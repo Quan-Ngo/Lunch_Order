@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/elements/Button';
 
 const navLinks = [
     { to: '/', label: 'Daily Menu' },
@@ -20,8 +21,8 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20 items-center">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-3">
-                        <div className="bg-primary p-2 rounded-lg border-2 border-black shadow-[var(--shadow-neobrutalism)]">
+                    <Link to="/" className="flex items-center gap-3 group">
+                        <div className="bg-primary p-2 rounded-lg border-2 border-black shadow-[var(--shadow-neobrutalism)] transition-transform group-hover:rotate-3">
                             <span className="material-icons text-black text-2xl">lunch_dining</span>
                         </div>
                         <span className="text-2xl font-bold tracking-tight text-text-primary-light font-display">
@@ -30,28 +31,23 @@ export default function Navbar() {
                     </Link>
 
                     {/* Desktop Nav Links */}
-                    <div className="hidden md:flex items-center space-x-8">
+                    <div className="hidden md:flex items-center space-x-2">
                         {navLinks.map((link) => (
-                            <Link
-                                key={link.to}
-                                to={link.to}
-                                className={`text-sm font-medium transition-colors ${isActive(link.to)
-                                        ? 'text-text-primary-light font-bold border-b-2 border-primary'
-                                        : 'text-text-secondary-light hover:text-primary'
-                                    }`}
-                            >
-                                {link.label}
+                            <Link key={link.to} to={link.to}>
+                                <Button
+                                    variant={isActive(link.to) ? 'primary' : 'ghost'}
+                                    size="sm"
+                                    className={isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'}
+                                >
+                                    {link.label}
+                                </Button>
                             </Link>
                         ))}
                     </div>
 
                     {/* User Avatar */}
                     <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full">
-                            <span className="material-icons text-yellow-500 text-sm">star</span>
-                            <span className="text-sm font-bold text-text-primary-light">450 pts</span>
-                        </div>
-                        <div className="h-10 w-10 rounded-full bg-gray-300 overflow-hidden border-2 border-primary">
+                        <div className="h-10 w-10 rounded-full bg-gray-300 overflow-hidden border-2 border-primary cursor-pointer hover:scale-105 transition-transform">
                             <img
                                 alt="User Avatar"
                                 className="h-full w-full object-cover"
@@ -74,19 +70,17 @@ export default function Navbar() {
 
             {/* Mobile Menu */}
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+                <div className="md:hidden bg-white border-t border-gray-200 shadow-lg animate-in slide-in-from-top-5 duration-200">
                     <div className="px-4 py-4 space-y-3">
                         {navLinks.map((link) => (
-                            <Link
-                                key={link.to}
-                                to={link.to}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`block px-4 py-3 rounded-xl text-base font-medium transition-colors ${isActive(link.to)
-                                        ? 'bg-primary text-black font-bold border-2 border-black shadow-[var(--shadow-neobrutalism-sm)]'
-                                        : 'text-text-secondary-light hover:bg-gray-50'
-                                    }`}
-                            >
-                                {link.label}
+                            <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button
+                                    fullWidth
+                                    variant={isActive(link.to) ? 'primary' : 'ghost'}
+                                    className="justify-start"
+                                >
+                                    {link.label}
+                                </Button>
                             </Link>
                         ))}
                     </div>

@@ -1,77 +1,97 @@
-import { useQuery } from '@tanstack/react-query';
-import { foodService, type Food } from '@/services/api';
-import Navbar from '@/components/Navbar';
+import { useState } from 'react';
+import { RootLayout } from '@/layouts/RootLayout';
+import { useFoods } from '@/hooks/useFoods';
 import CatalogItem from '@/components/CatalogItem';
+import { Button } from '@/components/elements/Button';
+import { PageHeader } from '@/components/elements/PageHeader';
+import { LoadingState } from '@/components/elements/LoadingState';
+import { ErrorState } from '@/components/elements/ErrorState';
+import { EmptyState } from '@/components/elements/EmptyState';
+import { CreateFoodModal, type FoodFormData } from '@/components/fragments/CreateFoodModal';
+import { foodService } from '@/services/api';
 
 export default function FoodCatalog() {
-    const { data: foods, isLoading, error } = useQuery<Food[]>({
-        queryKey: ['foods'],
-        queryFn: foodService.getAll,
-    });
+    const { foods, isLoading, error, refetch } = useFoods();
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-    const handleEdit = (food: Food) => {
+    const handleEdit = (food: any) => {
         console.info('Edit food:', food.name);
     };
 
-    const handleDelete = (food: Food) => {
+    const handleDelete = (food: any) => {
         console.info('Delete food:', food.name);
     };
 
+    const handleSave = async (data: FoodFormData) => {
+        try {
+            await foodService.create({
+                name: data.name,
+                price: parseFloat(data.price),
+                description: data.description,
+            });
+            // Refresh list
+            await refetch();
+            setIsModalOpen(false);
+        } catch (err) {
+            console.error('Failed to create food:', err);
+            // Optionally show error to user (e.g., alert or toast)
+            alert('Failed to save food. check console for details.');
+        }
+    };
+
     return (
-        <div className="font-body bg-background-light text-gray-800 min-h-screen flex flex-col pattern-bg">
-            <Navbar />
-            <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full relative">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
-                    <div>
-                        <h1 className="text-4xl font-extrabold text-gray-900 mb-2 font-display">
-                            Food Catalog
-                        </h1>
-                        <p className="text-gray-600 font-body">
-                            Manage your delicious offerings for the team.
-                        </p>
-                    </div>
-                    <button className="group relative inline-flex items-center justify-center px-8 py-3 text-base font-bold text-black transition-all duration-200 bg-primary border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary hover:shadow-[var(--shadow-neobrutalism)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
-                        <span className="material-icons-outlined mr-2">add_circle</span>
-                        Add New Food
-                    </button>
+        <RootLayout>
+            <PageHeader
+                title="Food Catalog"
+                description="Manage your delicious offerings for the team."
+            >
+                <Button
+                    variant="primary"
+                    icon={<span className="material-icons-outlined">add_circle</span>}
+                    onClick={() => setIsModalOpen(true)}
+                >
+                    Add New Food
+                </Button>
+            </PageHeader>
+
+            {isLoading && <LoadingState />}
+
+            {error && (
+                <ErrorState
+                    message="Failed to load food items. Is the backend running?"
+                    description={
+                        <>
+                            Run <code className="bg-red-100 px-2 py-0.5 rounded">cds watch</code> in the project root.
+                        </>
+                    }
+                />
+            )}
+
+            {foods && (
+                <div className="flex flex-col gap-4">
+                    {foods.map((food) => (
+                        <CatalogItem
+                            key={food.ID}
+                            food={food}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    ))}
                 </div>
+            )}
 
-                {/* Food List */}
-                {isLoading && (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-                    </div>
-                )}
+            {foods && foods.length === 0 && (
+                <EmptyState
+                    icon="restaurant"
+                    message="No food items yet. Add your first dish!"
+                />
+            )}
 
-                {error && (
-                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
-                        <span className="material-icons text-red-500 text-4xl mb-2">error</span>
-                        <p className="text-red-700 font-medium">Failed to load food items. Is the backend running?</p>
-                        <p className="text-red-500 text-sm mt-1">Run <code className="bg-red-100 px-2 py-0.5 rounded">cds watch</code> in the project root.</p>
-                    </div>
-                )}
-
-                {foods && (
-                    <div className="flex flex-col gap-4">
-                        {foods.map((food) => (
-                            <CatalogItem
-                                key={food.ID}
-                                food={food}
-                                onEdit={handleEdit}
-                                onDelete={handleDelete}
-                            />
-                        ))}
-                    </div>
-                )}
-
-                {foods && foods.length === 0 && (
-                    <div className="text-center py-20">
-                        <span className="material-icons text-gray-300 text-6xl mb-4">restaurant</span>
-                        <p className="text-gray-500 text-lg">No food items yet. Add your first dish!</p>
-                    </div>
-                )}
-            </main>
-        </div>
+            <CreateFoodModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSave}
+            />
+        </RootLayout>
     );
 }

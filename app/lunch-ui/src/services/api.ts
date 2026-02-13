@@ -66,6 +66,17 @@ export const foodService = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/Catalog(${id})`);
     },
+    // Create new food item
+    create: async (data: { name: string; price: number; description: string }): Promise<void> => {
+        await api.post('/Catalog', {
+            Name: data.name,
+            Price: data.price,
+            Description: data.description,
+            // Fallback for fields not yet in UI or required by DB if any
+            Category: 'General',
+            isActive: true
+        });
+    },
 };
 
 export const employeeService = {
