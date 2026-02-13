@@ -12,7 +12,8 @@
   "devDependencies": {
     "@cap-js/sqlite": "^2",
     "@sap/cds-dk": "^9",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "wait-on": "^9.0.4"
   },
   "scripts": {
     "start": "cds-serve",
@@ -31,6 +32,11 @@
       "destinations": true,
       "html5-repo": true,
       "application-logging": true
+    },
+    "watch": {
+      "ignore": [
+        "app/**"
+      ]
     }
   }
 }

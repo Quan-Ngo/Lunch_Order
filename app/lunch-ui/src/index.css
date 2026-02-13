@@ -21,12 +21,6 @@
     --shadow-neobrutalism-sm: 2px 2px 0px 0px rgba(0, 0, 0, 1);
 }
 
-/* === Google Fonts === */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
-/* === Material Icons === */
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined');
-
 /* === Global Styles === */
 * {
     margin: 0;
@@ -71,6 +65,7 @@ body {
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
