@@ -1,0 +1,9 @@
+node_modules/
+dist/
+src/
+public/
+*.ts
+*.tsx
+*.json
+*.config.*
+tsconfig*

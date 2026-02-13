@@ -1,23 +1,29 @@
 {
-  "name": "Lunch_Order",
+  "name": "lunch-order",
   "version": "1.0.0",
   "description": "A simple CAP project.",
   "dependencies": {
     "@cap-js/hana": "^2",
+    "@cap-js/notifications": "*",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
-    "express": "^4",
-    "@cap-js/notifications": "*"
+    "express": "^4"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
-    "@sap/cds-dk": "^9"
+    "@sap/cds-dk": "^9",
+    "concurrently": "^9.2.1"
   },
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "start-local": "concurrently \"npm run watch\" \"cd app/lunch-ui && npm run dev\""
   },
   "private": true,
   "cds": {
+    "server": {
+      "port": 4005
+    },
     "requires": {
       "[production]": {
         "auth": "xsuaa"
