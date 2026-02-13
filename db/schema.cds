@@ -2,42 +2,41 @@ namespace lunch;
 
 using { cuid, managed } from '@sap/cds/common';
 
-entity Food : cuid, managed {
-    name        : String(100)  @mandatory;
-    description : String(500);
-    price       : Decimal(10,2) @mandatory;
-    image       : String(2048);
-    category    : String(50);
+entity Staff : cuid, managed {
+    Name         : String(100);
+    Notification : Boolean;
+    catalogs     : Association to many StaffCatalog on catalogs.staff = $self;
 }
 
-entity Employees : cuid, managed {
-    name        : String(100)  @mandatory;
-    email       : String(255)  @mandatory;
-    department  : String(100);
+entity Catalog : cuid, managed {
+    Name         : String(100);
+    isActive     : Boolean;
+    Price        : Decimal(15,2);
+    Description  : String(500); // Added to support existing UI
+    Category     : String(50);  // Added to support existing UI
+    menus        : Association to many DailyMenu on menus.catalog = $self;
+    staffCatalogs: Association to many StaffCatalog on staffCatalogs.catalog = $self;
+    file         : Composition of one CatalogFile on file.catalog = $self;
 }
 
-entity DailyMenus : cuid, managed {
-    date        : Date         @mandatory;
-    items       : Composition of many DailyMenuItems on items.menu = $self;
+entity CatalogFile : cuid, managed {
+    url          : String(2048);
+    content      : LargeBinary;
+    mediaType    : String;
+    catalog      : Association to Catalog;
 }
 
-entity DailyMenuItems : cuid {
-    menu        : Association to DailyMenus;
-    food        : Association to Food;
+entity DailyMenu : cuid, managed {
+    Date         : Date;
+    isComplete   : Boolean;
+    catalog      : Association to Catalog; // "Association to many DailyMenu" implies Catalog -> DailyMenu 1:n? Or n:m? User said "Association to many DailyMenu" in Catalog. So DailyMenu has one Catalog?
+    parent       : Association to DailyMenu; // "Association to one DailyMenu"
 }
 
-entity Orders : cuid, managed {
-    date        : Date         @mandatory;
-    employee    : Association to Employees;
-    items       : Composition of many OrderItems on items.order = $self;
-    totalAmount : Decimal(10,2);
-    status      : String(20) default 'Pending';
-}
-
-entity OrderItems : cuid {
-    order       : Association to Orders;
-    food        : Association to Food;
-    quantity    : Integer default 1;
-    unitPrice   : Decimal(10,2);
-    subtotal    : Decimal(10,2);
+entity StaffCatalog : managed {
+    key Staff_ID   : UUID;
+    key Catalog_ID : UUID;
+    Date           : Date;
+    staff          : Association to Staff on staff.ID = Staff_ID;
+    catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
