@@ -8,18 +8,29 @@ import { LoadingState } from '@/components/elements/LoadingState';
 import { ErrorState } from '@/components/elements/ErrorState';
 import { EmptyState } from '@/components/elements/EmptyState';
 import { CreateFoodModal, type FoodFormData } from '@/components/fragments/CreateFoodModal';
-import { foodService } from '@/services/api';
+import { RemovalModal, type RemovalItem } from '@/components/fragments/RemovalModal';
+import { foodService, type Food } from '@/services/api';
 
 export default function FoodCatalog() {
     const { foods, isLoading, error, refetch } = useFoods();
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+    const [removalTarget, setRemovalTarget] = useState<RemovalItem | null>(null);
 
-    const handleEdit = (food: any) => {
+    const handleEdit = (food: Food) => {
         console.info('Edit food:', food.name);
     };
 
-    const handleDelete = (food: any) => {
-        console.info('Delete food:', food.name);
+    const handleDelete = (food: Food) => {
+        setRemovalTarget({
+            id: food.ID,
+            name: food.name,
+            image: food.image || undefined,
+        });
+    };
+
+    const handleConfirmDelete = async (id: string) => {
+        await foodService.delete(id);
+        await refetch();
     };
 
     const handleSave = async (data: FoodFormData) => {
@@ -29,13 +40,11 @@ export default function FoodCatalog() {
                 price: parseFloat(data.price),
                 description: data.description,
             });
-            // Refresh list
             await refetch();
-            setIsModalOpen(false);
+            setIsCreateModalOpen(false);
         } catch (err) {
             console.error('Failed to create food:', err);
-            // Optionally show error to user (e.g., alert or toast)
-            alert('Failed to save food. check console for details.');
+            alert('Failed to save food. Check console for details.');
         }
     };
 
@@ -48,7 +57,7 @@ export default function FoodCatalog() {
                 <Button
                     variant="primary"
                     icon={<span className="material-icons-outlined">add_circle</span>}
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => setIsCreateModalOpen(true)}
                 >
                     Add New Food
                 </Button>
@@ -88,9 +97,17 @@ export default function FoodCatalog() {
             )}
 
             <CreateFoodModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
                 onSave={handleSave}
+            />
+
+            <RemovalModal
+                isOpen={removalTarget !== null}
+                onClose={() => setRemovalTarget(null)}
+                onConfirm={handleConfirmDelete}
+                item={removalTarget}
+                contextText="from the food catalog"
             />
         </RootLayout>
     );
