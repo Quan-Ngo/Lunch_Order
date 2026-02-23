@@ -4,7 +4,7 @@ using { cuid, managed } from '@sap/cds/common';
 
 entity Staff : cuid, managed {
     name         : String(100);
-    Notification : Boolean;
+    notification : Boolean;
     catalogs     : Association to many StaffCatalog on catalogs.staff = $self;
 }
 
@@ -27,7 +27,7 @@ entity CatalogFile : cuid, managed {
 }
 
 entity DailyMenu : cuid, managed {
-    Date         : Date;
+    date         : Date;
     isComplete   : Boolean;
     catalog      : Association to Catalog; // "Association to many DailyMenu" implies Catalog -> DailyMenu 1:n? Or n:m? User said "Association to many DailyMenu" in Catalog. So DailyMenu has one Catalog?
     parent       : Association to DailyMenu; // "Association to one DailyMenu"
@@ -36,7 +36,7 @@ entity DailyMenu : cuid, managed {
 entity StaffCatalog : managed {
     key Staff_ID   : UUID;
     key Catalog_ID : UUID;
-    Date           : Date;
+    date           : Date;
     staff          : Association to Staff on staff.ID = Staff_ID;
     catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
