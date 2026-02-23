@@ -1,4 +1,4 @@
-ID,Name,Price,Description,Category,isActive
+ID,name,price,description,category,isActive
 1d3f5a7b-9c2e-4b6a-8f1d-3e5c7a9b0d2f,Big Hamburger,12.50,Juicy beef patty with fresh lettuce tomatoes and our signature sauce.,Burger,true
 2e416b8c-0d3f-5c7b-912e-4f6d8b0c2e41,Classic Pepperoni,15.00,Authentic Italian pepperoni with mozzarella and tomato sauce on a thin crust.,Pizza,true
 3f527c9d-1e41-6d8c-023f-517e9c1d3f52,Power Green Bowl,10.99,A mix of kale spinach avocado quinoa and lemon vinaigrette.,Salad,true

@@ -3,17 +3,17 @@ namespace lunch;
 using { cuid, managed } from '@sap/cds/common';
 
 entity Staff : cuid, managed {
-    Name         : String(100);
+    name         : String(100);
     Notification : Boolean;
     catalogs     : Association to many StaffCatalog on catalogs.staff = $self;
 }
 
 entity Catalog : cuid, managed {
-    Name         : String(100);
+    name         : String(100);
     isActive     : Boolean;
-    Price        : Decimal(15,2);
-    Description  : String(500); // Added to support existing UI
-    Category     : String(50);  // Added to support existing UI
+    price        : Decimal(15,2);
+    description  : String(500); // Added to support existing UI
+    category     : String(50);  // Added to support existing UI
     menus        : Association to many DailyMenu on menus.catalog = $self;
     staffCatalogs: Association to many StaffCatalog on staffCatalogs.catalog = $self;
     file         : Composition of one CatalogFile on file.catalog = $self;

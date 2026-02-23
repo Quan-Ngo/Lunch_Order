@@ -17,10 +17,10 @@ export interface Food {
 // Interface from the backend (matches new CDS model)
 interface CatalogEntity {
     ID: string;
-    Name: string;
-    Description: string;
-    Price: number;
-    Category: string;
+    name: string;
+    description: string;
+    price: number;
+    category: string;
     isActive: boolean;
     file?: {
         url: string;
@@ -29,7 +29,7 @@ interface CatalogEntity {
 
 interface StaffEntity {
     ID: string;
-    Name: string;
+    name: string;
     Notification: boolean;
 }
 
@@ -41,11 +41,11 @@ export const foodService = {
         // Map backend 'Catalog' to frontend 'Food' interface
         return response.data.value.map(item => ({
             ID: item.ID,
-            name: item.Name,
-            description: item.Description || '',
-            price: item.Price,
+            name: item.name,
+            description: item.description || '',
+            price: item.price,
             image: item.file?.url || '', // Fallback if no file
-            category: item.Category || 'General'
+            category: item.category || 'General'
         }));
     },
     // Other methods would need similar updates if implemented fully
@@ -54,11 +54,11 @@ export const foodService = {
         const item = response.data;
         return {
             ID: item.ID,
-            name: item.Name,
-            description: item.Description || '',
-            price: item.Price,
+            name: item.name,
+            description: item.description || '',
+            price: item.price,
             image: item.file?.url || '',
-            category: item.Category || 'General'
+            category: item.category || 'General'
         };
     },
     // Create/Update/Delete would need to handle the new schema (e.g. creating Catalog + CatalogFile)
@@ -69,11 +69,11 @@ export const foodService = {
     // Create new food item
     create: async (data: { name: string; price: number; description: string }): Promise<void> => {
         await api.post('/Catalog', {
-            Name: data.name,
-            Price: data.price,
-            Description: data.description,
+            name: data.name,
+            price: data.price,
+            description: data.description,
             // Fallback for fields not yet in UI or required by DB if any
-            Category: 'General',
+            category: 'General',
             isActive: true
         });
     },
