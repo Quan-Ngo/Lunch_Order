@@ -49,6 +49,7 @@ view DailyCatalogStatistics as
     C.ID                   as CatalogID,
     C.name                 as CatalogName,
     C.price                as CatalogPrice,
+    C.description          as CatalogDescription,
     count(*)               as OrderCount,
     count(*) * C.price     as SubTotal
   }
@@ -56,7 +57,8 @@ view DailyCatalogStatistics as
     SC.date,
     C.ID,
     C.name,
-    C.price;
+    C.price,
+    C.description;
 
 view DailyOrderSummary as
   select from DailyCatalogStatistics {

@@ -114,4 +114,38 @@ export const dailyMenuService = {
     }
 };
 
+export interface DailyCatalogStatistics {
+    OrderDate: string;
+    CatalogID: string;
+    CatalogName: string;
+    CatalogPrice: number;
+    CatalogDescription: string;
+    OrderCount: number;
+    SubTotal: number;
+}
+
+export const statisticsService = {
+    getByDate: async (dateString: string): Promise<DailyCatalogStatistics[]> => {
+        const response = await api.get<{ value: DailyCatalogStatistics[] }>(
+            `/DailyCatalogStatistics?$filter=OrderDate eq ${dateString}`
+        );
+        return response.data.value;
+    }
+};
+
+export interface DailyOrderSummary {
+    OrderDate: string;
+    TotalOrders: number;
+    TotalAmount: number;
+}
+
+export const summaryService = {
+    getByDate: async (dateString: string): Promise<DailyOrderSummary | null> => {
+        const response = await api.get<{ value: DailyOrderSummary[] }>(
+            `/DailyOrderSummary?$filter=OrderDate eq ${dateString}`
+        );
+        return response.data.value[0] || null;
+    }
+};
+
 export default api;

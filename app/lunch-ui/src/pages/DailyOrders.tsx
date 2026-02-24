@@ -6,7 +6,7 @@ import { SoftCard } from '@/components/elements/SoftCard';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
-import { dailyMenuService } from '@/services/api';
+import { statisticsService, foodService, summaryService } from '@/services/api';
 
 // --- Helper Functions ---
 
@@ -20,28 +20,41 @@ export default function DailyOrders() {
 
     const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 
-    const { data: menuItems = [], isLoading } = useQuery({
-        queryKey: ['dailyOrders', formattedDate],
-        queryFn: () => dailyMenuService.getByDate(formattedDate)
+    const { data: orderStats = [], isLoading: statsLoading } = useQuery({
+        queryKey: ['orderStatistics', formattedDate],
+        queryFn: () => statisticsService.getByDate(formattedDate)
     });
 
-    // Map fetched daily menu items to displayable 'orders'.
-    // Given the request to not modify the quantity and subtotal fields logic for now,
-    // we provide a fallback placeholder quantity for display purposes.
-    const orders = menuItems.map((item, index) => ({
-        id: item.ID,
-        name: item.catalog?.name || 'Unknown',
-        description: item.catalog?.description || '',
-        unitPrice: item.catalog?.price || 0,
-        qty: (index + 1) * 5, // Mock quantity since it's not provided yet
-        image: item.catalog?.file?.url || 'https://via.placeholder.com/150',
-    }));
+    const { data: catalogItems = [], isLoading: catalogLoading } = useQuery({
+        queryKey: ['catalog'],
+        queryFn: foodService.getAll
+    });
 
-    const subtotal: number = orders.reduce((sum, o) => sum + o.unitPrice * o.qty, 0);
+    const { data: summary, isLoading: summaryLoading } = useQuery({
+        queryKey: ['orderSummary', formattedDate],
+        queryFn: () => summaryService.getByDate(formattedDate)
+    });
+
+    const isLoading = statsLoading || catalogLoading || summaryLoading;
+
+    const orders = orderStats.map((stat) => {
+        const catalogItem = catalogItems.find(c => c.ID === stat.CatalogID);
+        return {
+            id: stat.CatalogID,
+            name: stat.CatalogName,
+            description: stat.CatalogDescription,
+            unitPrice: stat.CatalogPrice,
+            qty: stat.OrderCount,
+            image: catalogItem?.image || 'https://via.placeholder.com/150',
+            subtotal: stat.SubTotal
+        };
+    });
+
+    const subtotal: number = summary?.TotalAmount || 0;
     const tax: number = subtotal * 0.1;
     const deliveryFee: number = 5.75;
     const total: number = subtotal + tax + deliveryFee;
-    const totalQty: number = orders.reduce((sum, o) => sum + o.qty, 0);
+    const totalQty: number = summary?.TotalOrders || 0;
 
     const handlePrevDay = () => {
         const prev: Date = new Date(currentDate);
@@ -150,7 +163,7 @@ export default function DailyOrders() {
                                 {
                                     header: 'Subtotal',
                                     className: 'col-span-2 text-right text-sm font-bold text-gray-900',
-                                    render: (order) => formatCurrency(order.unitPrice * order.qty),
+                                    render: (order) => formatCurrency(order.subtotal),
                                 }
                             ]}
                         />
