@@ -36,7 +36,24 @@ entity DailyMenu : cuid, managed {
 entity StaffCatalog : managed {
     key Staff_ID   : UUID;
     key Catalog_ID : UUID;
-    date           : Date;
+    key date           : Date;
     staff          : Association to Staff on staff.ID = Staff_ID;
     catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
+
+view DailyCatalogStatistics as
+  select from lunch.StaffCatalog as SC
+  inner join lunch.Catalog as C on SC.Catalog_ID = C.ID
+  {
+    SC.date                as OrderDate,
+    C.ID                   as CatalogID,
+    C.name                 as CatalogName,
+    C.price                as CatalogPrice,
+    count(*)               as OrderCount,
+    count(*) * C.price     as SubTotal
+  }
+  group by
+    SC.date,
+    C.ID,
+    C.name,
+    C.price;

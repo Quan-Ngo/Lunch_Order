@@ -1,0 +1,21 @@
+[33m
+[1mcds serve all --with-mocks --in-memory? [0m
+[33m( live reload enabled for browsers ) [0m
+[33m
+[1m        ___________________________
+ [0m
+[cds] - loaded model from 3 file(s):
+ 
+  srv\service.cds
+  db\schema.cds
+  node_modules\@sap\cds\common.cds
+
+[cds] - using bindings from: { registry: '~/.cds-services.json' }
+[cds] - connect to db > sqlite { url: ':memory:' }
+/> deployment to in-memory database. failed
+
+[ERROR] db\schema.cds:45:3: “lunch.DailyCatalogStatistics”: “catalog” in path “SC.catalog.ID” must not be an unmanaged association (in entity:“lunch.DailyCatalogStatistics”/query:1)
+
+[33m[1m[32m
+[cds] - my watch has ended. [0m [0m
+Terminate batch job (Y/N)? 
