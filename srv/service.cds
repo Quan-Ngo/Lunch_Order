@@ -8,4 +8,6 @@ service LunchService @(path: '/odata/v4/lunch') {
     entity CatalogFile  as projection on lunch.CatalogFile;
     @readonly
     entity DailyCatalogStatistics as projection on lunch.DailyCatalogStatistics;
+    @readonly
+    entity DailyOrderSummary as projection on lunch.DailyOrderSummary;
 }

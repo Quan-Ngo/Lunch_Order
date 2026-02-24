@@ -97,4 +97,21 @@ export const employeeService = {
     },
 };
 
+export interface DailyMenuEntity {
+    ID: string;
+    date: string;
+    isComplete: boolean;
+    catalog?: CatalogEntity;
+}
+
+export const dailyMenuService = {
+    getByDate: async (dateString: string): Promise<DailyMenuEntity[]> => {
+        // Formats YYYY-MM-DD
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=date eq ${dateString}&$expand=catalog($expand=file)`
+        );
+        return response.data.value;
+    }
+};
+
 export default api;

@@ -57,3 +57,12 @@ view DailyCatalogStatistics as
     C.ID,
     C.name,
     C.price;
+
+view DailyOrderSummary as
+  select from DailyCatalogStatistics {
+    OrderDate,
+    sum(OrderCount) as TotalOrders,
+    sum(SubTotal)   as TotalAmount
+  }
+  group by
+    OrderDate;
