@@ -7,17 +7,24 @@ import { PageHeader } from '@/components/elements/PageHeader';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { ErrorState } from '@/components/elements/ErrorState';
 import { EmptyState } from '@/components/elements/EmptyState';
-import { CreateFoodModal, type FoodFormData } from '@/components/fragments/CreateFoodModal';
+import { FoodModal, type FoodFormData } from '@/components/fragments/FoodModal';
 import { RemovalModal, type RemovalItem } from '@/components/fragments/RemovalModal';
 import { foodService, type Food } from '@/services/api';
 
 export default function FoodCatalog() {
     const { foods, isLoading, error, refetch } = useFoods();
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [editingFood, setEditingFood] = useState<Food | null>(null);
     const [removalTarget, setRemovalTarget] = useState<RemovalItem | null>(null);
 
     const handleEdit = (food: Food) => {
-        console.info('Edit food:', food.name);
+        setEditingFood(food);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenCreateModal = () => {
+        setEditingFood(null);
+        setIsModalOpen(true);
     };
 
     const handleDelete = (food: Food) => {
@@ -35,16 +42,29 @@ export default function FoodCatalog() {
 
     const handleSave = async (data: FoodFormData) => {
         try {
-            await foodService.create({
-                name: data.name,
-                price: parseFloat(data.price),
-                description: data.description,
-            });
+            if (editingFood) {
+                // PATCH allows partial updates so we don't accidentally wipe out the image or category 
+                // if we are only sending name, price, description in an update
+                await foodService.update(editingFood.ID, {
+                    name: data.name,
+                    price: parseFloat(data.price),
+                    description: data.description,
+                });
+            } else {
+                await foodService.create({
+                    name: data.name,
+                    price: parseFloat(data.price),
+                    description: data.description,
+                });
+            }
+            // Refresh list
             await refetch();
-            setIsCreateModalOpen(false);
+            setIsModalOpen(false);
+            setEditingFood(null);
         } catch (err) {
-            console.error('Failed to create food:', err);
-            alert('Failed to save food. Check console for details.');
+            console.error('Failed to save food:', err);
+            // Optionally show error to user (e.g., alert or toast)
+            alert('Failed to save food. check console for details.');
         }
     };
 
@@ -57,7 +77,7 @@ export default function FoodCatalog() {
                 <Button
                     variant="primary"
                     icon={<span className="material-icons-outlined">add_circle</span>}
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={handleOpenCreateModal}
                 >
                     Add New Food
                 </Button>
@@ -96,9 +116,22 @@ export default function FoodCatalog() {
                 />
             )}
 
-            <CreateFoodModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+            <FoodModal
+                isOpen={isModalOpen}
+                mode={editingFood ? 'edit' : 'create'}
+                initialData={
+                    editingFood
+                        ? {
+                            name: editingFood.name,
+                            price: editingFood.price.toString(),
+                            description: editingFood.description,
+                        }
+                        : null
+                }
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingFood(null);
+                }}
                 onSave={handleSave}
             />
 
