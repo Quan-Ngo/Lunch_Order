@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/elements/Button';
 
-interface CreateFoodModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (data: FoodFormData) => void;
-}
-
 export interface FoodFormData {
     name: string;
     price: string;
@@ -14,13 +8,44 @@ export interface FoodFormData {
     image: File | null;
 }
 
-export function CreateFoodModal({ isOpen, onClose, onSave }: CreateFoodModalProps) {
+interface FoodModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: FoodFormData) => void;
+    mode?: 'create' | 'edit';
+    initialData?: Partial<FoodFormData> | null;
+}
+
+export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialData }: FoodModalProps) {
     const [name, setName] = useState<string>('');
     const [price, setPrice] = useState<string>('');
     const [description, setDescription] = useState<string>('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [errors, setErrors] = useState<{ name: boolean; price: boolean }>({ name: false, price: false });
+
+    // Populate data when editing
+    React.useEffect(() => {
+        if (isOpen) {
+            if (mode === 'edit' && initialData) {
+                setName(initialData.name || '');
+                setPrice(initialData.price?.toString() || '');
+                setDescription(initialData.description || '');
+                // Note: Image population requires URL or File logic. Assuming image Preview URL is passed or handled via separate prop if needed,
+                // but for now per requirement: "Ignore image for now."
+                setImageFile(null);
+                setImagePreview(null);
+            } else {
+                // Reset for create
+                setName('');
+                setPrice('');
+                setDescription('');
+                setImageFile(null);
+                setImagePreview(null);
+            }
+            setErrors({ name: false, price: false });
+        }
+    }, [isOpen, mode, initialData]);
 
     // Reset state on close could be done here if we used useEffect, but for simplicity we rely on isOpen prop
     // to mount/unmount or just return null.
@@ -51,13 +76,6 @@ export function CreateFoodModal({ isOpen, onClose, onSave }: CreateFoodModalProp
         }
 
         onSave({ name, price, description, image: imageFile });
-        // Reset form
-        setName('');
-        setPrice('');
-        setDescription('');
-        setImageFile(null);
-        setImagePreview(null);
-        setErrors({ name: false, price: false });
     };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -90,7 +108,7 @@ export function CreateFoodModal({ isOpen, onClose, onSave }: CreateFoodModalProp
                                 id="modal-title"
                                 className="text-2xl font-extrabold text-black uppercase tracking-tight font-display"
                             >
-                                Add New Food
+                                {mode === 'edit' ? 'Edit Food Item' : 'Add New Food'}
                             </h3>
                             <button
                                 onClick={onClose}
