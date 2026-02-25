@@ -31,12 +31,41 @@ entity DailyMenu : cuid, managed {
     isComplete   : Boolean;
     catalog      : Association to Catalog; // "Association to many DailyMenu" implies Catalog -> DailyMenu 1:n? Or n:m? User said "Association to many DailyMenu" in Catalog. So DailyMenu has one Catalog?
     parent       : Association to DailyMenu; // "Association to one DailyMenu"
+    note         : String(500);
 }
 
 entity StaffCatalog : managed {
     key Staff_ID   : UUID;
     key Catalog_ID : UUID;
-    date           : Date;
+    key date           : Date;
     staff          : Association to Staff on staff.ID = Staff_ID;
     catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
+
+view DailyCatalogStatistics as
+  select from lunch.StaffCatalog as SC
+  inner join lunch.Catalog as C on SC.Catalog_ID = C.ID
+  {
+    SC.date                as OrderDate,
+    C.ID                   as CatalogID,
+    C.name                 as CatalogName,
+    C.price                as CatalogPrice,
+    C.description          as CatalogDescription,
+    count(*)               as OrderCount,
+    count(*) * C.price     as SubTotal
+  }
+  group by
+    SC.date,
+    C.ID,
+    C.name,
+    C.price,
+    C.description;
+
+view DailyOrderSummary as
+  select from DailyCatalogStatistics {
+    OrderDate,
+    sum(OrderCount) as TotalOrders,
+    sum(SubTotal)   as TotalAmount
+  }
+  group by
+    OrderDate;

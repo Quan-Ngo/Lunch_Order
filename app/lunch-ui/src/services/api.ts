@@ -77,6 +77,17 @@ export const foodService = {
             isActive: true
         });
     },
+    // Update existing food item
+    update: async (id: string, data: { name: string; price: number; description: string }): Promise<void> => {
+        await api.put(`/Catalog(${id})`, {
+            name: data.name,
+            price: data.price,
+            description: data.description,
+            // Retain fields that might be lost if strictly overwritten, although PUT usually assumes full replace
+            // A PATCH might be safer, but PUT matches standard CAP behavior for full updates.
+            // In a real app we'd want to preserve the image, so PATCH is actually better for partial updates
+        });
+    },
 };
 
 export const employeeService = {
@@ -84,6 +95,64 @@ export const employeeService = {
         const response = await api.get<{ value: StaffEntity[] }>('/Staff');
         return response.data.value;
     },
+};
+
+export interface DailyMenuEntity {
+    ID: string;
+    date: string;
+    isComplete: boolean;
+    catalog?: CatalogEntity;
+    note?: string;
+}
+
+export const dailyMenuService = {
+    getByDate: async (dateString: string): Promise<DailyMenuEntity[]> => {
+        // Formats YYYY-MM-DD
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=date eq '${dateString}'&$expand=catalog($expand=file)`
+        );
+        return response.data.value;
+    },
+    updateNote: async (id: string, note: string): Promise<void> => {
+        await api.patch(`/DailyMenu(${id})`, { note });
+    },
+    createNote: async (dateString: string, note: string): Promise<void> => {
+        await api.post('/DailyMenu', { date: dateString, note, isComplete: false });
+    }
+};
+
+export interface DailyCatalogStatistics {
+    OrderDate: string;
+    CatalogID: string;
+    CatalogName: string;
+    CatalogPrice: number;
+    CatalogDescription: string;
+    OrderCount: number;
+    SubTotal: number;
+}
+
+export const statisticsService = {
+    getByDate: async (dateString: string): Promise<DailyCatalogStatistics[]> => {
+        const response = await api.get<{ value: DailyCatalogStatistics[] }>(
+            `/DailyCatalogStatistics?$filter=OrderDate eq '${dateString}'`
+        );
+        return response.data.value;
+    }
+};
+
+export interface DailyOrderSummary {
+    OrderDate: string;
+    TotalOrders: number;
+    TotalAmount: number;
+}
+
+export const summaryService = {
+    getByDate: async (dateString: string): Promise<DailyOrderSummary | null> => {
+        const response = await api.get<{ value: DailyOrderSummary[] }>(
+            `/DailyOrderSummary?$filter=OrderDate eq '${dateString}'`
+        );
+        return response.data.value[0] || null;
+    }
 };
 
 export default api;

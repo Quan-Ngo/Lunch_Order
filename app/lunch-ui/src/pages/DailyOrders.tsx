@@ -1,15 +1,324 @@
-import Navbar from '@/components/Navbar';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { RootLayout } from '@/layouts/RootLayout';
+import { PageHeader } from '@/components/elements/PageHeader';
+import { SoftCard } from '@/components/elements/SoftCard';
+import { Button } from '@/components/elements/Button';
+import { Badge } from '@/components/elements/Badge';
+import { Table } from '@/components/elements/Table';
+import { statisticsService, foodService, summaryService, dailyMenuService } from '@/services/api';
+
+// --- Helper Functions ---
+
+function formatCurrency(value: number): string {
+    return `$${value.toFixed(2)}`;
+}
 
 export default function DailyOrders() {
+    const [currentDate, setCurrentDate] = useState<Date>(new Date(2023, 9, 24)); // Oct 24, 2023
+    const [orderNote, setOrderNote] = useState<string>('');
+    const [showSavedText, setShowSavedText] = useState<boolean>(false);
+    const queryClient = useQueryClient();
+
+    const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+
+    const { data: orderStats = [], isLoading: statsLoading } = useQuery({
+        queryKey: ['orderStatistics', formattedDate],
+        queryFn: () => statisticsService.getByDate(formattedDate)
+    });
+
+    const { data: catalogItems = [], isLoading: catalogLoading } = useQuery({
+        queryKey: ['catalog'],
+        queryFn: foodService.getAll
+    });
+
+    const { data: summary, isLoading: summaryLoading } = useQuery({
+        queryKey: ['orderSummary', formattedDate],
+        queryFn: () => summaryService.getByDate(formattedDate)
+    });
+
+    const { data: dailyMenus = [], isLoading: dailyMenuLoading } = useQuery({
+        queryKey: ['dailyMenu', formattedDate],
+        queryFn: () => dailyMenuService.getByDate(formattedDate)
+    });
+
+    useEffect(() => {
+        if (dailyMenus.length > 0) {
+            const menuWithNote = dailyMenus.find(m => m.note);
+            setOrderNote(menuWithNote?.note || '');
+        } else {
+            setOrderNote('');
+        }
+    }, [dailyMenus]);
+
+    const saveNoteMutation = useMutation({
+        mutationFn: async (note: string) => {
+            if (dailyMenus.length > 0) {
+                await dailyMenuService.updateNote(dailyMenus[0].ID, note);
+            } else {
+                await dailyMenuService.createNote(formattedDate, note);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
+            setShowSavedText(true);
+            setTimeout(() => {
+                setShowSavedText(false);
+            }, 3000);
+        },
+        onError: (error) => {
+            console.error('Failed to save note:', error);
+            setShowSavedText(false);
+        }
+    });
+
+    const isLoading = statsLoading || catalogLoading || summaryLoading || dailyMenuLoading;
+
+    const orders = orderStats.map((stat) => {
+        const catalogItem = catalogItems.find(c => c.ID === stat.CatalogID);
+        return {
+            id: stat.CatalogID,
+            name: stat.CatalogName,
+            description: stat.CatalogDescription,
+            unitPrice: stat.CatalogPrice,
+            qty: stat.OrderCount,
+            image: catalogItem?.image || 'https://via.placeholder.com/150',
+            subtotal: stat.SubTotal
+        };
+    });
+
+    const subtotal: number = summary?.TotalAmount || 0;
+    const tax: number = subtotal * 0.1;
+    const deliveryFee: number = 5.75;
+    const total: number = subtotal + tax + deliveryFee;
+    const totalQty: number = summary?.TotalOrders || 0;
+
+    const handlePrevDay = () => {
+        const prev: Date = new Date(currentDate);
+        prev.setDate(prev.getDate() - 1);
+        setCurrentDate(prev);
+    };
+
+    const handleNextDay = () => {
+        const next: Date = new Date(currentDate);
+        next.setDate(next.getDate() + 1);
+        setCurrentDate(next);
+    };
+
+    const dateString: string = currentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+
     return (
-        <div className="font-body bg-background-light text-gray-800 min-h-screen flex flex-col pattern-bg">
-            <Navbar />
-            <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
-                <h1 className="text-4xl font-extrabold text-gray-900 mb-2 font-display">
-                    Daily Orders
-                </h1>
-                <p className="text-gray-600 font-body">Daily orders dashboard will appear here.</p>
-            </main>
-        </div>
+        <RootLayout>
+            <PageHeader
+                title="Daily Orders"
+                description="Manage and track today's office lunch orders efficiently."
+            >
+                {/* Date Navigator */}
+                <div className="flex items-center gap-3 border-2 border-black rounded-lg px-4 py-2 bg-white shadow-[var(--shadow-neobrutalism-sm)]">
+                    <button
+                        onClick={handlePrevDay}
+                        className="text-gray-600 hover:text-black transition-colors"
+                        aria-label="Previous day"
+                    >
+                        <span className="material-icons-outlined text-xl">chevron_left</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <span className="material-icons-outlined text-lg text-gray-500">calendar_today</span>
+                        <span className="font-bold text-sm">{dateString}</span>
+                    </div>
+                    <button
+                        onClick={handleNextDay}
+                        className="text-gray-600 hover:text-black transition-colors"
+                        aria-label="Next day"
+                    >
+                        <span className="material-icons-outlined text-xl">chevron_right</span>
+                    </button>
+                </div>
+            </PageHeader>
+
+            {/* Two-column layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* === LEFT COLUMN (2/3) === */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+
+                    {/* Total Order Value */}
+                    <SoftCard className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-1">Total Order Value</p>
+                            <p className="text-4xl font-extrabold text-black font-display">{formatCurrency(total)}</p>
+                        </div>
+                        <Badge className="text-base px-4 py-2 rounded-full">{totalQty}</Badge>
+                    </SoftCard>
+
+                    {/* Order Details Table */}
+                    {isLoading ? (
+                        <SoftCard>
+                            <p className="text-gray-500 text-center py-10">Loading orders...</p>
+                        </SoftCard>
+                    ) : orders.length === 0 ? (
+                        <SoftCard>
+                            <p className="text-gray-500 text-center py-10">No orders placed on this date.</p>
+                        </SoftCard>
+                    ) : (
+                        <Table
+                            title="Order Details"
+                            data={orders}
+                            keyExtractor={(row) => row.id}
+                            columns={[
+                                {
+                                    header: 'Item',
+                                    className: 'col-span-5',
+                                    render: (order) => (
+                                        <div className="flex items-center gap-3">
+                                            <img
+                                                src={order.image}
+                                                alt={order.name}
+                                                className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                                            />
+                                            <div>
+                                                <p className="font-bold text-sm text-gray-900">{order.name}</p>
+                                                <p className="text-xs text-gray-500">{order.description}</p>
+                                            </div>
+                                        </div>
+                                    ),
+                                },
+                                {
+                                    header: 'Unit Price',
+                                    className: 'col-span-3 text-right text-sm font-medium text-gray-600',
+                                    render: (order) => formatCurrency(order.unitPrice),
+                                },
+                                {
+                                    header: 'Qty',
+                                    className: 'col-span-2 flex justify-center',
+                                    render: (order) => <Badge>{order.qty}</Badge>,
+                                },
+                                {
+                                    header: 'Subtotal',
+                                    className: 'col-span-2 text-right text-sm font-bold text-gray-900',
+                                    render: (order) => formatCurrency(order.subtotal),
+                                }
+                            ]}
+                        />
+                    )}
+
+                    {/* Order Notes */}
+                    <SoftCard>
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="material-icons-outlined text-primary text-xl">edit_note</span>
+                            <h2 className="text-lg font-extrabold font-display">Order Notes</h2>
+                        </div>
+                        <textarea
+                            value={orderNote}
+                            onChange={(e) => setOrderNote(e.target.value)}
+                            placeholder="Special notes about the order..."
+                            rows={4}
+                            className="w-full border-2 border-gray-200 rounded-lg p-3 text-sm focus:ring-primary focus:border-primary resize-none bg-white"
+                        />
+                        <div className="flex justify-end mt-3 items-center gap-3">
+                            {showSavedText && (
+                                <span className="text-green-600 text-sm font-bold flex items-center gap-1 animate-fade-in">
+                                    <span className="material-icons-outlined text-sm">check_circle</span>
+                                    Note saved
+                                </span>
+                            )}
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => saveNoteMutation.mutate(orderNote)}
+                                disabled={saveNoteMutation.isPending}
+                            >
+                                {saveNoteMutation.isPending ? 'Saving...' : 'Save Note'}
+                            </Button>
+                        </div>
+                    </SoftCard>
+                </div>
+
+                {/* === RIGHT COLUMN (1/3) === */}
+                <div className="flex flex-col gap-6">
+
+                    {/* Receipt / Bill */}
+                    <SoftCard noPadding>
+                        <div className="p-4 border-b border-gray-200">
+                            <h2 className="text-lg font-extrabold font-display">Receipt / Bill</h2>
+                        </div>
+                        <div className="p-4">
+                            {/* Receipt Image Placeholder */}
+                            <div className="bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg h-48 flex items-center justify-center mb-4">
+                                <span className="material-icons-outlined text-amber-400 text-5xl">receipt_long</span>
+                            </div>
+
+                            {/* Uploaded File Info */}
+                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                <span className="material-icons-outlined text-gray-400">attach_file</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-gray-800 truncate">Le_Klub_Oct24_Page1.jpg</p>
+                                    <p className="text-xs text-gray-500">Uploaded 12:45 PM</p>
+                                </div>
+                                <button className="text-gray-400 hover:text-gray-600">
+                                    <span className="material-icons-outlined text-sm">more_vert</span>
+                                </button>
+                            </div>
+
+                            {/* Upload More */}
+                            <button className="w-full mt-3 flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 border-2 border-dashed border-gray-300 rounded-lg py-2.5 hover:border-gray-400 transition-colors">
+                                <span className="material-icons-outlined text-base">cloud_upload</span>
+                                Upload more pages
+                            </button>
+                        </div>
+                    </SoftCard>
+
+                    {/* Summary */}
+                    <SoftCard>
+                        <h2 className="text-lg font-extrabold font-display mb-4">Summary</h2>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Subtotal</span>
+                                <span className="font-medium">{formatCurrency(subtotal)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Tax (10%)</span>
+                                <span className="font-medium">{formatCurrency(tax)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Delivery Fee</span>
+                                <span className="font-medium">{formatCurrency(deliveryFee)}</span>
+                            </div>
+                            <div className="border-t border-gray-200 pt-3 flex justify-between">
+                                <span className="font-extrabold text-base">Total</span>
+                                <span className="font-extrabold text-base text-primary">{formatCurrency(total)}</span>
+                            </div>
+                        </div>
+                    </SoftCard>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-3">
+                        <Button
+                            variant="secondary"
+                            fullWidth
+                            icon={<span className="material-icons-outlined">download</span>}
+                        >
+                            Export to PDF
+                        </Button>
+                        <Button
+                            variant="primary"
+                            fullWidth
+                            icon={<span className="material-icons-outlined">check_circle</span>}
+                        >
+                            Mark as Complete
+                        </Button>
+                    </div>
+
+                    {/* Footer note */}
+                    <p className="text-xs text-gray-400 text-center">
+                        Orders lock automatically at 11:30 AM
+                    </p>
+                </div>
+            </div>
+        </RootLayout>
     );
 }
