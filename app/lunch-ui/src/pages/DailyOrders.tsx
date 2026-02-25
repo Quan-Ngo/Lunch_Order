@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootLayout } from '@/layouts/RootLayout';
 import { PageHeader } from '@/components/elements/PageHeader';
 import { SoftCard } from '@/components/elements/SoftCard';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
-import { statisticsService, foodService, summaryService } from '@/services/api';
+import { statisticsService, foodService, summaryService, dailyMenuService } from '@/services/api';
 
 // --- Helper Functions ---
 
@@ -17,6 +17,8 @@ function formatCurrency(value: number): string {
 export default function DailyOrders() {
     const [currentDate, setCurrentDate] = useState<Date>(new Date(2023, 9, 24)); // Oct 24, 2023
     const [orderNote, setOrderNote] = useState<string>('');
+    const [showSavedText, setShowSavedText] = useState<boolean>(false);
+    const queryClient = useQueryClient();
 
     const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 
@@ -35,7 +37,42 @@ export default function DailyOrders() {
         queryFn: () => summaryService.getByDate(formattedDate)
     });
 
-    const isLoading = statsLoading || catalogLoading || summaryLoading;
+    const { data: dailyMenus = [], isLoading: dailyMenuLoading } = useQuery({
+        queryKey: ['dailyMenu', formattedDate],
+        queryFn: () => dailyMenuService.getByDate(formattedDate)
+    });
+
+    useEffect(() => {
+        if (dailyMenus.length > 0) {
+            const menuWithNote = dailyMenus.find(m => m.note);
+            setOrderNote(menuWithNote?.note || '');
+        } else {
+            setOrderNote('');
+        }
+    }, [dailyMenus]);
+
+    const saveNoteMutation = useMutation({
+        mutationFn: async (note: string) => {
+            if (dailyMenus.length > 0) {
+                await dailyMenuService.updateNote(dailyMenus[0].ID, note);
+            } else {
+                await dailyMenuService.createNote(formattedDate, note);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
+            setShowSavedText(true);
+            setTimeout(() => {
+                setShowSavedText(false);
+            }, 3000);
+        },
+        onError: (error) => {
+            console.error('Failed to save note:', error);
+            setShowSavedText(false);
+        }
+    });
+
+    const isLoading = statsLoading || catalogLoading || summaryLoading || dailyMenuLoading;
 
     const orders = orderStats.map((stat) => {
         const catalogItem = catalogItems.find(c => c.ID === stat.CatalogID);
@@ -178,12 +215,25 @@ export default function DailyOrders() {
                         <textarea
                             value={orderNote}
                             onChange={(e) => setOrderNote(e.target.value)}
-                            placeholder="Add any special instructions for the restaurant, delivery details, or dietary restriction alerts here..."
+                            placeholder="Special notes about the order..."
                             rows={4}
                             className="w-full border-2 border-gray-200 rounded-lg p-3 text-sm focus:ring-primary focus:border-primary resize-none bg-white"
                         />
-                        <div className="flex justify-end mt-3">
-                            <Button variant="secondary" size="sm">Save Note</Button>
+                        <div className="flex justify-end mt-3 items-center gap-3">
+                            {showSavedText && (
+                                <span className="text-green-600 text-sm font-bold flex items-center gap-1 animate-fade-in">
+                                    <span className="material-icons-outlined text-sm">check_circle</span>
+                                    Note saved
+                                </span>
+                            )}
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => saveNoteMutation.mutate(orderNote)}
+                                disabled={saveNoteMutation.isPending}
+                            >
+                                {saveNoteMutation.isPending ? 'Saving...' : 'Save Note'}
+                            </Button>
                         </div>
                     </SoftCard>
                 </div>

@@ -31,6 +31,7 @@ entity DailyMenu : cuid, managed {
     isComplete   : Boolean;
     catalog      : Association to Catalog; // "Association to many DailyMenu" implies Catalog -> DailyMenu 1:n? Or n:m? User said "Association to many DailyMenu" in Catalog. So DailyMenu has one Catalog?
     parent       : Association to DailyMenu; // "Association to one DailyMenu"
+    note         : String(500);
 }
 
 entity StaffCatalog : managed {
