@@ -69,7 +69,7 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
                 <div className="px-6 pb-6 pt-2 text-center">
                     {/* Floating Delete Icon */}
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4 -mt-10 relative z-10 border-4 border-white">
-                        <span className="material-symbols-outlined text-3xl">delete_outline</span>
+                        <span className="material-icons-outlined text-3xl">delete</span>
                     </div>
 
                     <h3 className="text-xl font-bold text-slate-900 mb-2">{t('removalModal.title')}</h3>
