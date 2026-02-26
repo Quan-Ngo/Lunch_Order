@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../elements/Button';
 
 export interface RemovalItem {
@@ -16,6 +17,7 @@ interface RemovalModalProps {
 }
 
 export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: RemovalModalProps) {
+    const { t } = useTranslation();
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
     if (!isOpen || !item) return null;
@@ -27,7 +29,7 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
             onClose();
         } catch (err) {
             console.error('Failed to delete item:', err);
-            alert('Failed to delete item. Check console for details.');
+            alert(t('removalModal.deleteFailed'));
         } finally {
             setIsDeleting(false);
         }
@@ -70,9 +72,9 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
                         <span className="material-symbols-outlined text-3xl">delete_outline</span>
                     </div>
 
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Remove Item?</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{t('removalModal.title')}</h3>
                     <p className="text-sm text-slate-500 mb-6">
-                        This will remove{' '}
+                        {t('removalModal.bodyPrefix')}{' '}
                         <span className="font-semibold text-slate-700">{item.name}</span>
                         {contextText && (
                             <span className="font-medium"> {contextText}</span>
@@ -88,7 +90,7 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
                             onClick={handleConfirm}
                             disabled={isDeleting}
                         >
-                            {isDeleting ? 'Removing...' : 'Confirm Remove'}
+                            {isDeleting ? t('removalModal.confirming') : t('removalModal.confirm')}
                         </Button>
                         <Button
                             variant="ghost"
@@ -97,7 +99,7 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
                             disabled={isDeleting}
                             className="text-slate-500 hover:text-slate-800"
                         >
-                            Cancel
+                            {t('removalModal.cancel')}
                         </Button>
                     </div>
                 </div>

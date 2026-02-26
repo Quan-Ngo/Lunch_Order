@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/elements/Button';
 
 export interface FoodFormData {
@@ -17,6 +18,7 @@ interface FoodModalProps {
 }
 
 export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialData }: FoodModalProps) {
+    const { t } = useTranslation();
     const [name, setName] = useState<string>('');
     const [price, setPrice] = useState<string>('');
     const [description, setDescription] = useState<string>('');
@@ -108,12 +110,12 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                 id="modal-title"
                                 className="text-2xl font-extrabold text-black uppercase tracking-tight font-display"
                             >
-                                {mode === 'edit' ? 'Edit Food Item' : 'Add New Food'}
+                                {mode === 'edit' ? t('foodModal.titleEdit') : t('foodModal.titleCreate')}
                             </h3>
                             <button
                                 onClick={onClose}
                                 className="text-black/60 hover:text-black transition-colors"
-                                aria-label="Close modal"
+                                aria-label={t('foodModal.closeAriaLabel')}
                             >
                                 <span className="material-icons-outlined text-2xl">close</span>
                             </button>
@@ -126,7 +128,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                         {/* Image Upload */}
                         <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2 uppercase">
-                                Food Image
+                                {t('foodModal.imageSectionLabel')}
                             </label>
                             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-gray-300 border-dashed rounded-lg hover:bg-gray-50 transition-colors cursor-pointer bg-gray-50">
                                 <div className="space-y-1 text-center">
@@ -151,7 +153,8 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                             htmlFor="file-upload"
                                             className="relative cursor-pointer rounded-md font-bold text-black hover:underline focus-within:outline-none"
                                         >
-                                            <span>Upload a file</span>
+                                            <span>{t('foodModal.uploadCta')}</span>
+                                            <p className="pl-1">{t('foodModal.uploadOr')}</p>
                                             <input
                                                 id="file-upload"
                                                 name="file-upload"
@@ -161,9 +164,8 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                                 onChange={handleImageChange}
                                             />
                                         </label>
-                                        <p className="pl-1">or drag and drop</p>
                                     </div>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                                    <p className="text-xs text-gray-500">{t('foodModal.uploadHint')}</p>
                                 </div>
                             </div>
                         </div>
@@ -176,12 +178,12 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                     htmlFor="food-name"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
                                 >
-                                    Item Name
+                                    {t('foodModal.fieldName')}
                                 </label>
                                 <input
                                     id="food-name"
                                     type="text"
-                                    placeholder="e.g. Cheese Burger"
+                                    placeholder={t('foodModal.fieldNamePlaceholder')}
                                     value={name}
                                     onChange={(e) => {
                                         setName(e.target.value);
@@ -190,7 +192,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                     className={`block w-full border rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 font-medium bg-white ${errors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                                         }`}
                                 />
-                                {errors.name && <p className="mt-1 text-xs text-red-500 font-bold">Name is required.</p>}
+                                {errors.name && <p className="mt-1 text-xs text-red-500 font-bold">{t('foodModal.fieldNameError')}</p>}
                             </div>
 
                             {/* Price */}
@@ -199,7 +201,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                     htmlFor="food-price"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
                                 >
-                                    Price ($)
+                                    {t('foodModal.fieldPrice')}
                                 </label>
                                 <input
                                     id="food-price"
@@ -219,7 +221,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                     className={`block w-full border rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 font-medium bg-white ${errors.price ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                                         }`}
                                 />
-                                {errors.price && <p className="mt-1 text-xs text-red-500 font-bold">Price is required.</p>}
+                                {errors.price && <p className="mt-1 text-xs text-red-500 font-bold">{t('foodModal.fieldPriceError')}</p>}
                             </div>
 
                             {/* Description */}
@@ -228,12 +230,12 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                     htmlFor="food-description"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
                                 >
-                                    Description
+                                    {t('foodModal.fieldDescription')}
                                 </label>
                                 <textarea
                                     id="food-description"
                                     rows={3}
-                                    placeholder="Describe the dish..."
+                                    placeholder={t('foodModal.fieldDescriptionPlaceholder')}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="block w-full border border-gray-200 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 bg-white"
@@ -249,14 +251,14 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                             onClick={handleSubmit}
                             className="w-full sm:w-auto"
                         >
-                            Save Changes
+                            {t('foodModal.saveChanges')}
                         </Button>
                         <Button
                             variant="secondary"
                             onClick={onClose}
                             className="w-full sm:w-auto"
                         >
-                            Cancel
+                            {t('foodModal.cancel')}
                         </Button>
                     </div>
                 </div>

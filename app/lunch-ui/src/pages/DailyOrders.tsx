@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { RootLayout } from '@/layouts/RootLayout';
 import { PageHeader } from '@/components/elements/PageHeader';
 import { SoftCard } from '@/components/elements/SoftCard';
@@ -15,6 +16,7 @@ function formatCurrency(value: number): string {
 }
 
 export default function DailyOrders() {
+    const { t, i18n } = useTranslation();
     const [currentDate, setCurrentDate] = useState<Date>(new Date(2023, 9, 24)); // Oct 24, 2023
     const [orderNote, setOrderNote] = useState<string>('');
     const [showSavedText, setShowSavedText] = useState<boolean>(false);
@@ -105,7 +107,7 @@ export default function DailyOrders() {
         setCurrentDate(next);
     };
 
-    const dateString: string = currentDate.toLocaleDateString('en-US', {
+    const dateString: string = currentDate.toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -114,15 +116,15 @@ export default function DailyOrders() {
     return (
         <RootLayout>
             <PageHeader
-                title="Daily Orders"
-                description="Manage and track today's office lunch orders efficiently."
+                title={t('dailyOrders.title')}
+                description={t('dailyOrders.description')}
             >
                 {/* Date Navigator */}
                 <div className="flex items-center gap-3 border-2 border-black rounded-lg px-4 py-2 bg-white shadow-[var(--shadow-neobrutalism-sm)]">
                     <button
                         onClick={handlePrevDay}
                         className="text-gray-600 hover:text-black transition-colors"
-                        aria-label="Previous day"
+                        aria-label={t('dailyOrders.previousDayAria')}
                     >
                         <span className="material-icons-outlined text-xl">chevron_left</span>
                     </button>
@@ -133,7 +135,7 @@ export default function DailyOrders() {
                     <button
                         onClick={handleNextDay}
                         className="text-gray-600 hover:text-black transition-colors"
-                        aria-label="Next day"
+                        aria-label={t('dailyOrders.nextDayAria')}
                     >
                         <span className="material-icons-outlined text-xl">chevron_right</span>
                     </button>
@@ -149,7 +151,7 @@ export default function DailyOrders() {
                     {/* Total Order Value */}
                     <SoftCard className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-1">Total Order Value</p>
+                            <p className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-1">{t('dailyOrders.totalOrderValue')}</p>
                             <p className="text-4xl font-extrabold text-black font-display">{formatCurrency(total)}</p>
                         </div>
                         <Badge className="text-base px-4 py-2 rounded-full">{totalQty}</Badge>
@@ -158,20 +160,20 @@ export default function DailyOrders() {
                     {/* Order Details Table */}
                     {isLoading ? (
                         <SoftCard>
-                            <p className="text-gray-500 text-center py-10">Loading orders...</p>
+                            <p className="text-gray-500 text-center py-10">{t('dailyOrders.loadingOrders')}</p>
                         </SoftCard>
                     ) : orders.length === 0 ? (
                         <SoftCard>
-                            <p className="text-gray-500 text-center py-10">No orders placed on this date.</p>
+                            <p className="text-gray-500 text-center py-10">{t('dailyOrders.noOrders')}</p>
                         </SoftCard>
                     ) : (
                         <Table
-                            title="Order Details"
+                            title={t('dailyOrders.orderDetails')}
                             data={orders}
                             keyExtractor={(row) => row.id}
                             columns={[
                                 {
-                                    header: 'Item',
+                                    header: t('dailyOrders.table.item'),
                                     className: 'col-span-5',
                                     render: (order) => (
                                         <div className="flex items-center gap-3">
@@ -188,17 +190,17 @@ export default function DailyOrders() {
                                     ),
                                 },
                                 {
-                                    header: 'Unit Price',
+                                    header: t('dailyOrders.table.unitPrice'),
                                     className: 'col-span-3 text-right text-sm font-medium text-gray-600',
                                     render: (order) => formatCurrency(order.unitPrice),
                                 },
                                 {
-                                    header: 'Qty',
+                                    header: t('dailyOrders.table.qty'),
                                     className: 'col-span-2 flex justify-center',
                                     render: (order) => <Badge>{order.qty}</Badge>,
                                 },
                                 {
-                                    header: 'Subtotal',
+                                    header: t('dailyOrders.table.tableSubtotal'),
                                     className: 'col-span-2 text-right text-sm font-bold text-gray-900',
                                     render: (order) => formatCurrency(order.subtotal),
                                 }
@@ -210,12 +212,12 @@ export default function DailyOrders() {
                     <SoftCard>
                         <div className="flex items-center gap-2 mb-4">
                             <span className="material-icons-outlined text-primary text-xl">edit_note</span>
-                            <h2 className="text-lg font-extrabold font-display">Order Notes</h2>
+                            <h2 className="text-lg font-extrabold font-display">{t('dailyOrders.orderNotes')}</h2>
                         </div>
                         <textarea
                             value={orderNote}
                             onChange={(e) => setOrderNote(e.target.value)}
-                            placeholder="Special notes about the order..."
+                            placeholder={t('dailyOrders.notesPlaceholder')}
                             rows={4}
                             className="w-full border-2 border-gray-200 rounded-lg p-3 text-sm focus:ring-primary focus:border-primary resize-none bg-white"
                         />
@@ -223,7 +225,7 @@ export default function DailyOrders() {
                             {showSavedText && (
                                 <span className="text-green-600 text-sm font-bold flex items-center gap-1 animate-fade-in">
                                     <span className="material-icons-outlined text-sm">check_circle</span>
-                                    Note saved
+                                    {t('dailyOrders.noteSaved')}
                                 </span>
                             )}
                             <Button
@@ -232,7 +234,7 @@ export default function DailyOrders() {
                                 onClick={() => saveNoteMutation.mutate(orderNote)}
                                 disabled={saveNoteMutation.isPending}
                             >
-                                {saveNoteMutation.isPending ? 'Saving...' : 'Save Note'}
+                                {saveNoteMutation.isPending ? t('dailyOrders.saving') : t('dailyOrders.saveNote')}
                             </Button>
                         </div>
                     </SoftCard>
@@ -244,7 +246,7 @@ export default function DailyOrders() {
                     {/* Receipt / Bill */}
                     <SoftCard noPadding>
                         <div className="p-4 border-b border-gray-200">
-                            <h2 className="text-lg font-extrabold font-display">Receipt / Bill</h2>
+                            <h2 className="text-lg font-extrabold font-display">{t('dailyOrders.receipt')}</h2>
                         </div>
                         <div className="p-4">
                             {/* Receipt Image Placeholder */}
@@ -257,7 +259,7 @@ export default function DailyOrders() {
                                 <span className="material-icons-outlined text-gray-400">attach_file</span>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-gray-800 truncate">Le_Klub_Oct24_Page1.jpg</p>
-                                    <p className="text-xs text-gray-500">Uploaded 12:45 PM</p>
+                                    <p className="text-xs text-gray-500">{t('dailyOrders.uploaded')}</p>
                                 </div>
                                 <button className="text-gray-400 hover:text-gray-600">
                                     <span className="material-icons-outlined text-sm">more_vert</span>
@@ -267,29 +269,29 @@ export default function DailyOrders() {
                             {/* Upload More */}
                             <button className="w-full mt-3 flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 border-2 border-dashed border-gray-300 rounded-lg py-2.5 hover:border-gray-400 transition-colors">
                                 <span className="material-icons-outlined text-base">cloud_upload</span>
-                                Upload more pages
+                                {t('dailyOrders.uploadMorePages')}
                             </button>
                         </div>
                     </SoftCard>
 
                     {/* Summary */}
                     <SoftCard>
-                        <h2 className="text-lg font-extrabold font-display mb-4">Summary</h2>
+                        <h2 className="text-lg font-extrabold font-display mb-4">{t('dailyOrders.summary')}</h2>
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Subtotal</span>
+                                <span className="text-gray-500">{t('dailyOrders.subtotal')}</span>
                                 <span className="font-medium">{formatCurrency(subtotal)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Tax (10%)</span>
+                                <span className="text-gray-500">{t('dailyOrders.tax')}</span>
                                 <span className="font-medium">{formatCurrency(tax)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Delivery Fee</span>
+                                <span className="text-gray-500">{t('dailyOrders.deliveryFee')}</span>
                                 <span className="font-medium">{formatCurrency(deliveryFee)}</span>
                             </div>
                             <div className="border-t border-gray-200 pt-3 flex justify-between">
-                                <span className="font-extrabold text-base">Total</span>
+                                <span className="font-extrabold text-base">{t('dailyOrders.total')}</span>
                                 <span className="font-extrabold text-base text-primary">{formatCurrency(total)}</span>
                             </div>
                         </div>
@@ -302,20 +304,20 @@ export default function DailyOrders() {
                             fullWidth
                             icon={<span className="material-icons-outlined">download</span>}
                         >
-                            Export to PDF
+                            {t('dailyOrders.exportPdf')}
                         </Button>
                         <Button
                             variant="primary"
                             fullWidth
                             icon={<span className="material-icons-outlined">check_circle</span>}
                         >
-                            Mark as Complete
+                            {t('dailyOrders.markComplete')}
                         </Button>
                     </div>
 
                     {/* Footer note */}
                     <p className="text-xs text-gray-400 text-center">
-                        Orders lock automatically at 11:30 AM
+                        {t('dailyOrders.ordersLockNotice')}
                     </p>
                 </div>
             </div>
