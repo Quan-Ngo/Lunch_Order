@@ -70,3 +70,15 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* === Custom Details from User === */
+.scribble-underline {
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='20' viewBox='0 0 200 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 15 Q 50 5, 100 15 T 195 12' stroke='%23E11D48' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: bottom center;
+    padding-bottom: 8px;
+}
+
+.bg-food-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill-opacity='0.08'%3E%3Cpath d='M30 10l5 5-5 5-5-5 5-5z' fill='%23E11D48'/%3E%3Cpath d='M90 40l8 8-8 8-8-8 8-8z' fill='%2310B981'/%3E%3Ccircle cx='20' cy='80' r='6' fill='%23E11D48'/%3E%3Cpath d='M70 90h12v2H70z' fill='%2310B981'/%3E%3Cpath d='M75 85v12h2V85z' fill='%2310B981'/%3E%3Cpath d='M100 15c2 0 4 2 4 4s-2 4-4 4-4-2-4-4 2-4 4-4z' fill='%23E11D48'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}

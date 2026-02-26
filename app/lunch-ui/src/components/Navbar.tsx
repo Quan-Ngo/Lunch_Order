@@ -1,20 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/elements/Button';
+import { useAuth, type AuthUser } from '@/contexts/AuthContext';
+import { employeeService, type StaffEntity } from '@/services/api';
+import { useTranslation } from 'react-i18next';
 
 const navLinks = [
-    { to: '/', label: 'Daily Menu' },
-    { to: '/employees', label: 'Employees' },
-    { to: '/catalog', label: 'Catalog' },
-    { to: '/manage-menu', label: 'Manage Menu' },
-    { to: '/daily-orders', label: 'Daily Orders' },
+    { to: '/', labelKey: 'navbar.dailyMenu' },
+    { to: '/employees', labelKey: 'navbar.employees' },
+    { to: '/catalog', labelKey: 'navbar.catalog' },
+    { to: '/manage-menu', labelKey: 'navbar.manageMenu' },
+    { to: '/daily-orders', labelKey: 'navbar.dailyOrders' },
 ];
 
 export default function Navbar() {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState<boolean>(false);
+    const [staffList, setStaffList] = useState<StaffEntity[]>([]);
+    const { currentUser, setCurrentUser } = useAuth();
+    const { t, i18n } = useTranslation();
 
     const isActive = (path: string): boolean => location.pathname === path;
+
+    useEffect(() => {
+        employeeService.getAll().then(setStaffList).catch(console.error);
+    }, []);
+
+    const handleSelectUser = (user: AuthUser | null) => {
+        setCurrentUser(user);
+        setIsUserDropdownOpen(false);
+    };
+
+    const toggleLanguage = () => {
+        i18n.changeLanguage(i18n.language === 'en' ? 'vi' : 'en');
+    };
+
+    const displayName = currentUser
+        ? currentUser.role === 'admin'
+            ? t('navbar.admin')
+            : currentUser.staff?.name ?? t('navbar.staff')
+        : t('navbar.selectUser');
+
+    const avatarInitial = currentUser
+        ? currentUser.role === 'admin'
+            ? 'A'
+            : (currentUser.staff?.name?.[0] ?? 'S')
+        : '?';
+
+    const ringColor = currentUser
+        ? currentUser.role === 'admin'
+            ? 'border-accent-pink'
+            : 'border-accent-green'
+        : 'border-gray-300';
 
     return (
         <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
@@ -31,7 +69,7 @@ export default function Navbar() {
                     </Link>
 
                     {/* Desktop Nav Links */}
-                    <div className="hidden md:flex items-center space-x-2">
+                    <div className="hidden md:flex items-center gap-6">
                         {navLinks.map((link) => (
                             <Link key={link.to} to={link.to}>
                                 <Button
@@ -39,21 +77,85 @@ export default function Navbar() {
                                     size="sm"
                                     className={isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'}
                                 >
-                                    {link.label}
+                                    {t(link.labelKey)}
                                 </Button>
                             </Link>
                         ))}
                     </div>
 
-                    {/* User Avatar */}
-                    <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 overflow-hidden border-2 border-primary cursor-pointer hover:scale-105 transition-transform">
-                            <img
-                                alt="User Avatar"
-                                className="h-full w-full object-cover"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2S5dxnwm_fqnD7oPOCT9w_85nvWWQ6m02iaf1UbJr6503WMmvZn-M1btT14J4b-pBFfOxhUFFv-QA_uzW_ytwSJCozaq0g3JgxP2rlgTwKOHc1cBGtGJAEsIIukEUa99PJlxrCHB5_vGiPTLuRVgA2L4sTqaRM1EaqieOqpFg4YzuXzXMGjTrlptJFQ0KJ3cMHhMcAh5nKO4NESIF3A3yL8WJ0_hyR8DlsMhS-gkN7-RSSR4JcfudC_XugaNWBmg3ULFkxsNUnvI"
-                            />
-                        </div>
+                    {/* User Selector & Lang Toggle */}
+                    <div className="flex items-center gap-4 relative">
+                        {/* Language Toggle */}
+                        <button
+                            onClick={toggleLanguage}
+                            className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all font-bold text-sm hover:bg-primary/20"
+                            title="Toggle Language"
+                        >
+                            {i18n.language === 'vi' ? 'VI' : 'EN'}
+                        </button>
+
+                        <button
+                            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all"
+                        >
+                            {/* Avatar circle */}
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center border-2 ${ringColor} text-sm font-bold bg-primary text-black`}>
+                                {avatarInitial}
+                            </div>
+                            <span className="text-sm font-semibold text-gray-800 hidden sm:block">{displayName}</span>
+                            <span className="material-icons text-sm text-gray-500">
+                                {isUserDropdownOpen ? 'expand_less' : 'expand_more'}
+                            </span>
+                        </button>
+
+                        {/* Dropdown */}
+                        {isUserDropdownOpen && (
+                            <div
+                                className="absolute right-0 top-12 bg-white border-2 border-black rounded-xl shadow-[var(--shadow-neobrutalism-lg)] z-50 min-w-[200px] overflow-hidden"
+                            >
+                                {/* Admin option */}
+                                <button
+                                    onClick={() => handleSelectUser({ role: 'admin' })}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary/20 transition-colors text-left ${currentUser?.role === 'admin' ? 'bg-primary/30 font-bold' : ''}`}
+                                >
+                                    <span className="h-7 w-7 rounded-full border-2 border-accent-pink bg-primary flex items-center justify-center font-bold text-xs">A</span>
+                                    <span>{t('navbar.admin')}</span>
+                                    {currentUser?.role === 'admin' && <span className="material-icons text-accent-green text-sm ml-auto">check_circle</span>}
+                                </button>
+
+                                {/* Divider */}
+                                <div className="border-t border-gray-100 mx-3 my-1" />
+
+                                {/* Staff options */}
+                                {staffList.map((staff) => (
+                                    <button
+                                        key={staff.ID}
+                                        onClick={() => handleSelectUser({ role: 'staff', staff })}
+                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary/20 transition-colors text-left ${currentUser?.staff?.ID === staff.ID ? 'bg-primary/30 font-bold' : ''}`}
+                                    >
+                                        <span className="h-7 w-7 rounded-full border-2 border-accent-green bg-gray-100 flex items-center justify-center font-bold text-xs">
+                                            {staff.name?.[0] ?? '?'}
+                                        </span>
+                                        <span>{staff.name}</span>
+                                        {currentUser?.staff?.ID === staff.ID && <span className="material-icons text-accent-green text-sm ml-auto">check_circle</span>}
+                                    </button>
+                                ))}
+
+                                {/* Clear */}
+                                {currentUser && (
+                                    <>
+                                        <div className="border-t border-gray-100 mx-3 my-1" />
+                                        <button
+                                            onClick={() => handleSelectUser(null)}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-accent-pink hover:bg-red-50 transition-colors text-left"
+                                        >
+                                            <span className="material-icons text-sm">logout</span>
+                                            <span>{t('navbar.clearSelection')}</span>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
 
                         {/* Mobile Hamburger */}
                         <button
@@ -70,7 +172,7 @@ export default function Navbar() {
 
             {/* Mobile Menu */}
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-white border-t border-gray-200 shadow-lg animate-in slide-in-from-top-5 duration-200">
+                <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
                     <div className="px-4 py-4 space-y-3">
                         {navLinks.map((link) => (
                             <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
@@ -79,7 +181,7 @@ export default function Navbar() {
                                     variant={isActive(link.to) ? 'primary' : 'ghost'}
                                     className="justify-start"
                                 >
-                                    {link.label}
+                                    {t(link.labelKey)}
                                 </Button>
                             </Link>
                         ))}

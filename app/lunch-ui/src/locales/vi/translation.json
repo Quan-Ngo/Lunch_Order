@@ -1,0 +1,44 @@
+{
+    "navbar": {
+        "dailyMenu": "Thực Đơn",
+        "employees": "Nhân Viên",
+        "catalog": "Món Ăn",
+        "manageMenu": "Quản Lý Menus",
+        "dailyOrders": "Đơn Hàng",
+        "selectUser": "Chọn Người Dùng",
+        "admin": "Quản Trị",
+        "staff": "Nhân Viên",
+        "clearSelection": "Bỏ Chọn Đăng Nhập"
+    },
+    "dailyMenu": {
+        "title": "Trưa nay",
+        "titleHighlight": "Ăn gì?",
+        "subtitle": "Chọn năng lượng căng tràn cho ngày mới. Vui lòng đặt trước 10:30 sáng.",
+        "noMeals": "Chưa có món ăn nào cho ngày này. Vui lòng nhắc Admin thiết lập Menu!",
+        "adminHint": "Chế độ Quản trị — chỉ xem menu. Chuyển sang tài khoản Staff để đặt món.",
+        "selectUserHint": "Vui lòng chọn người dùng ở góc trên bên phải để bắt đầu đặt món.",
+        "currentOrder": "Món bạn đã chọn:",
+        "cancel": "Huỷ",
+        "confirmOrder": "Xác Nhận Đặt",
+        "saving": "Đang Lưu...",
+        "orderConfirmed": "✅ Đặt món thành công! Chúc bạn ngon miệng.",
+        "orderFailed": "❌ Lỗi khi lưu đơn. Vui lòng thử lại.",
+        "orderCancelled": "✅ Đã huỷ món thành công.",
+        "cancelFailed": "❌ Lỗi khi huỷ đơn. Vui lòng thử lại.",
+        "today": "HÔM NAY"
+    },
+    "categories": {
+        "Healthy": "Khỏe Mạnh",
+        "Vegan": "Thuần Chay",
+        "Popular": "Phổ Biến",
+        "General": "Bình Thường",
+        "Comfort": "Dễ Chịu",
+        "Seafood": "Hải Sản",
+        "Salad": "Sa-lát",
+        "Pizza": "Pizza",
+        "Burger": "Bơ-gơ",
+        "Ramen": "Mì Ramen",
+        "Bowl": "Cơm Tô",
+        "Dessert": "Tráng Miệng"
+    }
+}
