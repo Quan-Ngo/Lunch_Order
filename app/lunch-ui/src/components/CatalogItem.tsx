@@ -2,6 +2,7 @@ import { type Food } from '@/services/api';
 import { Card } from '@/components/elements/Card';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
+import { useTranslation } from 'react-i18next';
 
 interface CatalogItemProps {
     food: Food;
@@ -10,6 +11,8 @@ interface CatalogItemProps {
 }
 
 export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps) {
+    const { t } = useTranslation();
+
     return (
         <Card className="flex flex-col md:flex-row gap-6 items-start md:items-center transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[var(--shadow-neobrutalism-lg)]">
             {/* Image Section */}
@@ -61,7 +64,7 @@ export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps
                         onClick={() => onEdit(food)}
                         icon={<span className="material-icons-outlined text-sm">edit</span>}
                     >
-                        Edit
+                        {t('catalog.edit')}
                     </Button>
                     <Button
                         variant="danger"
@@ -69,7 +72,7 @@ export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps
                         onClick={() => onDelete(food)}
                         icon={<span className="material-icons-outlined text-sm">delete</span>}
                     >
-                        Delete
+                        {t('catalog.delete')}
                     </Button>
                 </div>
             </div>

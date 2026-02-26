@@ -40,5 +40,43 @@
         "Ramen": "Ramen",
         "Bowl": "Bowl",
         "Dessert": "Dessert"
+    },
+    "catalog": {
+        "title": "Food Catalog",
+        "description": "Manage your delicious offerings for the team.",
+        "addNew": "Add New Food",
+        "errorMessage": "Failed to load food items. Is the backend running?",
+        "errorDescription": "Run cds watch in the project root.",
+        "empty": "No food items yet. Add your first dish!",
+        "saveFailed": "Failed to save food. check console for details.",
+        "removalContext": "from the food catalog",
+        "edit": "Edit",
+        "delete": "Delete"
+    },
+    "foodModal": {
+        "titleCreate": "Add New Food",
+        "titleEdit": "Edit Food Item",
+        "closeAriaLabel": "Close modal",
+        "imageSectionLabel": "Food Image",
+        "uploadCta": "Upload a file",
+        "uploadOr": " or drag and drop",
+        "uploadHint": "PNG, JPG, GIF up to 5MB",
+        "fieldName": "Item Name",
+        "fieldNamePlaceholder": "e.g. Cheese Burger",
+        "fieldNameError": "Name is required.",
+        "fieldPrice": "Price ($)",
+        "fieldPriceError": "Price is required.",
+        "fieldDescription": "Description",
+        "fieldDescriptionPlaceholder": "Describe the dish...",
+        "saveChanges": "Save Changes",
+        "cancel": "Cancel"
+    },
+    "removalModal": {
+        "title": "Remove Item?",
+        "bodyPrefix": "This will remove",
+        "confirming": "Removing...",
+        "confirm": "Confirm Remove",
+        "cancel": "Cancel",
+        "deleteFailed": "Failed to delete item. Check console for details."
     }
 }

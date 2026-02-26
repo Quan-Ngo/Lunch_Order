@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RootLayout } from '@/layouts/RootLayout';
 import { useFoods } from '@/hooks/useFoods';
 import CatalogItem from '@/components/CatalogItem';
@@ -12,6 +13,7 @@ import { RemovalModal, type RemovalItem } from '@/components/fragments/RemovalMo
 import { foodService, type Food } from '@/services/api';
 
 export default function FoodCatalog() {
+    const { t } = useTranslation();
     const { foods, isLoading, error, refetch } = useFoods();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [editingFood, setEditingFood] = useState<Food | null>(null);
@@ -64,22 +66,22 @@ export default function FoodCatalog() {
         } catch (err) {
             console.error('Failed to save food:', err);
             // Optionally show error to user (e.g., alert or toast)
-            alert('Failed to save food. check console for details.');
+            alert(t('catalog.saveFailed'));
         }
     };
 
     return (
         <RootLayout>
             <PageHeader
-                title="Food Catalog"
-                description="Manage your delicious offerings for the team."
+                title={t('catalog.title')}
+                description={t('catalog.description')}
             >
                 <Button
                     variant="primary"
                     icon={<span className="material-icons-outlined">add_circle</span>}
                     onClick={handleOpenCreateModal}
                 >
-                    Add New Food
+                    {t('catalog.addNew')}
                 </Button>
             </PageHeader>
 
@@ -87,10 +89,10 @@ export default function FoodCatalog() {
 
             {error && (
                 <ErrorState
-                    message="Failed to load food items. Is the backend running?"
+                    message={t('catalog.errorMessage')}
                     description={
                         <>
-                            Run <code className="bg-red-100 px-2 py-0.5 rounded">cds watch</code> in the project root.
+                            {t('catalog.errorDescription')}
                         </>
                     }
                 />
@@ -112,7 +114,7 @@ export default function FoodCatalog() {
             {foods && foods.length === 0 && (
                 <EmptyState
                     icon="restaurant"
-                    message="No food items yet. Add your first dish!"
+                    message={t('catalog.empty')}
                 />
             )}
 
@@ -140,7 +142,7 @@ export default function FoodCatalog() {
                 onClose={() => setRemovalTarget(null)}
                 onConfirm={handleConfirmDelete}
                 item={removalTarget}
-                contextText="from the food catalog"
+                contextText={t('catalog.removalContext')}
             />
         </RootLayout>
     );
