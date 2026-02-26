@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/elements/Button';
+import { NavigationPageSelect } from '@/components/elements/NavigationPageSelect';
 import { useAuth, type AuthUser } from '@/contexts/AuthContext';
 import { employeeService, type StaffEntity } from '@/services/api';
 import { useTranslation } from 'react-i18next';
@@ -72,13 +72,13 @@ export default function Navbar() {
                     <div className="hidden md:flex items-center gap-6">
                         {navLinks.map((link) => (
                             <Link key={link.to} to={link.to}>
-                                <Button
+                                <NavigationPageSelect
                                     variant={isActive(link.to) ? 'primary' : 'ghost'}
                                     size="sm"
                                     className={isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'}
                                 >
                                     {t(link.labelKey)}
-                                </Button>
+                                </NavigationPageSelect>
                             </Link>
                         ))}
                     </div>
@@ -176,13 +176,13 @@ export default function Navbar() {
                     <div className="px-4 py-4 space-y-3">
                         {navLinks.map((link) => (
                             <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button
+                                <NavigationPageSelect
                                     fullWidth
                                     variant={isActive(link.to) ? 'primary' : 'ghost'}
                                     className="justify-start"
                                 >
                                     {t(link.labelKey)}
-                                </Button>
+                                </NavigationPageSelect>
                             </Link>
                         ))}
                     </div>
