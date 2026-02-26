@@ -78,5 +78,38 @@
         "confirm": "Xác Nhận Xóa",
         "cancel": "Huỷ",
         "deleteFailed": "Xóa thất bại. Vui lòng kiểm tra console để biết chi tiết."
+    },
+    "dailyOrders": {
+        "title": "Đơn Hàng",
+        "description": "Quản lý và theo dõi các đơn đặt hàng trưa văn phòng hôm nay một cách hiệu quả.",
+        "prevDay": "Ngày hôm trước",
+        "nextDay": "Ngày tiếp theo",
+        "dateLocale": "vi-VN",
+        "totalOrderValue": "Tổng Giá Trị Đơn Hàng",
+        "loading": "Đang tải đơn hàng...",
+        "noOrders": "Không có đơn đặt hàng nào trong ngày này.",
+        "orderDetails": "Chi Tiết Đơn Hàng",
+        "table": {
+            "item": "Món Ăn",
+            "unitPrice": "Đơn Giá",
+            "qty": "Số Lượng",
+            "tableSubtotal": "Thành Tiền"
+        },
+        "orderNotes": "Ghi Chú Đơn Hàng",
+        "notesPlaceholder": "Ghi chú đặc biệt về đơn hàng...",
+        "noteSaved": "Đã lưu ghi chú",
+        "saving": "Đang lưu...",
+        "saveNote": "Lưu Ghi Chú",
+        "receipt": "Hoá Đơn / Chứng Từ",
+        "uploaded": "Đã tải lên",
+        "uploadMore": "Tải thêm trang khác",
+        "summary": "Tổng Kết",
+        "subtotal": "Thành Tiền",
+        "tax": "Thuế (10%)",
+        "deliveryFee": "Phí Giao Hàng",
+        "total": "Tổng Cộng",
+        "exportPdf": "Xuất file PDF",
+        "markComplete": "Đánh dấu Hoàn Thành",
+        "lockNote": "Đơn hàng sẽ tự động khoá lúc 11:30 sáng"
     }
 }

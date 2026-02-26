@@ -78,5 +78,38 @@
         "confirm": "Confirm Remove",
         "cancel": "Cancel",
         "deleteFailed": "Failed to delete item. Check console for details."
+    },
+    "dailyOrders": {
+        "title": "Daily Orders",
+        "description": "Manage and track today's office lunch orders efficiently.",
+        "prevDay": "Previous day",
+        "nextDay": "Next day",
+        "dateLocale": "en-US",
+        "totalOrderValue": "Total Order Value",
+        "loading": "Loading orders...",
+        "noOrders": "No orders placed on this date.",
+        "orderDetails": "Order Details",
+        "table": {
+            "item": "Item",
+            "unitPrice": "Unit Price",
+            "qty": "Qty",
+            "tableSubtotal": "Subtotal"
+        },
+        "orderNotes": "Order Notes",
+        "notesPlaceholder": "Special notes about the order...",
+        "noteSaved": "Note saved",
+        "saving": "Saving...",
+        "saveNote": "Save Note",
+        "receipt": "Receipt / Bill",
+        "uploaded": "Uploaded",
+        "uploadMore": "Upload more pages",
+        "summary": "Summary",
+        "subtotal": "Subtotal",
+        "tax": "Tax (10%)",
+        "deliveryFee": "Delivery Fee",
+        "total": "Total",
+        "exportPdf": "Export to PDF",
+        "markComplete": "Mark as Complete",
+        "lockNote": "Orders lock automatically at 11:30 AM"
     }
 }
