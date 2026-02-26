@@ -94,6 +94,12 @@ export default function DailyOrders() {
     const deliveryFee: number = 5.75;
     const total: number = subtotal + tax + deliveryFee;
     const totalQty: number = summary?.TotalOrders || 0;
+    const totalQtyDigits = String(totalQty).length;
+    const totalQtyTextClass =
+        totalQtyDigits >= 4 ? 'text-[0.65rem]' :
+            totalQtyDigits === 3 ? 'text-[0.8rem]' :
+                totalQtyDigits === 2 ? 'text-[0.9rem]' :
+                    'text-[1rem]';
 
     const handlePrevDay = () => {
         const prev: Date = new Date(currentDate);
@@ -149,12 +155,12 @@ export default function DailyOrders() {
                 <div className="lg:col-span-2 flex flex-col gap-6">
 
                     {/* Total Order Value */}
-                    <SoftCard className="flex items-center justify-between">
+                    <SoftCard className="flex items-center justify-between border-gray-900">
                         <div>
                             <p className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-1">{t('dailyOrders.totalOrderValue')}</p>
                             <p className="text-4xl font-extrabold text-black font-display">{formatCurrency(total)}</p>
                         </div>
-                        <Badge className="text-base px-4 py-2 rounded-full">{totalQty}</Badge>
+                        <Badge className={`${totalQtyTextClass} w-12 h-12 p-0 rounded-full flex items-center justify-center`}>{totalQty}</Badge>
                     </SoftCard>
 
                     {/* Order Details Table */}
@@ -191,7 +197,7 @@ export default function DailyOrders() {
                                 },
                                 {
                                     header: t('dailyOrders.table.unitPrice'),
-                                    className: 'col-span-3 text-right text-sm font-medium text-gray-600',
+                                    className: 'col-span-3 text-center text-sm font-medium text-gray-600',
                                     render: (order) => formatCurrency(order.unitPrice),
                                 },
                                 {
@@ -209,7 +215,7 @@ export default function DailyOrders() {
                     )}
 
                     {/* Order Notes */}
-                    <SoftCard>
+                    <SoftCard className="border-gray-900">
                         <div className="flex items-center gap-2 mb-4">
                             <span className="material-icons-outlined text-primary text-xl">edit_note</span>
                             <h2 className="text-lg font-extrabold font-display">{t('dailyOrders.orderNotes')}</h2>
