@@ -1,7 +1,6 @@
 import { type Food } from '@/services/api';
 import { Card } from '@/components/elements/Card';
 import { Button } from '@/components/elements/Button';
-import { Badge } from '@/components/elements/Badge';
 import { useTranslation } from 'react-i18next';
 
 interface CatalogItemProps {
@@ -28,9 +27,6 @@ export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps
                         <span className="material-icons text-gray-400 text-4xl">restaurant</span>
                     </div>
                 )}
-                <div className="absolute top-2 right-2 md:hidden">
-                    <Badge variant="outline">{food.category}</Badge>
-                </div>
             </div>
 
             {/* Content Section */}
@@ -41,9 +37,6 @@ export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps
                             <h3 className="text-xl font-bold font-display text-text-primary-light">
                                 {food.name}
                             </h3>
-                            <div className="hidden md:block">
-                                <Badge variant="warning">{food.category}</Badge>
-                            </div>
                         </div>
                         <p className="text-text-secondary-light font-body text-sm line-clamp-2 md:line-clamp-none">
                             {food.description}
