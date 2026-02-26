@@ -4,6 +4,10 @@ const api = axios.create({
     baseURL: '/odata/v4/lunch',
 });
 
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
+
 // Interface used by the UI (keeps the display consistent)
 export interface Food {
     ID: string;
@@ -12,9 +16,10 @@ export interface Food {
     price: number;
     image: string;
     category: string;
+    isActive: boolean;
 }
 
-// Interface from the backend (matches new CDS model)
+// Interface from the backend (matches CDS model)
 interface CatalogEntity {
     ID: string;
     name: string;
@@ -27,28 +32,28 @@ interface CatalogEntity {
     };
 }
 
-interface StaffEntity {
+export interface StaffEntity {
     ID: string;
     name: string;
-    Notification: boolean;
+    notification: boolean;
 }
 
+// ─────────────────────────────────────────────
+// Food / Catalog Service
+// ─────────────────────────────────────────────
 export const foodService = {
     getAll: async (): Promise<Food[]> => {
-        // Fetch from new 'Catalog' entity, expanding 'file' to get the image URL
         const response = await api.get<{ value: CatalogEntity[] }>('/Catalog?$expand=file');
-
-        // Map backend 'Catalog' to frontend 'Food' interface
         return response.data.value.map(item => ({
             ID: item.ID,
             name: item.name,
             description: item.description || '',
             price: item.price,
-            image: item.file?.url || '', // Fallback if no file
-            category: item.category || 'General'
+            image: item.file?.url || '',
+            category: item.category || 'General',
+            isActive: item.isActive,
         }));
     },
-    // Other methods would need similar updates if implemented fully
     getById: async (id: string): Promise<Food> => {
         const response = await api.get<CatalogEntity>(`/Catalog(${id})?$expand=file`);
         const item = response.data;
@@ -58,38 +63,34 @@ export const foodService = {
             description: item.description || '',
             price: item.price,
             image: item.file?.url || '',
-            category: item.category || 'General'
+            category: item.category || 'General',
+            isActive: item.isActive,
         };
     },
-    // Create/Update/Delete would need to handle the new schema (e.g. creating Catalog + CatalogFile)
-    // For now, I'll leave them as placeholders or update them if needed.
     delete: async (id: string): Promise<void> => {
         await api.delete(`/Catalog(${id})`);
     },
-    // Create new food item
     create: async (data: { name: string; price: number; description: string }): Promise<void> => {
         await api.post('/Catalog', {
             name: data.name,
             price: data.price,
             description: data.description,
-            // Fallback for fields not yet in UI or required by DB if any
             category: 'General',
-            isActive: true
+            isActive: true,
         });
     },
-    // Update existing food item
     update: async (id: string, data: { name: string; price: number; description: string }): Promise<void> => {
         await api.put(`/Catalog(${id})`, {
             name: data.name,
             price: data.price,
             description: data.description,
-            // Retain fields that might be lost if strictly overwritten, although PUT usually assumes full replace
-            // A PATCH might be safer, but PUT matches standard CAP behavior for full updates.
-            // In a real app we'd want to preserve the image, so PATCH is actually better for partial updates
         });
     },
 };
 
+// ─────────────────────────────────────────────
+// Employee / Staff Service
+// ─────────────────────────────────────────────
 export const employeeService = {
     getAll: async (): Promise<StaffEntity[]> => {
         const response = await api.get<{ value: StaffEntity[] }>('/Staff');
@@ -97,30 +98,55 @@ export const employeeService = {
     },
 };
 
+// ─────────────────────────────────────────────
+// DailyMenu Service
+// ─────────────────────────────────────────────
 export interface DailyMenuEntity {
     ID: string;
     date: string;
     isComplete: boolean;
-    catalog?: CatalogEntity;
+    catalog?: CatalogEntity & { file?: { url: string } };
+    catalog_ID?: string;
     note?: string;
 }
 
 export const dailyMenuService = {
+    /** Get all menu items for a given date */
     getByDate: async (dateString: string): Promise<DailyMenuEntity[]> => {
-        // Formats YYYY-MM-DD
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'&$expand=catalog($expand=file)`
         );
         return response.data.value;
     },
+
+    /** Add a food item to a day's menu */
+    addFoodToDate: async (dateString: string, catalogId: string): Promise<void> => {
+        await api.post('/DailyMenu', {
+            date: dateString,
+            catalog_ID: catalogId,
+            isComplete: false,
+        });
+    },
+
+    /** Remove a food item from a day's menu */
+    removeFoodFromDate: async (dailyMenuId: string): Promise<void> => {
+        await api.delete(`/DailyMenu(${dailyMenuId})`);
+    },
+
+    /** Update note on a daily menu entry */
     updateNote: async (id: string, note: string): Promise<void> => {
         await api.patch(`/DailyMenu(${id})`, { note });
     },
+
+    /** Create a note-only daily menu entry */
     createNote: async (dateString: string, note: string): Promise<void> => {
         await api.post('/DailyMenu', { date: dateString, note, isComplete: false });
-    }
+    },
 };
 
+// ─────────────────────────────────────────────
+// Statistics Services
+// ─────────────────────────────────────────────
 export interface DailyCatalogStatistics {
     OrderDate: string;
     CatalogID: string;
@@ -137,7 +163,7 @@ export const statisticsService = {
             `/DailyCatalogStatistics?$filter=OrderDate eq '${dateString}'`
         );
         return response.data.value;
-    }
+    },
 };
 
 export interface DailyOrderSummary {
@@ -152,7 +178,54 @@ export const summaryService = {
             `/DailyOrderSummary?$filter=OrderDate eq '${dateString}'`
         );
         return response.data.value[0] || null;
-    }
+    },
+};
+
+// ─────────────────────────────────────────────
+// StaffCatalog / Order Service
+// ─────────────────────────────────────────────
+export interface StaffCatalogEntity {
+    Staff_ID: string;
+    Catalog_ID: string;
+    date: string; // YYYY-MM-DD
+    staff?: StaffEntity;
+    catalog?: {
+        ID: string;
+        name: string;
+        description: string;
+        price: number;
+        category: string;
+        isActive: boolean;
+        file?: { url: string };
+    };
+}
+
+export const staffCatalogService = {
+    /** Get today's order for a given staff member */
+    getForStaffAndDate: async (staffId: string, date: string): Promise<StaffCatalogEntity | null> => {
+        const filter = `Staff_ID eq ${staffId} and date eq '${date}'`;
+        const response = await api.get<{ value: StaffCatalogEntity[] }>(
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=catalog($expand=file)`
+        );
+        return response.data.value[0] ?? null;
+    },
+
+    /** Create a new order */
+    createOrder: async (staffId: string, catalogId: string, date: string): Promise<void> => {
+        await api.post('/StaffCatalog', {
+            Staff_ID: staffId,
+            Catalog_ID: catalogId,
+            date: date,
+        });
+    },
+
+    /** Delete an order (composite key: Staff_ID + Catalog_ID + date) */
+    deleteOrder: async (staffId: string, catalogId: string, date: string): Promise<void> => {
+        await api.delete(
+            `/StaffCatalog(Staff_ID=${staffId},Catalog_ID=${catalogId},date='${date}')`
+        );
+    },
 };
 
 export default api;
+

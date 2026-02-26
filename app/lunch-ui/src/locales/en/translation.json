@@ -1,0 +1,44 @@
+{
+    "navbar": {
+        "dailyMenu": "Daily Menu",
+        "employees": "Employees",
+        "catalog": "Catalog",
+        "manageMenu": "Manage Menu",
+        "dailyOrders": "Daily Orders",
+        "selectUser": "Select User",
+        "admin": "Admin",
+        "staff": "Staff",
+        "clearSelection": "Clear Selection"
+    },
+    "dailyMenu": {
+        "title": "What's for",
+        "titleHighlight": "Lunch?",
+        "subtitle": "Choose your fuel for the day. Place your order before 10:30 AM.",
+        "noMeals": "No meals available for this day. Ask the manager to set up the menu!",
+        "adminHint": "Admin view — browsing the menu. Switch to a Staff account to place an order.",
+        "selectUserHint": "Select a user from the top-right dropdown to place an order.",
+        "currentOrder": "Your current order:",
+        "cancel": "Cancel",
+        "confirmOrder": "Confirm Order",
+        "saving": "Saving...",
+        "orderConfirmed": "✅ Order confirmed! Enjoy your meal.",
+        "orderFailed": "❌ Failed to save order. Please try again.",
+        "orderCancelled": "✅ Order cancelled.",
+        "cancelFailed": "❌ Failed to cancel order. Please try again.",
+        "today": "TODAY"
+    },
+    "categories": {
+        "Healthy": "Healthy",
+        "Vegan": "Vegan",
+        "Popular": "Popular",
+        "General": "General",
+        "Comfort": "Comfort",
+        "Seafood": "Seafood",
+        "Salad": "Salad",
+        "Pizza": "Pizza",
+        "Burger": "Burger",
+        "Ramen": "Ramen",
+        "Bowl": "Bowl",
+        "Dessert": "Dessert"
+    }
+}
