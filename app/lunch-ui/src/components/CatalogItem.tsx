@@ -7,9 +7,10 @@ interface CatalogItemProps {
     food: Food;
     onEdit: (food: Food) => void;
     onDelete: (food: Food) => void;
+    showEdit?: boolean;
 }
 
-export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps) {
+export default function CatalogItem({ food, onEdit, onDelete, showEdit = true }: CatalogItemProps) {
     const { t } = useTranslation();
 
     return (
@@ -51,14 +52,16 @@ export default function CatalogItem({ food, onEdit, onDelete }: CatalogItemProps
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-2">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => onEdit(food)}
-                        icon={<span className="material-icons-outlined text-sm">edit</span>}
-                    >
-                        {t('catalog.edit')}
-                    </Button>
+                    {showEdit && (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onEdit(food)}
+                            icon={<span className="material-icons-outlined text-sm">edit</span>}
+                        >
+                            {t('catalog.edit')}
+                        </Button>
+                    )}
                     <Button
                         variant="danger"
                         size="sm"
