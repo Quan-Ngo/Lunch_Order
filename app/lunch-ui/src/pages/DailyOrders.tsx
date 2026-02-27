@@ -275,7 +275,7 @@ export default function DailyOrders() {
                             {/* Upload More */}
                             <button className="w-full mt-3 flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 border-2 border-dashed border-gray-300 rounded-lg py-2.5 hover:border-gray-400 transition-colors">
                                 <span className="material-icons-outlined text-base">cloud_upload</span>
-                                {t('dailyOrders.uploadMorePages')}
+                                {t('dailyOrders.uploadMore')}
                             </button>
                         </div>
                     </SoftCard>

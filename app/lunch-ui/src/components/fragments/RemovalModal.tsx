@@ -89,6 +89,7 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
                             fullWidth
                             onClick={handleConfirm}
                             disabled={isDeleting}
+                            className="shadow-none hover:shadow-none active:shadow-none"
                         >
                             {isDeleting ? t('removalModal.confirming') : t('removalModal.confirm')}
                         </Button>
@@ -97,7 +98,7 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, contextText }: 
                             fullWidth
                             onClick={onClose}
                             disabled={isDeleting}
-                            className="text-slate-500 hover:text-slate-800"
+                            className="text-slate-500 hover:text-slate-800 shadow-none hover:shadow-none active:shadow-none"
                         >
                             {t('removalModal.cancel')}
                         </Button>
