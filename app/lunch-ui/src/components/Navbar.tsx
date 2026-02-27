@@ -57,13 +57,13 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-20 items-center">
+                <div className="flex justify-between h-16 sm:h-20 items-center">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-3 group">
-                        <div className="bg-primary p-2 rounded-lg border-2 border-black shadow-[var(--shadow-neobrutalism)] transition-transform group-hover:rotate-3">
-                            <span className="material-icons text-black text-2xl">lunch_dining</span>
+                    <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
+                        <div className="bg-primary p-1.5 sm:p-2 rounded-lg border-2 border-black shadow-[var(--shadow-neobrutalism)] transition-transform group-hover:rotate-3">
+                            <span className="material-icons text-black text-xl sm:text-2xl">lunch_dining</span>
                         </div>
-                        <span className="text-2xl font-bold tracking-tight text-text-primary-light font-display">
+                        <span className="text-base sm:text-2xl font-bold tracking-tight text-text-primary-light font-display whitespace-nowrap">
                             Conarum <span className="text-primary-hover">Lunch</span>
                         </span>
                     </Link>
@@ -84,11 +84,11 @@ export default function Navbar() {
                     </div>
 
                     {/* User Selector & Lang Toggle */}
-                    <div className="flex items-center gap-4 relative">
+                    <div className="flex items-center gap-2 sm:gap-4 relative shrink-0">
                         {/* Language Toggle */}
                         <button
                             onClick={toggleLanguage}
-                            className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all font-bold text-sm hover:bg-primary/20"
+                            className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all font-bold text-xs sm:text-sm hover:bg-primary/20"
                             title="Toggle Language"
                         >
                             {i18n.language === 'vi' ? 'VI' : 'EN'}
@@ -96,10 +96,10 @@ export default function Navbar() {
 
                         <button
                             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all"
+                            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all"
                         >
                             {/* Avatar circle */}
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center border-2 ${ringColor} text-sm font-bold bg-primary text-black`}>
+                            <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center border-2 ${ringColor} text-xs sm:text-sm font-bold bg-primary text-black`}>
                                 {avatarInitial}
                             </div>
                             <span className="text-sm font-semibold text-gray-800 hidden sm:block">{displayName}</span>
@@ -159,10 +159,10 @@ export default function Navbar() {
 
                         {/* Mobile Hamburger */}
                         <button
-                            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                            className="md:hidden p-1.5 rounded-lg hover:bg-gray-100"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         >
-                            <span className="material-icons text-2xl">
+                            <span className="material-icons text-xl sm:text-2xl">
                                 {isMobileMenuOpen ? 'close' : 'menu'}
                             </span>
                         </button>
