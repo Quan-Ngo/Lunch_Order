@@ -2,70 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { RootLayout } from '@/layouts/RootLayout';
 import { PageHeader } from '@/components/elements/PageHeader';
 import { Button } from '@/components/elements/Button';
+import CatalogItem from '@/components/CatalogItem';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
 import { dailyMenuService, type DailyMenuEntity, type Food } from '@/services/api';
-
-// ─── Menu Item Card ─────────────────────────────────────────────────────────────
-
-interface MenuItemCardProps {
-    entry: DailyMenuEntity;
-    onRemove: () => void;
-}
-
-function MenuItemCard({ entry, onRemove }: MenuItemCardProps) {
-    const catalog = entry.catalog;
-    if (!catalog) return null;
-
-    const imageUrl = catalog.file?.url || '';
-
-    return (
-        <div className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all group">
-            {/* Image */}
-            <div className="flex-shrink-0 h-20 w-20 rounded-xl border-2 border-gray-200 overflow-hidden bg-gray-100">
-                {imageUrl ? (
-                    <img src={imageUrl} alt={catalog.name} className="h-full w-full object-cover" />
-                ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                        <span className="material-icons text-gray-400 text-2xl">restaurant</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Info */}
-            <div className="flex-grow min-w-0">
-                <p className="font-bold text-gray-900 font-display text-lg truncate">{catalog.name}</p>
-                <p className="text-sm text-gray-500 line-clamp-2 mt-0.5">{catalog.description || 'No description'}</p>
-                {catalog.category && (
-                    <span className="inline-block mt-1.5 text-[10px] font-bold uppercase bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full border border-gray-200">
-                        {catalog.category}
-                    </span>
-                )}
-            </div>
-
-            {/* Price */}
-            <div className="flex-shrink-0 text-right">
-                <span className="text-2xl font-black font-display text-gray-900">
-                    ${catalog.price.toFixed(2)}
-                </span>
-            </div>
-
-            {/* Remove button */}
-            <button
-                onClick={onRemove}
-                className="flex-shrink-0 p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                title="Remove from menu"
-            >
-                <span className="material-icons">close</span>
-            </button>
-        </div>
-    );
-}
-
-// ─── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function ManageMenu() {
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
@@ -75,14 +18,12 @@ export default function ManageMenu() {
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // ─── Data Loading ───────────────────────────────────────────────────────────
-
     const loadMenu = useCallback(async () => {
         setIsLoading(true);
         setFeedback(null);
         try {
             const entries = await dailyMenuService.getByDate(selectedDate);
-            setMenuEntries(entries.filter((e) => e.catalog)); // only entries with an associated catalog
+            setMenuEntries(entries.filter((e) => e.catalog));
         } catch (err) {
             console.error('Failed to load menu:', err);
             setMenuEntries([]);
@@ -95,8 +36,6 @@ export default function ManageMenu() {
         loadMenu();
     }, [loadMenu]);
 
-    // ─── Handlers ───────────────────────────────────────────────────────────────
-
     const handleAddFoods = async (foods: Food[]) => {
         setIsCatalogModalOpen(false);
         setFeedback(null);
@@ -106,24 +45,25 @@ export default function ManageMenu() {
             );
             setFeedback({
                 type: 'success',
-                text: `✅ Added ${foods.length} item${foods.length > 1 ? 's' : ''} to the menu!`,
+                text: `Added ${foods.length} item${foods.length > 1 ? 's' : ''} to the menu!`,
             });
             await loadMenu();
         } catch (err) {
             console.error('Failed to add foods:', err);
-            setFeedback({ type: 'error', text: '❌ Failed to add items. Please try again.' });
+            setFeedback({ type: 'error', text: 'Failed to add items. Please try again.' });
         }
     };
 
     const handleRemoveFood = async (dailyMenuId: string) => {
         try {
             await dailyMenuService.removeFoodFromDate(dailyMenuId);
-            setFeedback({ type: 'success', text: '✅ Item removed from the menu.' });
+
+            setFeedback({ type: 'success', text: 'Item removed from the menu.' });
             await loadMenu();
         } catch (err) {
             console.error('Failed to remove food:', err);
-            setFeedback({ type: 'error', text: '❌ Failed to remove item. Please try again.' });
-            throw err; // rethrow for RemovalModal's catch
+            setFeedback({ type: 'error', text: 'Failed to remove item. Please try again.' });
+            throw err;
         }
     };
 
@@ -131,11 +71,8 @@ export default function ManageMenu() {
         .map((e) => e.catalog?.ID)
         .filter((id): id is string => !!id);
 
-    // ─── Render ─────────────────────────────────────────────────────────────────
-
     return (
         <RootLayout>
-            {/* Header */}
             <PageHeader
                 title="Weekly Planner"
                 description="Plan the daily menu for your team."
@@ -149,7 +86,6 @@ export default function ManageMenu() {
                 </Button>
             </PageHeader>
 
-            {/* Feedback message */}
             {feedback && (
                 <div
                     className={`mb-4 px-4 py-3 rounded-xl border-2 font-semibold text-sm
@@ -162,12 +98,10 @@ export default function ManageMenu() {
                 </div>
             )}
 
-            {/* Date Timeline */}
             <div className="mb-6">
                 <DateWheel selected={selectedDate} onChange={setSelectedDate} />
             </div>
 
-            {/* Item count */}
             {!isLoading && menuEntries.length > 0 && (
                 <p className="text-sm text-gray-500 mb-4 font-medium">
                     <span className="material-icons text-sm align-middle mr-1 text-primary-hover">restaurant_menu</span>
@@ -175,7 +109,6 @@ export default function ManageMenu() {
                 </p>
             )}
 
-            {/* Content */}
             {isLoading ? (
                 <LoadingState />
             ) : menuEntries.length === 0 ? (
@@ -185,23 +118,42 @@ export default function ManageMenu() {
                 />
             ) : (
                 <div className="flex flex-col gap-3">
-                    {menuEntries.map((entry) => (
-                        <MenuItemCard
-                            key={entry.ID}
-                            entry={entry}
-                            onRemove={() =>
-                                setRemovalTarget({
-                                    id: entry.ID,
-                                    name: entry.catalog?.name || 'Unknown',
-                                    image: entry.catalog?.file?.url || undefined,
-                                })
-                            }
-                        />
-                    ))}
+                    {menuEntries.map((entry) => {
+                        if (!entry.catalog) return null;
+
+                        const catalogFood: Food = {
+                            ID: entry.catalog.ID,
+                            name: entry.catalog.name,
+                            description: entry.catalog.description || '',
+                            price: entry.catalog.price,
+                            image: entry.catalog.file?.url || '',
+                            category: entry.catalog.category || 'General',
+                            isActive: entry.catalog.isActive,
+                        };
+
+                        return (
+                            <div
+                                key={entry.ID}
+                                className="group"
+                            >
+                                <CatalogItem
+                                    food={catalogFood}
+                                    onEdit={() => { }}
+                                    onDelete={() =>
+                                        setRemovalTarget({
+                                            id: entry.ID,
+                                            name: entry.catalog?.name || 'Unknown',
+                                            image: entry.catalog?.file?.url || undefined,
+                                        })
+                                    }
+                                    showEdit={false}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
-            {/* Select from Catalog Modal */}
             <SelectFromCatalogModal
                 isOpen={isCatalogModalOpen}
                 onClose={() => setIsCatalogModalOpen(false)}
@@ -209,7 +161,6 @@ export default function ManageMenu() {
                 existingCatalogIds={existingCatalogIds}
             />
 
-            {/* Remove Confirmation Modal */}
             <RemovalModal
                 isOpen={removalTarget !== null}
                 onClose={() => setRemovalTarget(null)}
