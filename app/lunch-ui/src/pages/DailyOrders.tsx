@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RootLayout } from '@/layouts/RootLayout';
@@ -15,14 +15,22 @@ function formatCurrency(value: number): string {
     return `$${value.toFixed(2)}`;
 }
 
+function toISODate(d: Date): string {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 export default function DailyOrders() {
     const { t, i18n } = useTranslation();
-    const [currentDate, setCurrentDate] = useState<Date>(new Date(2023, 9, 24)); // Oct 24, 2023
+    const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [orderNote, setOrderNote] = useState<string>('');
     const [showSavedText, setShowSavedText] = useState<boolean>(false);
+    const dateInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
-    const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+    const formattedDate = selectedDate;
 
     const { data: orderStats = [], isLoading: statsLoading } = useQuery({
         queryKey: ['orderStatistics', formattedDate],
@@ -92,7 +100,7 @@ export default function DailyOrders() {
     const subtotal: number = summary?.TotalAmount || 0;
     const tax: number = subtotal * 0.1;
     const deliveryFee: number = 5.75;
-    const total: number = subtotal + tax + deliveryFee;
+    const total: number = subtotal;
     const totalQty: number = summary?.TotalOrders || 0;
     const totalQtyDigits = String(totalQty).length;
     const totalQtyTextClass =
@@ -100,24 +108,23 @@ export default function DailyOrders() {
             totalQtyDigits === 3 ? 'text-[0.8rem]' :
                 totalQtyDigits === 2 ? 'text-[0.9rem]' :
                     'text-[1rem]';
-
-    const handlePrevDay = () => {
-        const prev: Date = new Date(currentDate);
-        prev.setDate(prev.getDate() - 1);
-        setCurrentDate(prev);
-    };
-
-    const handleNextDay = () => {
-        const next: Date = new Date(currentDate);
-        next.setDate(next.getDate() + 1);
-        setCurrentDate(next);
-    };
-
-    const dateString: string = currentDate.toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
+    const dateObj = new Date(`${selectedDate}T00:00:00`);
+    const dateString = dateObj.toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
     });
+
+    const openDatePicker = () => {
+        const input = dateInputRef.current;
+        if (!input) return;
+        const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+        if (pickerInput.showPicker) {
+            pickerInput.showPicker();
+            return;
+        }
+        input.click();
+    };
 
     return (
         <RootLayout>
@@ -125,26 +132,27 @@ export default function DailyOrders() {
                 title={t('dailyOrders.title')}
                 description={t('dailyOrders.description')}
             >
-                {/* Date Navigator */}
                 <div className="flex items-center gap-3 border-2 border-black rounded-lg px-4 py-2 bg-white shadow-[var(--shadow-neobrutalism-sm)]">
                     <button
-                        onClick={handlePrevDay}
+                        type="button"
+                        onClick={openDatePicker}
                         className="text-gray-600 hover:text-black transition-colors"
-                        aria-label={t('dailyOrders.previousDayAria')}
+                        aria-label={t('dailyOrders.datePickerAria', 'Open date picker')}
                     >
-                        <span className="material-icons-outlined text-xl">chevron_left</span>
+                        <span className="material-icons-outlined text-xl">calendar_today</span>
                     </button>
-                    <div className="flex items-center gap-2">
-                        <span className="material-icons-outlined text-lg text-gray-500">calendar_today</span>
-                        <span className="font-bold text-sm">{dateString}</span>
-                    </div>
-                    <button
-                        onClick={handleNextDay}
-                        className="text-gray-600 hover:text-black transition-colors"
-                        aria-label={t('dailyOrders.nextDayAria')}
-                    >
-                        <span className="material-icons-outlined text-xl">chevron_right</span>
-                    </button>
+                    <span className="font-bold text-sm">{dateString}</span>
+                    <input
+                        ref={dateInputRef}
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                            if (e.target.value) setSelectedDate(e.target.value);
+                        }}
+                        className="sr-only"
+                        aria-hidden="true"
+                        tabIndex={-1}
+                    />
                 </div>
             </PageHeader>
 
@@ -153,7 +161,6 @@ export default function DailyOrders() {
 
                 {/* === LEFT COLUMN (2/3) === */}
                 <div className="lg:col-span-2 flex flex-col gap-6">
-
                     {/* Total Order Value */}
                     <SoftCard className="flex items-center justify-between border-gray-900">
                         <div>
@@ -277,29 +284,6 @@ export default function DailyOrders() {
                                 <span className="material-icons-outlined text-base">cloud_upload</span>
                                 {t('dailyOrders.uploadMore')}
                             </button>
-                        </div>
-                    </SoftCard>
-
-                    {/* Summary */}
-                    <SoftCard>
-                        <h2 className="text-lg font-extrabold font-display mb-4">{t('dailyOrders.summary')}</h2>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-gray-500">{t('dailyOrders.subtotal')}</span>
-                                <span className="font-medium">{formatCurrency(subtotal)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-500">{t('dailyOrders.tax')}</span>
-                                <span className="font-medium">{formatCurrency(tax)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-500">{t('dailyOrders.deliveryFee')}</span>
-                                <span className="font-medium">{formatCurrency(deliveryFee)}</span>
-                            </div>
-                            <div className="border-t border-gray-200 pt-3 flex justify-between">
-                                <span className="font-extrabold text-base">{t('dailyOrders.total')}</span>
-                                <span className="font-extrabold text-base text-primary">{formatCurrency(total)}</span>
-                            </div>
                         </div>
                     </SoftCard>
 
