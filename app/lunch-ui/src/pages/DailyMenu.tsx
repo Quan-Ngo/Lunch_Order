@@ -80,7 +80,7 @@ function DateTimeline({ selected, onChange }: { selected: string; onChange: (d: 
     };
 
     return (
-        <div className="mb-24">
+        <div className="mb-6">
             {/* Header row: month label + prev/next */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function DailyMenu() {
     const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null);
     const [savedOrder, setSavedOrder] = useState<StaffCatalogEntity | null>(null);
     const [isActioning, setIsActioning] = useState(false);
-    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const isStaff = currentUser?.role === 'staff' && !!currentUser.staff;
     const staffId = currentUser?.staff?.ID;
@@ -335,19 +335,6 @@ export default function DailyMenu() {
             {/* Date Timeline */}
             <DateTimeline selected={selectedDate} onChange={(d) => { setSelectedDate(d); setFeedback(null); }} />
 
-            {/* Feedback message */}
-            {feedback && (
-                <div
-                    className={`mb-5 px-4 py-3 rounded-xl border-2 font-semibold text-sm
-                        ${feedback.type === 'success'
-                            ? 'bg-green-50 border-green-400 text-green-700'
-                            : 'bg-red-50 border-red-400 text-red-700'
-                        }`}
-                >
-                    {feedback.text}
-                </div>
-            )}
-
             {/* Content */}
             {isLoading ? (
                 <LoadingState />
@@ -374,7 +361,7 @@ export default function DailyMenu() {
                     )}
 
                     {/* Food Cards - horizontal scrollable row */}
-                    <div className="flex gap-4 overflow-x-auto no-scrollbar mt-28 pt-8 pb-8 px-2">
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar mt-1 pt-8 pb-8 px-2">
                         {menuEntries.map((entry, i) => {
                             const catalogId = entry.catalog?.ID;
                             if (!catalogId) return null;
@@ -396,7 +383,7 @@ export default function DailyMenu() {
                     <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
                         <button
                             onClick={handleConfirmOrder}
-                            className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform font-black text-2xl border-4 border-black uppercase tracking-tighter 
+                            className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] font-black text-2xl border-4 border-black uppercase tracking-tighter 
                                 ${(isActioning)
                                     ? 'bg-primary text-black opacity-85 cursor-wait'
                                     : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
