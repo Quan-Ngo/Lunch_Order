@@ -225,6 +225,26 @@ export const staffCatalogService = {
             `/StaffCatalog(Staff_ID=${staffId},Catalog_ID=${catalogId},date='${date}')`
         );
     },
+
+    /** Get all orders for a catalog item on a specific date */
+    getByCatalogAndDate: async (catalogId: string, date: string): Promise<StaffCatalogEntity[]> => {
+        const filter = `Catalog_ID eq '${catalogId}' and date eq '${date}'`;
+        const response = await api.get<{ value: StaffCatalogEntity[] }>(
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}`
+        );
+        return response.data.value;
+    },
+
+    /**
+     * Clear all selections for a catalog item on a date.
+     * Catalog_ID is part of the key, so "set to null" is represented by deleting those rows.
+     */
+    clearCatalogSelectionsByDate: async (catalogId: string, date: string): Promise<void> => {
+        const orders = await staffCatalogService.getByCatalogAndDate(catalogId, date);
+        await Promise.all(
+            orders.map((order) => staffCatalogService.deleteOrder(order.Staff_ID, order.Catalog_ID, date))
+        );
+    },
 };
 
 export default api;
