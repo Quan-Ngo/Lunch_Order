@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { RootLayout } from '@/layouts/RootLayout';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { EmptyState } from '@/components/elements/EmptyState';
+import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     dailyMenuService,
@@ -10,47 +11,6 @@ import {
     type StaffCatalogEntity,
 } from '@/services/api';
 import { useTranslation } from 'react-i18next';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────────
-
-function getDateRange(): Date[] {
-    const today = new Date();
-    const days: Date[] = [];
-    for (let i = -3; i <= 3; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        days.push(d);
-    }
-    return days;
-}
-
-function toISODate(d: Date): string {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-// Category → badge color mapping
-const CATEGORY_COLORS: Record<string, string> = {
-    Healthy: 'bg-green-500',
-    Vegan: 'bg-emerald-600',
-    Popular: 'bg-red-500',
-    General: 'bg-blue-500',
-    Comfort: 'bg-orange-500',
-    Seafood: 'bg-cyan-600',
-    Salad: 'bg-green-600',
-    Pizza: 'bg-red-600',
-    Burger: 'bg-amber-600',
-    Ramen: 'bg-orange-600',
-    Bowl: 'bg-teal-600',
-};
-
-function getCategoryBg(category: string) {
-    return CATEGORY_COLORS[category] || 'bg-gray-500';
-}
 
 // Card accent colors - cycle through these for visual variety
 const CARD_ACCENTS = [
@@ -63,80 +23,6 @@ const CARD_ACCENTS = [
 ];
 
 // ─── Date Timeline ──────────────────────────────────────────────────────────────
-
-function DateTimeline({ selected, onChange }: { selected: string; onChange: (d: string) => void }) {
-    const { t } = useTranslation();
-    const days = getDateRange();
-    const today = toISODate(new Date());
-    const selDate = new Date(selected + 'T00:00:00');
-    const monthName = selDate.toLocaleString('default', { month: 'long' });
-    const monthLabel = `${monthName} ${selDate.getFullYear()}`;
-
-    // Navigate one day back/forward
-    const shiftDay = (delta: number) => {
-        const d = new Date(selected + 'T00:00:00');
-        d.setDate(d.getDate() + delta);
-        onChange(toISODate(d));
-    };
-
-    return (
-        <div className="mb-6">
-            {/* Header row: month label + prev/next */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <span className="material-icons text-gray-500 text-base">calendar_today</span>
-                    <span className="text-sm font-semibold text-gray-600">{monthLabel}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => shiftDay(-1)}
-                        className="w-7 h-7 flex items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 text-sm font-bold"
-                    >‹</button>
-                    <button
-                        onClick={() => shiftDay(1)}
-                        className="w-7 h-7 flex items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 text-sm font-bold"
-                    >›</button>
-                </div>
-            </div>
-
-            {/* Day tiles */}
-            <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 mt-4 items-center">
-                {days.map((d) => {
-                    const iso = toISODate(d);
-                    const isSelected = iso === selected;
-                    const isToday = iso === today;
-                    return (
-                        <div key={iso} className="flex flex-col items-center relative flex-shrink-0">
-                            {/* TODAY pill - floats above the card */}
-                            {isToday && (
-                                <span className="absolute -top-5 bg-black text-white text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full z-10 whitespace-nowrap">
-                                    {t('dailyMenu.today')}
-                                </span>
-                            )}
-                            <button
-                                onClick={() => onChange(iso)}
-                                className={`flex flex-col items-center justify-center rounded-2xl border-2 transition-all font-body
-                                    ${isSelected
-                                        ? 'w-16 h-20 bg-primary border-black border-[3px] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                                        : 'w-12 h-14 bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <span className={`font-semibold uppercase ${isSelected ? 'text-[10px] text-gray-700' : 'text-[9px] text-gray-400'}`}>
-                                    {DAY_LABELS[d.getDay()]}
-                                </span>
-                                <span className={`font-black leading-tight ${isSelected ? 'text-2xl text-black' : 'text-lg text-gray-600'}`}>
-                                    {d.getDate()}
-                                </span>
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
-
-// ─── Food Card (Full-bleed image, gradient overlay, text on image) ──────────────
 
 interface FoodCardProps {
     entry: DailyMenuEntity;
@@ -333,7 +219,12 @@ export default function DailyMenu() {
             </div>
 
             {/* Date Timeline */}
-            <DateTimeline selected={selectedDate} onChange={(d) => { setSelectedDate(d); setFeedback(null); }} />
+            <DateWheel
+                selected={selectedDate}
+                onChange={(d) => { setSelectedDate(d); setFeedback(null); }}
+                todayLabel={t('dailyMenu.today')}
+                className="mb-6"
+            />
 
             {/* Content */}
             {isLoading ? (
@@ -400,3 +291,5 @@ export default function DailyMenu() {
         </RootLayout>
     );
 }
+
+

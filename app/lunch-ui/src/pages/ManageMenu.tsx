@@ -4,66 +4,10 @@ import { PageHeader } from '@/components/elements/PageHeader';
 import { Button } from '@/components/elements/Button';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { EmptyState } from '@/components/elements/EmptyState';
+import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
 import { dailyMenuService, type DailyMenuEntity, type Food } from '@/services/api';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────────
-
-function getDateRange(): Date[] {
-    const today = new Date();
-    const days: Date[] = [];
-    for (let i = -3; i <= 3; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        days.push(d);
-    }
-    return days;
-}
-
-function toISODate(d: Date): string {
-    return d.toISOString().split('T')[0];
-}
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-// ─── Sub-components ─────────────────────────────────────────────────────────────
-
-function DateTimeline({ selected, onChange }: { selected: string; onChange: (d: string) => void }) {
-    const days = getDateRange();
-    const today = toISODate(new Date());
-
-    return (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-            {days.map((d) => {
-                const iso = toISODate(d);
-                const isSelected = iso === selected;
-                const isToday = iso === today;
-                return (
-                    <button
-                        key={iso}
-                        onClick={() => onChange(iso)}
-                        className={`flex flex-col items-center min-w-[58px] px-2 py-3 rounded-xl border-2 transition-all font-body
-                            ${isSelected
-                                ? 'bg-primary border-black shadow-[var(--shadow-neobrutalism)] -translate-y-1 font-bold'
-                                : 'bg-white border-gray-200 hover:border-gray-400 hover:bg-gray-50'
-                            }`}
-                    >
-                        <span className="text-xs text-gray-500">{DAY_LABELS[d.getDay()]}</span>
-                        <span className={`text-lg font-bold mt-0.5 ${isSelected ? 'text-black' : 'text-gray-800'}`}>
-                            {d.getDate()}
-                        </span>
-                        {isToday && (
-                            <span className={`text-[9px] font-semibold mt-0.5 ${isSelected ? 'text-black' : 'text-primary-hover'}`}>
-                                TODAY
-                            </span>
-                        )}
-                    </button>
-                );
-            })}
-        </div>
-    );
-}
 
 // ─── Menu Item Card ─────────────────────────────────────────────────────────────
 
@@ -220,7 +164,7 @@ export default function ManageMenu() {
 
             {/* Date Timeline */}
             <div className="mb-6">
-                <DateTimeline selected={selectedDate} onChange={setSelectedDate} />
+                <DateWheel selected={selectedDate} onChange={setSelectedDate} />
             </div>
 
             {/* Item count */}
