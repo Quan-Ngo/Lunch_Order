@@ -51,7 +51,8 @@
         "saveFailed": "Lưu món ăn thất bại. Vui lòng kiểm tra console để biết chi tiết.",
         "removalContext": "khỏi danh mục món ăn",
         "edit": "Chỉnh Sửa",
-        "delete": "Xoá"
+        "delete": "Xoá",
+        "searchHint": "Tìm món ăn..."
     },
     "foodModal": {
         "titleCreate": "Thêm Món Mới",

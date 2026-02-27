@@ -51,7 +51,8 @@
         "saveFailed": "Failed to save food. check console for details.",
         "removalContext": "from the food catalog",
         "edit": "Edit",
-        "delete": "Delete"
+        "delete": "Delete",
+        "searchHint": "Search for dishes..."
     },
     "foodModal": {
         "titleCreate": "Add New Food",

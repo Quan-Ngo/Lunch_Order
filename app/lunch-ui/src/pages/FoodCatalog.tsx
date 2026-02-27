@@ -129,9 +129,9 @@ export default function FoodCatalog() {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search for dishes..."
+                        placeholder={t('catalog.searchHint')}
                         className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-3 text-sm text-slate-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        aria-label="Search for dishes"
+                        aria-label={t('catalog.searchHint')}
                     />
                 </div>
             </SoftCard>
