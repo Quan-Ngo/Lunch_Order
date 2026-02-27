@@ -180,7 +180,7 @@ export default function DailyOrders() {
                             columns={[
                                 {
                                     header: t('dailyOrders.table.item'),
-                                    className: 'col-span-5',
+                                    className: 'col-span-4 sm:col-span-5',
                                     render: (order) => (
                                         <div className="flex items-center gap-3">
                                             <img
@@ -197,7 +197,7 @@ export default function DailyOrders() {
                                 },
                                 {
                                     header: t('dailyOrders.table.unitPrice'),
-                                    className: 'col-span-3 text-center text-sm font-medium text-gray-600',
+                                    className: 'col-span-3 text-center text-xs sm:text-sm font-medium text-gray-600',
                                     render: (order) => formatCurrency(order.unitPrice),
                                 },
                                 {
@@ -207,7 +207,7 @@ export default function DailyOrders() {
                                 },
                                 {
                                     header: t('dailyOrders.table.tableSubtotal'),
-                                    className: 'col-span-2 text-right text-sm font-bold text-gray-900',
+                                    className: 'col-span-3 sm:col-span-2 text-right text-xs sm:text-sm font-bold text-gray-900',
                                     render: (order) => formatCurrency(order.subtotal),
                                 }
                             ]}
@@ -322,9 +322,9 @@ export default function DailyOrders() {
                     </div>
 
                     {/* Footer note */}
-                    <p className="text-xs text-gray-400 text-center">
+                    {/*<p className="text-xs text-gray-400 text-center">
                         {t('dailyOrders.ordersLockNotice')}
-                    </p>
+                    </p>*/}
                 </div>
             </div>
         </RootLayout>
