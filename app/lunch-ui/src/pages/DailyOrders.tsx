@@ -98,8 +98,6 @@ export default function DailyOrders() {
     });
 
     const subtotal: number = summary?.TotalAmount || 0;
-    const tax: number = subtotal * 0.1;
-    const deliveryFee: number = 5.75;
     const total: number = subtotal;
     const totalQty: number = summary?.TotalOrders || 0;
     const totalQtyDigits = String(totalQty).length;

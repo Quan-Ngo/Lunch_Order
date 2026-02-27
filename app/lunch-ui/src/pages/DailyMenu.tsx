@@ -32,7 +32,6 @@ interface FoodCardProps {
 }
 
 function FoodCard({ entry, index, isSelected, onSelect }: FoodCardProps) {
-    const { t } = useTranslation();
     const catalog = entry.catalog;
     if (!catalog) return null;
 
