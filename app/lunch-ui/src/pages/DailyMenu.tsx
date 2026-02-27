@@ -25,7 +25,10 @@ function getDateRange(): Date[] {
 }
 
 function toISODate(d: Date): string {
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -139,30 +142,27 @@ interface FoodCardProps {
     entry: DailyMenuEntity;
     index: number;
     isSelected: boolean;
-    isSaved: boolean;
     onSelect: () => void;
 }
 
-function FoodCard({ entry, index, isSelected, isSaved, onSelect }: FoodCardProps) {
+function FoodCard({ entry, index, isSelected, onSelect }: FoodCardProps) {
     const { t } = useTranslation();
     const catalog = entry.catalog;
     if (!catalog) return null;
 
     const imageUrl = catalog.file?.url || '';
     const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
-    const isHighlighted = isSelected || isSaved;
-
     return (
         <div
             onClick={onSelect}
             className={`relative flex-shrink-0 w-[200px] sm:w-[220px] rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group
-                ${isHighlighted
+                ${isSelected
                     ? 'border-[3px] border-primary shadow-[var(--shadow-neobrutalism)] -translate-y-2 scale-[1.02]'
                     : 'border-[3px] border-transparent hover:-translate-y-1 hover:shadow-lg'
                 }`}
         >
             {/* Checkmark */}
-            {isHighlighted && (
+            {isSelected && (
                 <div className="absolute top-4 right-4 z-30 bg-primary text-black rounded-full p-2 shadow-lg border-2 border-black flex items-center justify-center">
                     <span className="material-icons font-bold text-lg">check</span>
                 </div>
@@ -186,15 +186,6 @@ function FoodCard({ entry, index, isSelected, isSaved, onSelect }: FoodCardProps
                 {/* Gradient overlay at bottom */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${accent.bg} from-black/90 via-transparent to-transparent`} />
 
-                {/* Category badges - bottom area above text */}
-                <div className="absolute bottom-[90px] left-3 flex flex-wrap gap-1.5 z-10">
-                    {catalog.category && (
-                        <span className={`${getCategoryBg(catalog.category)} text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full`}>
-                            {t(`categories.${catalog.category}`, catalog.category)}
-                        </span>
-                    )}
-                </div>
-
                 {/* Text overlay at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
                     <h3 className="font-black font-display text-white text-base leading-tight mb-1 drop-shadow-md">
@@ -203,21 +194,6 @@ function FoodCard({ entry, index, isSelected, isSaved, onSelect }: FoodCardProps
                     <p className="text-white/70 text-[11px] leading-snug line-clamp-2 mb-2">
                         {catalog.description || 'A delicious meal option.'}
                     </p>
-
-                    {/* Price + icons row */}
-                    <div className="flex items-center justify-between">
-                        <span className="text-primary font-black text-sm drop-shadow-sm">
-                            ${catalog.price.toFixed(2)}
-                        </span>
-                        <div className="flex gap-1">
-                            <span className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center">
-                                <span className="material-icons text-white text-[11px]">favorite_border</span>
-                            </span>
-                            <span className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center">
-                                <span className="material-icons text-white text-[11px]">share</span>
-                            </span>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -281,26 +257,37 @@ export default function DailyMenu() {
     // ─── Handlers ───────────────────────────────────────────────────────────────
 
     const handleSelect = (catalogId: string) => {
-        if (!currentUser) return; // must be logged in
-        if (savedOrder?.Catalog_ID === catalogId) {
-            // clicking the saved item unselects it
-            setSelectedCatalogId(null);
-            return;
-        }
+        if (!isStaff) return;
         setSelectedCatalogId((prev) => (prev === catalogId ? null : catalogId));
         setFeedback(null);
     };
 
     const handleConfirmOrder = async () => {
-        if (!staffId || !selectedCatalogId) return;
+        if (isActioning) return;
+        if (!staffId) {
+            setFeedback({ type: 'error', text: t('dailyMenu.selectUserHint') });
+            return;
+        }
         setIsActioning(true);
         setFeedback(null);
         try {
+            if (savedOrder?.Catalog_ID === selectedCatalogId) {
+                setFeedback({ type: 'success', text: t('dailyMenu.orderConfirmed') });
+                return;
+            }
+
             if (savedOrder) {
                 await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, selectedDate);
             }
-            await staffCatalogService.createOrder(staffId, selectedCatalogId, selectedDate);
-            setFeedback({ type: 'success', text: t('dailyMenu.orderConfirmed') });
+
+            if (selectedCatalogId) {
+                await staffCatalogService.createOrder(staffId, selectedCatalogId, selectedDate);
+            }
+
+            setFeedback({
+                type: 'success',
+                text: selectedCatalogId ? t('dailyMenu.orderConfirmed') : t('dailyMenu.orderCancelled'),
+            });
             await loadExistingOrder();
         } catch (err) {
             console.error('Failed to confirm order:', err);
@@ -326,9 +313,6 @@ export default function DailyMenu() {
             setIsActioning(false);
         }
     };
-
-    // Is the current selection new (not yet saved)?
-    const hasUnsavedSelection = !!currentUser && !!selectedCatalogId && selectedCatalogId !== savedOrder?.Catalog_ID;
 
     // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -394,8 +378,7 @@ export default function DailyMenu() {
                         {menuEntries.map((entry, i) => {
                             const catalogId = entry.catalog?.ID;
                             if (!catalogId) return null;
-                            const isSaved = savedOrder?.Catalog_ID === catalogId;
-                            const isSelected = selectedCatalogId === catalogId && !isSaved;
+                            const isSelected = selectedCatalogId === catalogId;
 
                             return (
                                 <FoodCard
@@ -403,7 +386,6 @@ export default function DailyMenu() {
                                     entry={entry}
                                     index={i}
                                     isSelected={isSelected}
-                                    isSaved={isSaved}
                                     onSelect={() => handleSelect(catalogId)}
                                 />
                             );
@@ -414,15 +396,14 @@ export default function DailyMenu() {
                     <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
                         <button
                             onClick={handleConfirmOrder}
-                            disabled={isActioning || !hasUnsavedSelection}
                             className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform font-black text-2xl border-4 border-black uppercase tracking-tighter 
-                                ${(!hasUnsavedSelection || isActioning)
-                                    ? 'bg-gray-300 text-gray-500 opacity-80 cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                                ${(isActioning)
+                                    ? 'bg-primary text-black opacity-85 cursor-wait'
                                     : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
                                 }`}
                         >
                             <span>{isActioning ? t('dailyMenu.saving') : t('dailyMenu.confirmOrder')}</span>
-                            <span className={`material-icons text-3xl transition-transform ${(!hasUnsavedSelection || isActioning) ? '' : 'group-hover:translate-x-1'}`}>
+                            <span className={`material-icons text-3xl transition-transform ${(isActioning) ? '' : 'group-hover:translate-x-1'}`}>
                                 arrow_forward
                             </span>
                         </button>
