@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
-import { dailyMenuService, type DailyMenuEntity, type Food } from '@/services/api';
+import { dailyMenuService, staffCatalogService, type DailyMenuEntity, type Food } from '@/services/api';
 
 export default function ManageMenu() {
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
@@ -56,7 +56,14 @@ export default function ManageMenu() {
 
     const handleRemoveFood = async (dailyMenuId: string) => {
         try {
+            const removedEntry = menuEntries.find((entry) => entry.ID === dailyMenuId);
+            const removedCatalogId = removedEntry?.catalog?.ID;
+
             await dailyMenuService.removeFoodFromDate(dailyMenuId);
+
+            if (removedCatalogId) {
+                await staffCatalogService.clearCatalogSelectionsByDate(removedCatalogId, selectedDate);
+            }
 
             setFeedback({ type: 'success', text: 'Item removed from the menu.' });
             await loadMenu();
