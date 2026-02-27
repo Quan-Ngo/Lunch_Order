@@ -104,7 +104,7 @@ function MenuItemCard({ entry, onRemove }: MenuItemCardProps) {
 
             {/* Price */}
             <div className="flex-shrink-0 text-right">
-                <span className="text-2xl font-black font-display text-primary-hover">
+                <span className="text-2xl font-black font-display text-gray-900">
                     ${catalog.price.toFixed(2)}
                 </span>
             </div>
