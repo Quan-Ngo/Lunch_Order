@@ -1,20 +1,22 @@
 import { type Food } from '@/services/api';
 import { Card } from '@/components/elements/Card';
 import { Button } from '@/components/elements/Button';
+import { ToggleActiveButton } from '@/components/elements/ToggleActiveButton';
 import { useTranslation } from 'react-i18next';
 
 interface CatalogItemProps {
     food: Food;
     onEdit: (food: Food) => void;
     onDelete: (food: Food) => void;
+    onToggleActive?: (food: Food) => void;
     showEdit?: boolean;
 }
 
-export default function CatalogItem({ food, onEdit, onDelete, showEdit = true }: CatalogItemProps) {
+export default function CatalogItem({ food, onEdit, onDelete, onToggleActive, showEdit = true }: CatalogItemProps) {
     const { t } = useTranslation();
 
     return (
-        <Card className="flex flex-col md:flex-row gap-6 items-start md:items-center transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[var(--shadow-neobrutalism-lg)]">
+        <Card className={`flex flex-col md:flex-row gap-6 items-start md:items-center transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[var(--shadow-neobrutalism-lg)] ${!food.isActive ? 'opacity-50 grayscale' : ''}`}>
             {/* Image Section */}
             <div className="w-full md:w-48 h-48 md:h-32 flex-shrink-0 bg-gray-100 rounded-lg border-2 border-black overflow-hidden relative group">
                 {food.image ? (
@@ -28,6 +30,13 @@ export default function CatalogItem({ food, onEdit, onDelete, showEdit = true }:
                         <span className="material-icons text-gray-400 text-4xl">restaurant</span>
                     </div>
                 )}
+
+                {/* Active/Inactive badge overlay */}
+                {!food.isActive && (
+                    <div className="absolute top-2 left-2 bg-gray-800/80 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                        {t('catalog.inactive')}
+                    </div>
+                )}
             </div>
 
             {/* Content Section */}
@@ -38,6 +47,16 @@ export default function CatalogItem({ food, onEdit, onDelete, showEdit = true }:
                             <h3 className="text-xl font-bold font-display text-text-primary-light">
                                 {food.name}
                             </h3>
+                            {/* Active/Inactive badge */}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border
+                                ${food.isActive
+                                    ? 'bg-green-100 text-green-700 border-green-300'
+                                    : 'bg-gray-100 text-gray-500 border-gray-300'
+                                }`}
+                            >
+                                <span className={`w-1.5 h-1.5 rounded-full ${food.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                {food.isActive ? t('catalog.active') : t('catalog.inactive')}
+                            </span>
                         </div>
                         <p className="text-text-secondary-light font-body text-sm line-clamp-2 md:line-clamp-none">
                             {food.description}
@@ -52,6 +71,12 @@ export default function CatalogItem({ food, onEdit, onDelete, showEdit = true }:
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-2">
+                    {onToggleActive && (
+                        <ToggleActiveButton
+                            isActive={food.isActive}
+                            onToggle={() => onToggleActive(food)}
+                        />
+                    )}
                     {showEdit && (
                         <Button
                             variant="secondary"

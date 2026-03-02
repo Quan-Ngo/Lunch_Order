@@ -7,7 +7,9 @@ import { SoftCard } from '@/components/elements/SoftCard';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
-import { statisticsService, foodService, summaryService, dailyMenuService } from '@/services/api';
+import { statisticsService, foodService, summaryService, dailyMenuService, billService } from '@/services/api';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // --- Helper Functions ---
 
@@ -28,6 +30,7 @@ export default function DailyOrders() {
     const [orderNote, setOrderNote] = useState<string>('');
     const [showSavedText, setShowSavedText] = useState<boolean>(false);
     const dateInputRef = useRef<HTMLInputElement>(null);
+    const billInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
     const formattedDate = selectedDate;
@@ -50,6 +53,31 @@ export default function DailyOrders() {
     const { data: dailyMenus = [], isLoading: dailyMenuLoading } = useQuery({
         queryKey: ['dailyMenu', formattedDate],
         queryFn: () => dailyMenuService.getByDate(formattedDate)
+    });
+
+    const { data: bills = [], isLoading: billsLoading } = useQuery({
+        queryKey: ['bills', formattedDate],
+        queryFn: () => billService.getByDate(formattedDate)
+    });
+
+    const uploadBillMutation = useMutation({
+        mutationFn: (file: File) => billService.upload(formattedDate, file),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bills', formattedDate] });
+        },
+        onError: (error) => {
+            console.error('Failed to upload bill:', error);
+        }
+    });
+
+    const deleteBillMutation = useMutation({
+        mutationFn: (id: string) => billService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bills', formattedDate] });
+        },
+        onError: (error) => {
+            console.error('Failed to delete bill:', error);
+        }
     });
 
     useEffect(() => {
@@ -82,7 +110,7 @@ export default function DailyOrders() {
         }
     });
 
-    const isLoading = statsLoading || catalogLoading || summaryLoading || dailyMenuLoading;
+    const isLoading = statsLoading || catalogLoading || summaryLoading || dailyMenuLoading || billsLoading;
 
     const orders = orderStats.map((stat) => {
         const catalogItem = catalogItems.find(c => c.ID === stat.CatalogID);
@@ -122,6 +150,93 @@ export default function DailyOrders() {
             return;
         }
         input.click();
+    };
+
+    const handleExportPdf = async () => {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Load Roboto font to support Vietnamese characters
+        try {
+            // Fetch raw TTF Roboto font
+            const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/fonts/Roboto/Roboto-Regular.ttf');
+            const buffer = await response.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const base64Font = window.btoa(binary);
+
+            // Register font for both normal and bold styles
+            // (autoTable uses fontStyle:'bold' in head/foot, so we need bold registered too)
+            doc.addFileToVFS('Roboto-Regular.ttf', base64Font);
+            doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+            doc.addFont('Roboto-Regular.ttf', 'Roboto', 'bold');
+            doc.setFont('Roboto', 'normal');
+        } catch (error) {
+            console.error('Failed to load font for PDF:', error);
+            doc.setFont('helvetica', 'normal');
+        }
+
+        // Title
+        doc.setFontSize(20);
+        // doc.setFont('helvetica', 'bold'); -> Roboto normal for title to keep it simple since we only loaded normal weight, or we can just use normal and bigger size
+        doc.text(t('dailyOrders.pdfTitle'), pageWidth / 2, 20, { align: 'center' });
+
+        // Date
+        doc.setFontSize(12);
+        doc.text(`${t('dailyOrders.pdfDate')}: ${dateString}`, pageWidth / 2, 30, { align: 'center' });
+
+        // Line separator
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, 35, pageWidth - 14, 35);
+
+        // Table
+        if (orders.length > 0) {
+            const tableData = orders.map((order) => [
+                order.name,
+                formatCurrency(order.unitPrice),
+                order.qty.toString(),
+                formatCurrency(order.subtotal),
+            ]);
+
+            autoTable(doc, {
+                startY: 40,
+                head: [[
+                    t('dailyOrders.table.item'),
+                    t('dailyOrders.table.unitPrice'),
+                    t('dailyOrders.table.qty'),
+                    t('dailyOrders.table.tableSubtotal'),
+                ]],
+                body: tableData,
+                foot: [[
+                    t('dailyOrders.total'),
+                    '',
+                    totalQty.toString(),
+                    formatCurrency(total),
+                ]],
+                theme: 'grid',
+                headStyles: { fillColor: [255, 214, 0], textColor: [0, 0, 0], fontStyle: 'bold', font: 'Roboto' },
+                footStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', font: 'Roboto' },
+                styles: { fontSize: 10, font: 'Roboto' },
+            });
+        } else {
+            doc.setFontSize(11);
+            doc.text(t('dailyOrders.noOrders'), pageWidth / 2, 50, { align: 'center' });
+        }
+
+        // Notes section
+        if (orderNote) {
+            const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 60;
+            doc.setFontSize(12);
+            doc.text(t('dailyOrders.orderNotes') + ':', 14, finalY + 15);
+            doc.setFontSize(10);
+            const splitNotes = doc.splitTextToSize(orderNote, pageWidth - 28);
+            doc.text(splitNotes, 14, finalY + 23);
+        }
+
+        doc.save(`lunch-order-${selectedDate}.pdf`);
     };
 
     return (
@@ -260,27 +375,69 @@ export default function DailyOrders() {
                             <h2 className="text-lg font-extrabold font-display">{t('dailyOrders.receipt')}</h2>
                         </div>
                         <div className="p-4">
-                            {/* Receipt Image Placeholder */}
-                            <div className="bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg h-48 flex items-center justify-center mb-4">
-                                <span className="material-icons-outlined text-amber-400 text-5xl">receipt_long</span>
-                            </div>
-
-                            {/* Uploaded File Info */}
-                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <span className="material-icons-outlined text-gray-400">attach_file</span>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-gray-800 truncate">Le_Klub_Oct24_Page1.jpg</p>
-                                    <p className="text-xs text-gray-500">{t('dailyOrders.uploaded')}</p>
+                            {/* Uploaded Bills */}
+                            {bills.length > 0 ? (
+                                <div className="space-y-3 mb-4">
+                                    {bills.map((bill) => (
+                                        <div key={bill.ID}>
+                                            {/* Bill Image Preview */}
+                                            {bill.mediaType.startsWith('image/') && (
+                                                <div className="rounded-lg border-2 border-gray-200 overflow-hidden mb-2">
+                                                    <img
+                                                        src={billService.getContentUrl(bill.ID)}
+                                                        alt={bill.fileName}
+                                                        className="w-full h-auto max-h-64 object-contain bg-gray-50"
+                                                    />
+                                                </div>
+                                            )}
+                                            {/* File Info */}
+                                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                <span className="material-icons-outlined text-gray-400">attach_file</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-gray-800 truncate">{bill.fileName}</p>
+                                                    <p className="text-xs text-gray-500">{t('dailyOrders.uploaded')}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteBillMutation.mutate(bill.ID)}
+                                                    disabled={deleteBillMutation.isPending}
+                                                    className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                                                    title={t('catalog.delete')}
+                                                >
+                                                    <span className="material-icons-outlined text-sm">delete</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <button className="text-gray-400 hover:text-gray-600">
-                                    <span className="material-icons-outlined text-sm">more_vert</span>
-                                </button>
-                            </div>
+                            ) : (
+                                /* Empty state placeholder */
+                                <div className="bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg h-32 flex flex-col items-center justify-center mb-4">
+                                    <span className="material-icons-outlined text-amber-400 text-4xl">receipt_long</span>
+                                    <p className="text-xs text-amber-500 mt-1 font-medium">{t('dailyOrders.noBills')}</p>
+                                </div>
+                            )}
 
-                            {/* Upload More */}
-                            <button className="w-full mt-3 flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 border-2 border-dashed border-gray-300 rounded-lg py-2.5 hover:border-gray-400 transition-colors">
+                            {/* Upload button */}
+                            <input
+                                ref={billInputRef}
+                                type="file"
+                                accept="image/*,.pdf"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        uploadBillMutation.mutate(file);
+                                        e.target.value = '';
+                                    }
+                                }}
+                            />
+                            <button
+                                onClick={() => billInputRef.current?.click()}
+                                disabled={uploadBillMutation.isPending}
+                                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 border-2 border-dashed border-gray-300 rounded-lg py-2.5 hover:border-gray-400 transition-colors disabled:opacity-50"
+                            >
                                 <span className="material-icons-outlined text-base">cloud_upload</span>
-                                {t('dailyOrders.uploadMore')}
+                                {uploadBillMutation.isPending ? t('dailyOrders.uploading') : t('dailyOrders.uploadMore')}
                             </button>
                         </div>
                     </SoftCard>
@@ -291,6 +448,7 @@ export default function DailyOrders() {
                             variant="secondary"
                             fullWidth
                             icon={<span className="material-icons-outlined">download</span>}
+                            onClick={handleExportPdf}
                         >
                             {t('dailyOrders.exportPdf')}
                         </Button>

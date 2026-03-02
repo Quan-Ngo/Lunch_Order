@@ -8,7 +8,8 @@
         "selectUser": "Select User",
         "admin": "Admin",
         "staff": "Staff",
-        "clearSelection": "Clear Selection"
+        "clearSelection": "Clear Selection",
+        "toggleLanguage": "Toggle Language"
     },
     "dailyMenu": {
         "title": "What's for",
@@ -25,9 +26,12 @@
         "orderFailed": "❌ Failed to save order. Please try again.",
         "orderCancelled": "✅ Order cancelled.",
         "cancelFailed": "❌ Failed to cancel order. Please try again.",
-        "today": "TODAY"
+        "today": "TODAY",
+        "foodItem": "Food Item",
+        "orderSuccessToast": "You selected \"{{itemName}}\" for {{date}}!"
     },
     "categories": {
+        "All": "All",
         "Healthy": "Healthy",
         "Vegan": "Vegan",
         "Popular": "Popular",
@@ -52,6 +56,10 @@
         "removalContext": "from the food catalog",
         "edit": "Edit",
         "delete": "Delete",
+        "active": "Active",
+        "inactive": "Inactive",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
         "searchHint": "Search for dishes..."
     },
     "foodModal": {
@@ -80,6 +88,35 @@
         "cancel": "Cancel",
         "deleteFailed": "Failed to delete item. Check console for details."
     },
+    "manageMenu": {
+        "title": "Weekly Planner",
+        "description": "Plan the daily menu for your team.",
+        "selectFromCatalog": "Select from Catalog",
+        "addedCount_one": "Added {{count}} item to the menu!",
+        "addedCount_other": "Added {{count}} items to the menu!",
+        "addFailed": "Failed to add items. Please try again.",
+        "itemRemoved": "Item removed from the menu.",
+        "removeFailed": "Failed to remove item. Please try again.",
+        "itemCount_one": "{{count}} item on the menu",
+        "itemCount_other": "{{count}} items on the menu",
+        "emptyMenu": "No food on the menu for this day yet. Click 'Select from Catalog' to add some!",
+        "fromTodaysMenu": "from today's menu"
+    },
+    "employees": {
+        "title": "Employees",
+        "description": "Employee management will appear here."
+    },
+    "selectCatalogModal": {
+        "title": "Select from Catalog",
+        "closeAriaLabel": "Close modal",
+        "searchPlaceholder": "Search food items…",
+        "noItems": "No items found.",
+        "added": "Added",
+        "addNewFood": "Add New Food to Catalog",
+        "cancel": "Cancel",
+        "add": "Add",
+        "addFailed": "Failed to add food. Check console for details."
+    },
     "dailyOrders": {
         "title": "Daily Orders",
         "description": "Manage and track today's office lunch orders efficiently.",
@@ -103,7 +140,9 @@
         "saveNote": "Save Note",
         "receipt": "Receipt / Bill",
         "uploaded": "Uploaded",
-        "uploadMore": "Upload more pages",
+        "uploading": "Uploading...",
+        "noBills": "No receipts uploaded yet",
+        "uploadMore": "Upload receipt / bill",
         "summary": "Summary",
         "subtotal": "Subtotal",
         "tax": "Tax (10%)",
@@ -111,6 +150,8 @@
         "total": "Total",
         "exportPdf": "Export to PDF",
         "markComplete": "Mark as Complete",
-        "lockNote": "Orders lock automatically at 11:30 AM"
+        "lockNote": "Orders lock automatically at 11:30 AM",
+        "pdfTitle": "Daily Order Report",
+        "pdfDate": "Date"
     }
 }

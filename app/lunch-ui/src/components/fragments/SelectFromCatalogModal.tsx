@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/elements/Button';
 import { FoodModal, type FoodFormData } from '@/components/fragments/FoodModal';
 import { foodService, type Food } from '@/services/api';
+import { useTranslation } from 'react-i18next';
 
 // ─── Props ──────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ export function SelectFromCatalogModal({
     onAccept,
     existingCatalogIds,
 }: SelectFromCatalogModalProps) {
+    const { t } = useTranslation();
     const [catalogItems, setCatalogItems] = useState<Food[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -93,7 +95,7 @@ export function SelectFromCatalogModal({
             setIsFoodModalOpen(false);
         } catch (err) {
             console.error('Failed to add food to catalog:', err);
-            alert('Failed to add food. Check console for details.');
+            alert(t('selectCatalogModal.addFailed'));
         }
     };
 
@@ -130,12 +132,12 @@ export function SelectFromCatalogModal({
                                     id="select-catalog-title"
                                     className="text-xl font-extrabold text-black uppercase tracking-tight font-display"
                                 >
-                                    Select from Catalog
+                                    {t('selectCatalogModal.title')}
                                 </h3>
                                 <button
                                     onClick={onClose}
                                     className="text-black/60 hover:text-black transition-colors"
-                                    aria-label="Close modal"
+                                    aria-label={t('selectCatalogModal.closeAriaLabel')}
                                 >
                                     <span className="material-icons-outlined text-2xl">close</span>
                                 </button>
@@ -148,7 +150,7 @@ export function SelectFromCatalogModal({
                                 </span>
                                 <input
                                     type="text"
-                                    placeholder="Search food items…"
+                                    placeholder={t('selectCatalogModal.searchPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2.5 border-2 border-black rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black bg-white"
@@ -169,7 +171,7 @@ export function SelectFromCatalogModal({
                                                 : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
                                             }`}
                                     >
-                                        {cat}
+                                        {t(`categories.${cat}`, cat)}
                                     </button>
                                 ))}
                             </div>
@@ -184,7 +186,7 @@ export function SelectFromCatalogModal({
                             ) : filteredItems.length === 0 ? (
                                 <div className="text-center py-12 text-gray-500 text-sm">
                                     <span className="material-icons text-4xl text-gray-300 mb-2 block">lunch_dining</span>
-                                    No items found.
+                                    {t('selectCatalogModal.noItems')}
                                 </div>
                             ) : (
                                 filteredItems.map((food) => {
@@ -242,7 +244,7 @@ export function SelectFromCatalogModal({
                                             {/* Already on menu badge */}
                                             {isOnMenu && (
                                                 <span className="flex-shrink-0 text-[10px] font-bold text-gray-400 uppercase">
-                                                    Added
+                                                    {t('selectCatalogModal.added')}
                                                 </span>
                                             )}
                                         </button>
@@ -259,19 +261,19 @@ export function SelectFromCatalogModal({
                                 className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-black transition-colors"
                             >
                                 <span className="material-icons text-lg">add_circle_outline</span>
-                                Add New Food to Catalog
+                                {t('selectCatalogModal.addNewFood')}
                             </button>
 
                             <div className="flex gap-3">
                                 <Button variant="secondary" onClick={onClose}>
-                                    Cancel
+                                    {t('selectCatalogModal.cancel')}
                                 </Button>
                                 <Button
                                     variant="primary"
                                     onClick={handleAccept}
                                     disabled={newSelectionsCount === 0}
                                 >
-                                    Add{newSelectionsCount > 0 ? ` (${newSelectionsCount})` : ''}
+                                    {t('selectCatalogModal.add')}{newSelectionsCount > 0 ? ` (${newSelectionsCount})` : ''}
                                 </Button>
                             </div>
                         </div>
