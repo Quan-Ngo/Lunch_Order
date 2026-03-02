@@ -100,6 +100,9 @@ export const employeeService = {
         const response = await api.get<{ value: StaffEntity[] }>('/Staff');
         return response.data.value;
     },
+    setStatus: async (id: string, status: boolean): Promise<void> => {
+        await api.patch(`/Staff(${id})`, { status });
+    },
 };
 
 // ─────────────────────────────────────────────
