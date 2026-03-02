@@ -1,7 +1,9 @@
+import { useMemo, useState } from 'react';
 import { RootLayout } from '@/layouts/RootLayout';
 import { useEmployees } from '@/hooks/useEmployees';
 import { PageHeader } from '@/components/elements/PageHeader';
 import { SoftCard } from '@/components/elements/SoftCard';
+import { SearchBar } from '@/components/elements/SearchBar';
 import { Table, type ColumnDef } from '@/components/elements/Table';
 import { Badge } from '@/components/elements/Badge';
 import { LoadingState } from '@/components/elements/LoadingState';
@@ -46,14 +48,23 @@ const columns: ColumnDef<StaffEntity>[] = [
 
 export default function Employees() {
     const { employees, isLoading, error } = useEmployees();
+    const [searchTerm, setSearchTerm] = useState<string>('');
 
     const totalEmployees: number = employees?.length ?? 0;
+    const filteredEmployees = useMemo(() => {
+        if (!employees) return [];
+        const query = searchTerm.toLowerCase().trim();
+        if (!query) return employees;
+        return employees.filter((employee) =>
+            employee.name.toLowerCase().includes(query)
+        );
+    }, [employees, searchTerm]);
 
     return (
         <RootLayout>
             <PageHeader
                 title="Manage Employees"
-                description="Manage team access, dietary preferences, and account status for office lunches."
+                description="Manage team access and account status for office lunches."
             >
                 <Button
                     variant="primary"
@@ -75,6 +86,15 @@ export default function Employees() {
                 </SoftCard>
             </div>
 
+            <SoftCard className="mb-4">
+                <SearchBar
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    placeholder="Search employees by name"
+                    className="md:w-1/3"
+                />
+            </SoftCard>
+
             {/* Content states */}
             {isLoading && <LoadingState />}
 
@@ -85,10 +105,10 @@ export default function Employees() {
                 />
             )}
 
-            {employees && employees.length > 0 && (
+            {employees && filteredEmployees.length > 0 && (
                 <Table<StaffEntity>
                     columns={columns}
-                    data={employees}
+                    data={filteredEmployees}
                     keyExtractor={(row) => row.ID}
                 />
             )}
@@ -99,9 +119,15 @@ export default function Employees() {
                     message="No employees found."
                 />
             )}
+
+            {employees && employees.length > 0 && filteredEmployees.length === 0 && (
+                <EmptyState
+                    icon="search_off"
+                    message="No employees match your search."
+                />
+            )}
         </RootLayout>
     );
 }
-
 
 
