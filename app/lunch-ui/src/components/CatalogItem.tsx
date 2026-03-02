@@ -1,6 +1,7 @@
 import { type Food } from '@/services/api';
 import { Card } from '@/components/elements/Card';
 import { Button } from '@/components/elements/Button';
+import { formatCurrency } from '@/config/currency';
 import { useTranslation } from 'react-i18next';
 
 interface CatalogItemProps {
@@ -45,7 +46,7 @@ export default function CatalogItem({ food, onEdit, onDelete, showEdit = true }:
                     </div>
                     <div className="text-right">
                         <span className="block text-2xl font-black text-black font-display">
-                            ${food.price.toFixed(2)}
+                            {formatCurrency(food.price)}
                         </span>
                     </div>
                 </div>
