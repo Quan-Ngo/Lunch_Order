@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootLayout } from '@/layouts/RootLayout';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { EmptyState } from '@/components/elements/EmptyState';
@@ -8,7 +9,6 @@ import {
     dailyMenuService,
     staffCatalogService,
     type DailyMenuEntity,
-    type StaffCatalogEntity,
 } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
@@ -93,126 +93,103 @@ export default function DailyMenu() {
     const { t } = useTranslation();
 
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
-    const [menuEntries, setMenuEntries] = useState<DailyMenuEntity[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null);
-    const [savedOrder, setSavedOrder] = useState<StaffCatalogEntity | null>(null);
-    const [isActioning, setIsActioning] = useState(false);
-    const [, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const isStaff = currentUser?.role === 'staff' && !!currentUser.staff;
     const staffId = currentUser?.staff?.ID;
+    const queryClient = useQueryClient();
 
-    // ─── Data Loading ───────────────────────────────────────────────────────────
+    const { data: isLocked = false } = useQuery({
+        queryKey: ['isComplete', selectedDate],
+        queryFn: () => dailyMenuService.isDateComplete(selectedDate),
+    });
 
-    const loadMenu = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const entries = await dailyMenuService.getByDate(selectedDate);
+    // ─── Data Loading via React Query ───────────────────────────────────────────
 
-            // Deduplicate by catalog.ID and filter active items
-            const seen = new Set<string>();
-            const uniqueEntries = entries.filter((e) => {
-                if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
-                    seen.add(e.catalog.ID);
-                    return true;
-                }
-                return false;
-            });
+    const { data: rawMenuEntries = [], isFetching: menuLoading } = useQuery({
+        queryKey: ['dailyMenu', selectedDate],
+        queryFn: () => dailyMenuService.getByDate(selectedDate),
+    });
 
-            setMenuEntries(uniqueEntries);
-        } catch (err) {
-            console.error('Failed to load menu:', err);
-            setMenuEntries([]);
-        } finally {
-            setIsLoading(false);
+    // Deduplicate and filter active items
+    const seen = new Set<string>();
+    const menuEntries = rawMenuEntries.filter((e) => {
+        if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
+            seen.add(e.catalog.ID);
+            return true;
         }
-    }, [selectedDate]);
+        return false;
+    });
 
-    const loadExistingOrder = useCallback(async () => {
-        if (!isStaff || !staffId) {
-            setSavedOrder(null);
-            setSelectedCatalogId(null);
-            return;
-        }
-        try {
-            const order = await staffCatalogService.getForStaffAndDate(staffId, selectedDate);
-            setSavedOrder(order);
-            setSelectedCatalogId(order?.Catalog_ID ?? null);
-        } catch {
-            setSavedOrder(null);
-            setSelectedCatalogId(null);
-        }
-    }, [isStaff, staffId, selectedDate]);
+    const { data: savedOrder = null } = useQuery({
+        queryKey: ['staffOrder', staffId, selectedDate],
+        queryFn: () =>
+            isStaff && staffId
+                ? staffCatalogService.getForStaffAndDate(staffId, selectedDate)
+                : Promise.resolve(null),
+        enabled: isStaff && !!staffId,
+    });
 
-    useEffect(() => {
-        setFeedback(null);
-        loadMenu();
-        loadExistingOrder();
-    }, [loadMenu, loadExistingOrder]);
+    const isLoading = menuLoading;
+
+    // Sync selectedCatalogId from saved order
+    const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null);
+
+    // When savedOrder or date changes, sync tick UI
+    const savedCatalogId = savedOrder?.Catalog_ID ?? null;
 
     // ─── Handlers ───────────────────────────────────────────────────────────────
 
     const handleSelect = (catalogId: string) => {
-        if (!isStaff) return;
+        if (!isStaff || isLocked) return;
         setSelectedCatalogId((prev) => (prev === catalogId ? null : catalogId));
-        setFeedback(null);
     };
 
-    const handleConfirmOrder = async () => {
-        if (isActioning) return;
-        if (!staffId) {
-            setFeedback({ type: 'error', text: t('dailyMenu.selectUserHint') });
-            return;
-        }
-        setIsActioning(true);
-        setFeedback(null);
-        try {
-            if (savedOrder?.Catalog_ID === selectedCatalogId) {
-                setFeedback({ type: 'success', text: t('dailyMenu.orderConfirmed') });
-                return;
-            }
-
+    const confirmMutation = useMutation({
+        mutationFn: async (catalogId: string | null) => {
+            if (!staffId) throw new Error('No staffId');
             if (savedOrder) {
                 await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, selectedDate);
             }
-
-            if (selectedCatalogId) {
-                await staffCatalogService.createOrder(staffId, selectedCatalogId, selectedDate);
-                const catalogItem = menuEntries.find(m => m.catalog?.ID === selectedCatalogId)?.catalog;
-                const itemName = catalogItem?.name || t('dailyMenu.foodItem');
-
+            if (catalogId) {
+                await staffCatalogService.createOrder(staffId, catalogId, selectedDate);
+            }
+        },
+        onSuccess: (_, catalogId) => {
+            const catalogItem = menuEntries.find(m => m.catalog?.ID === catalogId)?.catalog;
+            const itemName = catalogItem?.name || t('dailyMenu.foodItem');
+            if (catalogId) {
                 toast.success(t('dailyMenu.orderSuccessToast', { itemName, date: selectedDate }));
             }
+            queryClient.invalidateQueries({ queryKey: ['staffOrder', staffId, selectedDate] });
+        },
+        onError: () => {
+            setSelectedCatalogId(savedCatalogId);
+        },
+    });
 
-            setFeedback({
-                type: 'success',
-                text: selectedCatalogId ? t('dailyMenu.orderConfirmed') : t('dailyMenu.orderCancelled'),
-            });
-            await loadExistingOrder();
-        } catch (err) {
-            console.error('Failed to confirm order:', err);
-            setFeedback({ type: 'error', text: t('dailyMenu.orderFailed') });
-        } finally {
-            setIsActioning(false);
-        }
+    const cancelMutation = useMutation({
+        mutationFn: async () => {
+            if (!staffId || !savedOrder) return;
+            await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, selectedDate);
+        },
+        onSuccess: () => {
+            setSelectedCatalogId(null);
+            queryClient.invalidateQueries({ queryKey: ['staffOrder', staffId, selectedDate] });
+        },
+    });
+
+    const isActioning = confirmMutation.isPending || cancelMutation.isPending;
+
+    const handleConfirmOrder = async () => {
+        if (isActioning || isLocked) return;
+        if (!staffId) return;
+        if (savedCatalogId === selectedCatalogId) return;
+        await confirmMutation.mutateAsync(selectedCatalogId);
     };
 
     const handleCancelOrder = async () => {
-        if (!staffId || !savedOrder) return;
-        setIsActioning(true);
-        setFeedback(null);
-        try {
-            await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, selectedDate);
-            setSavedOrder(null);
-            setSelectedCatalogId(null);
-            setFeedback({ type: 'success', text: t('dailyMenu.orderCancelled') });
-        } catch (err) {
-            console.error('Failed to cancel order:', err);
-            setFeedback({ type: 'error', text: t('dailyMenu.cancelFailed') });
-        } finally {
-            setIsActioning(false);
-        }
+        if (!staffId || !savedOrder || isLocked) return;
+        await cancelMutation.mutateAsync();
     };
 
     // ─── Render ─────────────────────────────────────────────────────────────────
@@ -236,7 +213,7 @@ export default function DailyMenu() {
             {/* Date Timeline */}
             <DateWheel
                 selected={selectedDate}
-                onChange={(d) => { setSelectedDate(d); setFeedback(null); }}
+                onChange={(d) => setSelectedDate(d)}
                 todayLabel={t('dailyMenu.today')}
                 className="mb-6"
             />
@@ -251,6 +228,14 @@ export default function DailyMenu() {
                 />
             ) : (
                 <>
+                    {/* Locked banner */}
+                    {isLocked && (
+                        <div className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-green-50 border-2 border-green-300 text-green-700 font-semibold text-sm">
+                            <span className="material-icons text-sm">lock</span>
+                            {t('dailyOrders.isLocked')}
+                        </div>
+                    )}
+
                     {/* Saved order badge */}
                     {savedOrder && (
                         <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">

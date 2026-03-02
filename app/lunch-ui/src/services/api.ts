@@ -146,6 +146,25 @@ export const dailyMenuService = {
     createNote: async (dateString: string, note: string): Promise<void> => {
         await api.post('/DailyMenu', { date: dateString, note, isComplete: false });
     },
+
+    /** Mark all entries for a date as complete (locked) */
+    markCompleteByDate: async (dateString: string): Promise<void> => {
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=date eq '${dateString}'`
+        );
+        const entries = response.data.value;
+        await Promise.all(
+            entries.map((entry) => api.patch(`/DailyMenu(${entry.ID})`, { isComplete: true }))
+        );
+    },
+
+    /** Check if any entry for a date is marked complete */
+    isDateComplete: async (dateString: string): Promise<boolean> => {
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=date eq '${dateString}'`
+        );
+        return response.data.value.some((e) => e.isComplete === true);
+    },
 };
 
 // ─────────────────────────────────────────────

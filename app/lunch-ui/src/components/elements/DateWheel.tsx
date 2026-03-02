@@ -1,6 +1,5 @@
 import { useRef } from 'react';
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+import { useTranslation } from 'react-i18next';
 
 function getDateRange(centerDate: Date): Date[] {
     const days: Date[] = [];
@@ -33,10 +32,12 @@ export function DateWheel({
     todayLabel = 'TODAY',
 }: DateWheelProps) {
     const dateInputRef = useRef<HTMLInputElement>(null);
+    const { i18n } = useTranslation();
+    const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
     const today = toISODate(new Date());
     const selectedDate = new Date(`${selected}T00:00:00`);
     const days = getDateRange(selectedDate);
-    const monthName = selectedDate.toLocaleString('default', { month: 'long' });
+    const monthName = selectedDate.toLocaleString(locale, { month: 'long' });
     const monthLabel = `${monthName} ${selectedDate.getFullYear()}`;
 
     const handleOpenDatePicker = () => {
@@ -90,7 +91,9 @@ export function DateWheel({
                                     : 'bg-white border-gray-200 hover:border-gray-400 hover:bg-gray-50'
                                 }`}
                         >
-                            <span className="text-xs text-gray-500">{DAY_LABELS[d.getDay()]}</span>
+                            <span className="text-xs text-gray-500">
+                                {new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d)}
+                            </span>
                             <span className={`text-lg font-bold mt-0.5 ${isSelected ? 'text-black' : 'text-gray-800'}`}>
                                 {d.getDate()}
                             </span>

@@ -152,6 +152,14 @@
         "markComplete": "Đánh dấu Hoàn Thành",
         "lockNote": "Đơn hàng sẽ tự động khoá lúc 11:30 sáng",
         "pdfTitle": "Báo Cáo Đơn Hàng",
-        "pdfDate": "Ngày"
+        "pdfDate": "Ngày",
+        "completeModal": {
+            "title": "Hoàn Tất Đơn Hàng?",
+            "body": "Sau khi đánh dấu hoàn thành, đơn hàng sẽ bị khoá và không thể chỉnh sửa. Bạn có chắc muốn tiếp tục?",
+            "confirm": "Xác Nhận Hoàn Tất",
+            "cancel": "Huỷ"
+        },
+        "isLocked": "Đơn hàng này đã được hoàn tất và bị khoá.",
+        "markCompleting": "Đang xử lý..."
     }
 }
