@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/elements/Button';
 import { FoodModal, type FoodFormData } from '@/components/fragments/FoodModal';
+import { formatCurrency } from '@/config/currency';
 import { foodService, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 
@@ -238,7 +239,7 @@ export function SelectFromCatalogModal({
 
                                             {/* Price */}
                                             <span className="flex-shrink-0 font-black text-sm font-display">
-                                                ${food.price.toFixed(2)}
+                                                {formatCurrency(food.price)}
                                             </span>
 
                                             {/* Already on menu badge */}

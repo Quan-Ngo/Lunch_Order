@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/elements/Button';
+import { currencyConfig } from '@/config/currency';
 
 export interface FoodFormData {
     name: string;
@@ -201,7 +202,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                     htmlFor="food-price"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
                                 >
-                                    {t('foodModal.fieldPrice')}
+                                    {t('foodModal.fieldPrice')} ({currencyConfig.currency})
                                 </label>
                                 <input
                                     id="food-price"
