@@ -87,6 +87,9 @@ export const foodService = {
             description: data.description,
         });
     },
+    toggleActive: async (id: string, isActive: boolean): Promise<void> => {
+        await api.patch(`/Catalog(${id})`, { isActive });
+    },
 };
 
 // ─────────────────────────────────────────────
@@ -245,6 +248,54 @@ export const staffCatalogService = {
         await Promise.all(
             orders.map((order) => staffCatalogService.deleteOrder(order.Staff_ID, order.Catalog_ID, date))
         );
+    },
+};
+
+// ─────────────────────────────────────────────
+// DailyOrderBill Service
+// ─────────────────────────────────────────────
+export interface DailyOrderBillEntity {
+    ID: string;
+    date: string;
+    fileName: string;
+    mediaType: string;
+}
+
+export const billService = {
+    /** Get all bills for a specific date */
+    getByDate: async (dateString: string): Promise<DailyOrderBillEntity[]> => {
+        const response = await api.get<{ value: DailyOrderBillEntity[] }>(
+            `/DailyOrderBill?$filter=date eq '${dateString}'`
+        );
+        return response.data.value;
+    },
+
+    /** Upload a bill file (two-step: create record, then PUT content) */
+    upload: async (dateString: string, file: File): Promise<void> => {
+        // Step 1: Create the metadata record
+        const response = await api.post('/DailyOrderBill', {
+            date: dateString,
+            fileName: file.name,
+            mediaType: file.type,
+        });
+        const billId = response.data.ID;
+
+        // Step 2: PUT the binary content directly
+        await api.put(`/DailyOrderBill(${billId})/content`, file, {
+            headers: {
+                'Content-Type': file.type,
+            },
+        });
+    },
+
+    /** Delete a bill */
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/DailyOrderBill(${id})`);
+    },
+
+    /** Get content URL for displaying a bill */
+    getContentUrl: (id: string): string => {
+        return `/odata/v4/lunch/DailyOrderBill(${id})/content`;
     },
 };
 

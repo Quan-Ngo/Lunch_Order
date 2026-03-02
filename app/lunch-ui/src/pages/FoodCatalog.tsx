@@ -78,6 +78,15 @@ export default function FoodCatalog() {
         await refetch();
     };
 
+    const handleToggleActive = async (food: Food) => {
+        try {
+            await foodService.toggleActive(food.ID, !food.isActive);
+            await refetch();
+        } catch (err) {
+            console.error('Failed to toggle active status:', err);
+        }
+    };
+
     const handleSave = async (data: FoodFormData) => {
         try {
             if (editingFood) {
@@ -151,6 +160,7 @@ export default function FoodCatalog() {
                             food={food}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            onToggleActive={handleToggleActive}
                         />
                     ))}
                 </div>
