@@ -11,6 +11,7 @@ import {
     type StaffCatalogEntity,
 } from '@/services/api';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
 
 // Card accent colors - cycle through these for visual variety
 const CARD_ACCENTS = [
@@ -108,7 +109,18 @@ export default function DailyMenu() {
         setIsLoading(true);
         try {
             const entries = await dailyMenuService.getByDate(selectedDate);
-            setMenuEntries(entries.filter((e) => e.catalog));
+
+            // Deduplicate by catalog.ID and filter active items
+            const seen = new Set<string>();
+            const uniqueEntries = entries.filter((e) => {
+                if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
+                    seen.add(e.catalog.ID);
+                    return true;
+                }
+                return false;
+            });
+
+            setMenuEntries(uniqueEntries);
         } catch (err) {
             console.error('Failed to load menu:', err);
             setMenuEntries([]);
@@ -167,6 +179,10 @@ export default function DailyMenu() {
 
             if (selectedCatalogId) {
                 await staffCatalogService.createOrder(staffId, selectedCatalogId, selectedDate);
+                const catalogItem = menuEntries.find(m => m.catalog?.ID === selectedCatalogId)?.catalog;
+                const itemName = catalogItem?.name || t('dailyMenu.foodItem');
+
+                toast.success(t('dailyMenu.orderSuccessToast', { itemName, date: selectedDate }));
             }
 
             setFeedback({
@@ -273,7 +289,7 @@ export default function DailyMenu() {
                     <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
                         <button
                             onClick={handleConfirmOrder}
-                            className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] font-black text-2xl border-4 border-black uppercase tracking-tighter 
+                            className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] font-bold text-2xl border-4 border-black uppercase tracking-tighter 
                                 ${(isActioning)
                                     ? 'bg-primary text-black opacity-85 cursor-wait'
                                     : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'

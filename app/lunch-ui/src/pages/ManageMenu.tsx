@@ -9,8 +9,10 @@ import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
 import { dailyMenuService, staffCatalogService, type DailyMenuEntity, type Food } from '@/services/api';
+import { useTranslation } from 'react-i18next';
 
 export default function ManageMenu() {
+    const { t } = useTranslation();
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [menuEntries, setMenuEntries] = useState<DailyMenuEntity[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,17 @@ export default function ManageMenu() {
         setFeedback(null);
         try {
             const entries = await dailyMenuService.getByDate(selectedDate);
-            setMenuEntries(entries.filter((e) => e.catalog));
+
+            const seen = new Set<string>();
+            const uniqueEntries = entries.filter((e) => {
+                if (e.catalog && !seen.has(e.catalog.ID)) {
+                    seen.add(e.catalog.ID);
+                    return true;
+                }
+                return false;
+            });
+
+            setMenuEntries(uniqueEntries);
         } catch (err) {
             console.error('Failed to load menu:', err);
             setMenuEntries([]);
@@ -45,12 +57,12 @@ export default function ManageMenu() {
             );
             setFeedback({
                 type: 'success',
-                text: `Added ${foods.length} item${foods.length > 1 ? 's' : ''} to the menu!`,
+                text: t('manageMenu.addedCount', { count: foods.length }),
             });
             await loadMenu();
         } catch (err) {
             console.error('Failed to add foods:', err);
-            setFeedback({ type: 'error', text: 'Failed to add items. Please try again.' });
+            setFeedback({ type: 'error', text: t('manageMenu.addFailed') });
         }
     };
 
@@ -65,11 +77,11 @@ export default function ManageMenu() {
                 await staffCatalogService.clearCatalogSelectionsByDate(removedCatalogId, selectedDate);
             }
 
-            setFeedback({ type: 'success', text: 'Item removed from the menu.' });
+            setFeedback({ type: 'success', text: t('manageMenu.itemRemoved') });
             await loadMenu();
         } catch (err) {
             console.error('Failed to remove food:', err);
-            setFeedback({ type: 'error', text: 'Failed to remove item. Please try again.' });
+            setFeedback({ type: 'error', text: t('manageMenu.removeFailed') });
             throw err;
         }
     };
@@ -81,15 +93,15 @@ export default function ManageMenu() {
     return (
         <RootLayout>
             <PageHeader
-                title="Weekly Planner"
-                description="Plan the daily menu for your team."
+                title={t('manageMenu.title')}
+                description={t('manageMenu.description')}
             >
                 <Button
                     variant="primary"
                     icon={<span className="material-icons-outlined">playlist_add</span>}
                     onClick={() => setIsCatalogModalOpen(true)}
                 >
-                    Select from Catalog
+                    {t('manageMenu.selectFromCatalog')}
                 </Button>
             </PageHeader>
 
@@ -112,7 +124,7 @@ export default function ManageMenu() {
             {!isLoading && menuEntries.length > 0 && (
                 <p className="text-sm text-gray-500 mb-4 font-medium">
                     <span className="material-icons text-sm align-middle mr-1 text-primary-hover">restaurant_menu</span>
-                    {menuEntries.length} item{menuEntries.length !== 1 ? 's' : ''} on the menu
+                    {t('manageMenu.itemCount', { count: menuEntries.length })}
                 </p>
             )}
 
@@ -121,7 +133,7 @@ export default function ManageMenu() {
             ) : menuEntries.length === 0 ? (
                 <EmptyState
                     icon="restaurant_menu"
-                    message="No food on the menu for this day yet. Click 'Select from Catalog' to add some!"
+                    message={t('manageMenu.emptyMenu')}
                 />
             ) : (
                 <div className="flex flex-col gap-3">
@@ -173,7 +185,7 @@ export default function ManageMenu() {
                 onClose={() => setRemovalTarget(null)}
                 onConfirm={handleRemoveFood}
                 item={removalTarget}
-                contextText="from today's menu"
+                contextText={t('manageMenu.fromTodaysMenu')}
             />
         </RootLayout>
     );

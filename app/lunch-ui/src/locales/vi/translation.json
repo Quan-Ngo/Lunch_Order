@@ -8,7 +8,8 @@
         "selectUser": "Chọn Người Dùng",
         "admin": "Quản Trị",
         "staff": "Nhân Viên",
-        "clearSelection": "Bỏ Chọn Đăng Nhập"
+        "clearSelection": "Bỏ Chọn Đăng Nhập",
+        "toggleLanguage": "Đổi Ngôn Ngữ"
     },
     "dailyMenu": {
         "title": "Trưa nay",
@@ -25,9 +26,12 @@
         "orderFailed": "❌ Lỗi khi lưu đơn. Vui lòng thử lại.",
         "orderCancelled": "✅ Đã huỷ món thành công.",
         "cancelFailed": "❌ Lỗi khi huỷ đơn. Vui lòng thử lại.",
-        "today": "HÔM NAY"
+        "today": "HÔM NAY",
+        "foodItem": "Món ăn",
+        "orderSuccessToast": "Bạn đã chốt đơn \"{{itemName}}\" cho ngày {{date}}!"
     },
     "categories": {
+        "All": "Tất Cả",
         "Healthy": "Khỏe Mạnh",
         "Vegan": "Thuần Chay",
         "Popular": "Phổ Biến",
@@ -52,6 +56,10 @@
         "removalContext": "khỏi danh mục món ăn",
         "edit": "Chỉnh Sửa",
         "delete": "Xoá",
+        "active": "Đang Bán",
+        "inactive": "Ngưng Bán",
+        "activate": "Mở Bán",
+        "deactivate": "Ngưng Bán",
         "searchHint": "Tìm món ăn..."
     },
     "foodModal": {
@@ -80,6 +88,35 @@
         "cancel": "Huỷ",
         "deleteFailed": "Xóa thất bại. Vui lòng kiểm tra console để biết chi tiết."
     },
+    "manageMenu": {
+        "title": "Kế Hoạch Tuần",
+        "description": "Lên thực đơn hàng ngày cho đội nhóm của bạn.",
+        "selectFromCatalog": "Chọn Từ Danh Mục",
+        "addedCount_one": "Đã thêm {{count}} món vào thực đơn!",
+        "addedCount_other": "Đã thêm {{count}} món vào thực đơn!",
+        "addFailed": "Thêm món thất bại. Vui lòng thử lại.",
+        "itemRemoved": "Đã xoá món khỏi thực đơn.",
+        "removeFailed": "Xoá món thất bại. Vui lòng thử lại.",
+        "itemCount_one": "{{count}} món trong thực đơn",
+        "itemCount_other": "{{count}} món trong thực đơn",
+        "emptyMenu": "Chưa có món nào trong thực đơn hôm nay. Bấm 'Chọn Từ Danh Mục' để thêm!",
+        "fromTodaysMenu": "khỏi thực đơn hôm nay"
+    },
+    "employees": {
+        "title": "Nhân Viên",
+        "description": "Quản lý nhân viên sẽ hiển thị tại đây."
+    },
+    "selectCatalogModal": {
+        "title": "Chọn Từ Danh Mục",
+        "closeAriaLabel": "Đóng hộp thoại",
+        "searchPlaceholder": "Tìm kiếm món ăn…",
+        "noItems": "Không tìm thấy món ăn nào.",
+        "added": "Đã thêm",
+        "addNewFood": "Thêm Món Mới Vào Danh Mục",
+        "cancel": "Huỷ",
+        "add": "Thêm",
+        "addFailed": "Thêm món thất bại. Vui lòng kiểm tra console để biết chi tiết."
+    },
     "dailyOrders": {
         "title": "Đơn Hàng",
         "description": "Quản lý và theo dõi các đơn đặt hàng trưa văn phòng hôm nay một cách hiệu quả.",
@@ -103,7 +140,9 @@
         "saveNote": "Lưu Ghi Chú",
         "receipt": "Hoá Đơn / Chứng Từ",
         "uploaded": "Đã tải lên",
-        "uploadMore": "Tải lên thêm trang khác",
+        "uploading": "Đang tải lên...",
+        "noBills": "Chưa có hoá đơn nào",
+        "uploadMore": "Tải lên hoá đơn / chứng từ",
         "summary": "Tổng Kết",
         "subtotal": "Thành Tiền",
         "tax": "Thuế (10%)",
@@ -111,6 +150,8 @@
         "total": "Tổng Cộng",
         "exportPdf": "Xuất file PDF",
         "markComplete": "Đánh dấu Hoàn Thành",
-        "lockNote": "Đơn hàng sẽ tự động khoá lúc 11:30 sáng"
+        "lockNote": "Đơn hàng sẽ tự động khoá lúc 11:30 sáng",
+        "pdfTitle": "Báo Cáo Đơn Hàng",
+        "pdfDate": "Ngày"
     }
 }

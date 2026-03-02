@@ -15,6 +15,9 @@ const queryClient = new QueryClient({
   },
 });
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -27,6 +30,16 @@ export default function App() {
           <Route path="/daily-orders" element={<DailyOrders />} />
         </Routes>
       </BrowserRouter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick={true}
+        pauseOnHover={true}
+        draggable={true}
+        theme="light"
+      />
     </QueryClientProvider>
   );
 }

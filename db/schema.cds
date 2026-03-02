@@ -42,6 +42,13 @@ entity StaffCatalog : managed {
     catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
 
+entity DailyOrderBill : cuid, managed {
+    date      : Date;
+    fileName  : String(500);
+    mediaType : String(100);
+    content   : LargeBinary @Core.MediaType: mediaType;
+}
+
 view DailyCatalogStatistics as
   select from lunch.StaffCatalog as SC
   inner join lunch.Catalog as C on SC.Catalog_ID = C.ID
