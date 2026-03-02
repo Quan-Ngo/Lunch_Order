@@ -65,7 +65,7 @@
         "fieldName": "Item Name",
         "fieldNamePlaceholder": "e.g. Cheese Burger",
         "fieldNameError": "Name is required.",
-        "fieldPrice": "Price ($)",
+        "fieldPrice": "Price",
         "fieldPriceError": "Price is required.",
         "fieldDescription": "Description",
         "fieldDescriptionPlaceholder": "Describe the dish...",

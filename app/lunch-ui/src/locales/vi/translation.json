@@ -65,7 +65,7 @@
         "fieldName": "Tên món",
         "fieldNamePlaceholder": "Ví dụ: Bánh mì phô mai",
         "fieldNameError": "Vui lòng nhập tên món.",
-        "fieldPrice": "Giá (VNĐ)",
+        "fieldPrice": "Giá",
         "fieldPriceError": "Vui lòng nhập giá.",
         "fieldDescription": "Mô tả",
         "fieldDescriptionPlaceholder": "Mô tả món ăn...",
