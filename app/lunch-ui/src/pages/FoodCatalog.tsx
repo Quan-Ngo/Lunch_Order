@@ -9,6 +9,7 @@ import { SoftCard } from '@/components/elements/SoftCard';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { ErrorState } from '@/components/elements/ErrorState';
 import { EmptyState } from '@/components/elements/EmptyState';
+import { SearchBar } from '@/components/elements/SearchBar';
 import { FoodModal, type FoodFormData } from '@/components/fragments/FoodModal';
 import { RemovalModal, type RemovalItem } from '@/components/fragments/RemovalModal';
 import { foodService, type Food } from '@/services/api';
@@ -130,19 +131,12 @@ export default function FoodCatalog() {
             </PageHeader>
 
             <SoftCard className="mb-4">
-                <div className="relative w-full md:w-1/3">
-                    <span className="material-icons-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                        search
-                    </span>
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder={t('catalog.searchHint')}
-                        className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-3 text-sm text-slate-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        aria-label={t('catalog.searchHint')}
-                    />
-                </div>
+                <SearchBar
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    placeholder={t('catalog.searchHint')}
+                    className="md:w-1/3"
+                />
             </SoftCard>
 
             {isLoading && <LoadingState />}
