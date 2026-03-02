@@ -4,7 +4,8 @@ using { cuid, managed } from '@sap/cds/common';
 
 entity Staff : cuid, managed {
     name         : String(100);
-    notification : Boolean;
+    notification : Boolean default true;
+    status       : Boolean default true;
     catalogs     : Association to many StaffCatalog on catalogs.staff = $self;
 }
 

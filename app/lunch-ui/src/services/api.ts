@@ -36,6 +36,7 @@ export interface StaffEntity {
     ID: string;
     name: string;
     notification: boolean;
+    status: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -248,4 +249,5 @@ export const staffCatalogService = {
 };
 
 export default api;
+
 
