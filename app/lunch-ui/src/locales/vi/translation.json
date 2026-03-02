@@ -103,8 +103,36 @@
         "fromTodaysMenu": "khỏi thực đơn hôm nay"
     },
     "employees": {
-        "title": "Nhân Viên",
-        "description": "Quản lý nhân viên sẽ hiển thị tại đây."
+        "title": "Quản Lý Nhân Viên",
+        "description": "Quản lý quyền truy cập và trạng thái tài khoản cho bữa trưa văn phòng.",
+        "registerNew": "Đăng Ký Nhân Viên Mới",
+        "stats": {
+            "total": "Tổng Số Nhân Viên",
+            "active": "Tài Khoản Hoạt Động"
+        },
+        "searchPlaceholder": "Tìm kiếm nhân viên theo tên",
+        "table": {
+            "name": "Họ Tên",
+            "status": "Trạng Thái",
+            "actions": "Thao Tác"
+        },
+        "status": {
+            "active": "Đang Hoạt Động",
+            "inactive": "Ngừng Hoạt Động"
+        },
+        "actions": {
+            "grantAdmin": "Cấp Quyền Admin",
+            "edit": "Chỉnh Sửa",
+            "delete": "Xóa"
+        },
+        "error": {
+            "title": "Không thể tải danh sách nhân viên",
+            "description": "Vui lòng kiểm tra kết nối và thử lại."
+        },
+        "empty": {
+            "noData": "Không tìm thấy nhân viên nào.",
+            "noResults": "Không có nhân viên nào khớp với tìm kiếm của bạn."
+        }
     },
     "selectCatalogModal": {
         "title": "Chọn Từ Danh Mục",

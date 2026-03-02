@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RootLayout } from '@/layouts/RootLayout';
 import { useEmployees } from '@/hooks/useEmployees';
 import { PageHeader } from '@/components/elements/PageHeader';
@@ -13,6 +14,7 @@ import { Button } from '@/components/elements/Button';
 import { employeeService, type StaffEntity } from '@/services/api';
 
 export default function Employees() {
+    const { t } = useTranslation();
     const { employees, isLoading, error, refetch } = useEmployees();
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [togglingEmployeeIds, setTogglingEmployeeIds] = useState<Set<string>>(new Set());
@@ -47,12 +49,12 @@ export default function Employees() {
 
     const columns: ColumnDef<StaffEntity>[] = useMemo(() => [
         {
-            header: 'Name',
+            header: t('employees.table.name'),
             key: 'name',
             className: 'col-span-4 text-sm font-semibold text-gray-800',
         },
         {
-            header: 'Status',
+            header: t('employees.table.status'),
             className: 'col-span-4 ',
             render: (row) => (
                 <ToggleActiveButton
@@ -63,54 +65,54 @@ export default function Employees() {
                     onDeactivate={() => {
                         void handleToggleStatus(row, false);
                     }}
-                    activeLabel="Active"
-                    inactiveLabel="Inactive"
+                    activeLabel={t('employees.status.active')}
+                    inactiveLabel={t('employees.status.inactive')}
                     disabled={togglingEmployeeIds.has(row.ID)}
                     className={`${row.status ? 'text-green-600' : 'text-gray-500'} border-white text-[0.60rem] shadow-none hover:shadow-none active:shadow-none transition-none active:translate-x-0 active:translate-y-0 focus:ring-0 focus:ring-offset-0`}
                 />
             ),
         },
         {
-            header: 'Actions',
+            header: t('employees.table.actions'),
             className: 'col-span-4 flex justify-end',
             render: () => (
                 <div className="flex items-center gap-2">
                     <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
-                        Grant Admin
+                        {t('employees.actions.grantAdmin')}
                     </Button>
                     <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
-                        Edit
+                        {t('employees.actions.edit')}
                     </Button>
                     <Button variant="danger" size="sm" className="shadow-none hover:shadow-none" onClick={() => { }}>
-                        Delete
+                        {t('employees.actions.delete')}
                     </Button>
                 </div>
             ),
         },
-    ], [handleToggleStatus, togglingEmployeeIds]);
+    ], [handleToggleStatus, togglingEmployeeIds, t]);
 
     return (
         <RootLayout>
             <PageHeader
-                title="Manage Employees"
-                description="Manage team access and account status for office lunches."
+                title={t('employees.title')}
+                description={t('employees.description')}
             >
                 <Button
                     variant="primary"
                     icon={<span className="material-icons-outlined">person_add</span>}
                 >
-                    Register New Employee
+                    {t('employees.registerNew')}
                 </Button>
             </PageHeader>
 
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <SoftCard>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Total Employees</p>
+                    <p className="text-sm text-gray-500 font-medium mb-1">{t('employees.stats.total')}</p>
                     <p className="text-3xl font-extrabold font-display text-gray-900">{totalEmployees}</p>
                 </SoftCard>
                 <SoftCard>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Active Accounts</p>
+                    <p className="text-sm text-gray-500 font-medium mb-1">{t('employees.stats.active')}</p>
                     <p className="text-3xl font-extrabold font-display text-gray-900">{activeAccounts}</p>
                 </SoftCard>
             </div>
@@ -119,7 +121,7 @@ export default function Employees() {
                 <SearchBar
                     value={searchTerm}
                     onChange={setSearchTerm}
-                    placeholder="Search employees by name"
+                    placeholder={t('employees.searchPlaceholder')}
                     className="md:w-1/3"
                 />
             </SoftCard>
@@ -129,8 +131,8 @@ export default function Employees() {
 
             {error && (
                 <ErrorState
-                    message="Unable to load employees"
-                    description={<>Please check your connection and try again.</>}
+                    message={t('employees.error.title')}
+                    description={<>{t('employees.error.description')}</>}
                 />
             )}
 
@@ -145,14 +147,14 @@ export default function Employees() {
             {employees && employees.length === 0 && (
                 <EmptyState
                     icon="group_off"
-                    message="No employees found."
+                    message={t('employees.empty.noData')}
                 />
             )}
 
             {employees && employees.length > 0 && filteredEmployees.length === 0 && (
                 <EmptyState
                     icon="search_off"
-                    message="No employees match your search."
+                    message={t('employees.empty.noResults')}
                 />
             )}
         </RootLayout>
