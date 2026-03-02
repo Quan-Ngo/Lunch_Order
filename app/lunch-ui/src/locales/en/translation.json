@@ -180,6 +180,14 @@
         "markComplete": "Mark as Complete",
         "lockNote": "Orders lock automatically at 11:30 AM",
         "pdfTitle": "Daily Order Report",
-        "pdfDate": "Date"
+        "pdfDate": "Date",
+        "completeModal": {
+            "title": "Complete Order?",
+            "body": "Once this order is marked as complete, it can no longer be edited. Are you sure you want to proceed?",
+            "confirm": "Yes, Complete Order",
+            "cancel": "Cancel"
+        },
+        "isLocked": "This order has been completed and is locked.",
+        "markCompleting": "Completing..."
     }
 }

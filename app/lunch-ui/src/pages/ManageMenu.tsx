@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootLayout } from '@/layouts/RootLayout';
 import { PageHeader } from '@/components/elements/PageHeader';
 import { Button } from '@/components/elements/Button';
@@ -8,66 +9,56 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
-import { dailyMenuService, staffCatalogService, type DailyMenuEntity, type Food } from '@/services/api';
+import { dailyMenuService, staffCatalogService, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 
 export default function ManageMenu() {
     const { t } = useTranslation();
+    const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
-    const [menuEntries, setMenuEntries] = useState<DailyMenuEntity[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const loadMenu = useCallback(async () => {
-        setIsLoading(true);
-        setFeedback(null);
-        try {
-            const entries = await dailyMenuService.getByDate(selectedDate);
+    const { data: isLocked = false } = useQuery({
+        queryKey: ['isComplete', selectedDate],
+        queryFn: () => dailyMenuService.isDateComplete(selectedDate),
+    });
 
-            const seen = new Set<string>();
-            const uniqueEntries = entries.filter((e) => {
-                if (e.catalog && !seen.has(e.catalog.ID)) {
-                    seen.add(e.catalog.ID);
-                    return true;
-                }
-                return false;
-            });
+    const { data: rawMenuEntries = [], isFetching: menuLoading } = useQuery({
+        queryKey: ['dailyMenu', selectedDate],
+        queryFn: () => dailyMenuService.getByDate(selectedDate),
+    });
 
-            setMenuEntries(uniqueEntries);
-        } catch (err) {
-            console.error('Failed to load menu:', err);
-            setMenuEntries([]);
-        } finally {
-            setIsLoading(false);
+    // Deduplicate and filter active items
+    const seen = new Set<string>();
+    const menuEntries = rawMenuEntries.filter((e) => {
+        if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
+            seen.add(e.catalog.ID);
+            return true;
         }
-    }, [selectedDate]);
+        return false;
+    });
 
-    useEffect(() => {
-        loadMenu();
-    }, [loadMenu]);
+    const isLoading = menuLoading;
 
-    const handleAddFoods = async (foods: Food[]) => {
-        setIsCatalogModalOpen(false);
-        setFeedback(null);
-        try {
-            await Promise.all(
-                foods.map((f) => dailyMenuService.addFoodToDate(selectedDate, f.ID))
-            );
-            setFeedback({
-                type: 'success',
-                text: t('manageMenu.addedCount', { count: foods.length }),
-            });
-            await loadMenu();
-        } catch (err) {
+    const addFoodsMutation = useMutation({
+        mutationFn: async (foods: Food[]) => {
+            await Promise.all(foods.map((f) => dailyMenuService.addFoodToDate(selectedDate, f.ID)));
+            return foods;
+        },
+        onSuccess: (foods) => {
+            setFeedback({ type: 'success', text: t('manageMenu.addedCount', { count: foods.length }) });
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
+        },
+        onError: (err) => {
             console.error('Failed to add foods:', err);
             setFeedback({ type: 'error', text: t('manageMenu.addFailed') });
-        }
-    };
+        },
+    });
 
-    const handleRemoveFood = async (dailyMenuId: string) => {
-        try {
+    const removeFoodMutation = useMutation({
+        mutationFn: async (dailyMenuId: string) => {
             const removedEntry = menuEntries.find((entry) => entry.ID === dailyMenuId);
             const removedCatalogId = removedEntry?.catalog?.ID;
 
@@ -76,14 +67,25 @@ export default function ManageMenu() {
             if (removedCatalogId) {
                 await staffCatalogService.clearCatalogSelectionsByDate(removedCatalogId, selectedDate);
             }
-
+        },
+        onSuccess: () => {
             setFeedback({ type: 'success', text: t('manageMenu.itemRemoved') });
-            await loadMenu();
-        } catch (err) {
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
+        },
+        onError: (err) => {
             console.error('Failed to remove food:', err);
             setFeedback({ type: 'error', text: t('manageMenu.removeFailed') });
-            throw err;
-        }
+        },
+    });
+
+    const handleAddFoods = async (foods: Food[]) => {
+        setIsCatalogModalOpen(false);
+        setFeedback(null);
+        await addFoodsMutation.mutateAsync(foods);
+    };
+
+    const handleRemoveFood = async (dailyMenuId: string) => {
+        await removeFoodMutation.mutateAsync(dailyMenuId);
     };
 
     const existingCatalogIds = menuEntries
@@ -98,6 +100,7 @@ export default function ManageMenu() {
             >
                 <Button
                     variant="primary"
+                    disabled={isLocked}
                     icon={<span className="material-icons-outlined">playlist_add</span>}
                     onClick={() => setIsCatalogModalOpen(true)}
                 >
@@ -114,6 +117,14 @@ export default function ManageMenu() {
                         }`}
                 >
                     {feedback.text}
+                </div>
+            )}
+
+            {/* Locked banner */}
+            {isLocked && (
+                <div className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-green-50 border-2 border-green-300 text-green-700 font-semibold text-sm">
+                    <span className="material-icons text-sm">lock</span>
+                    {t('dailyOrders.isLocked')}
                 </div>
             )}
 
@@ -159,7 +170,7 @@ export default function ManageMenu() {
                                     food={catalogFood}
                                     onEdit={() => { }}
                                     onDelete={() =>
-                                        setRemovalTarget({
+                                        isLocked ? undefined : setRemovalTarget({
                                             id: entry.ID,
                                             name: entry.catalog?.name || 'Unknown',
                                             image: entry.catalog?.file?.url || undefined,

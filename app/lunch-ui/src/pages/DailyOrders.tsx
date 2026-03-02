@@ -26,6 +26,7 @@ export default function DailyOrders() {
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [orderNote, setOrderNote] = useState<string>('');
     const [showSavedText, setShowSavedText] = useState<boolean>(false);
+    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState<boolean>(false);
     const dateInputRef = useRef<HTMLInputElement>(null);
     const billInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -57,6 +58,11 @@ export default function DailyOrders() {
         queryFn: () => billService.getByDate(formattedDate)
     });
 
+    const { data: isLocked = false } = useQuery({
+        queryKey: ['isComplete', formattedDate],
+        queryFn: () => dailyMenuService.isDateComplete(formattedDate),
+    });
+
     const uploadBillMutation = useMutation({
         mutationFn: (file: File) => billService.upload(formattedDate, file),
         onSuccess: () => {
@@ -74,6 +80,17 @@ export default function DailyOrders() {
         },
         onError: (error) => {
             console.error('Failed to delete bill:', error);
+        }
+    });
+
+    const markCompleteMutation = useMutation({
+        mutationFn: () => dailyMenuService.markCompleteByDate(formattedDate),
+        onSuccess: () => {
+            setIsCompleteModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['isComplete', formattedDate] });
+        },
+        onError: (error) => {
+            console.error('Failed to mark complete:', error);
         }
     });
 
@@ -242,16 +259,43 @@ export default function DailyOrders() {
                 title={t('dailyOrders.title')}
                 description={t('dailyOrders.description')}
             >
-                <div className="flex items-center gap-3 border-2 border-black rounded-lg px-4 py-2 bg-white shadow-[var(--shadow-neobrutalism-sm)]">
+                <div className="flex items-center gap-1 border-2 border-black rounded-lg px-2 py-1.5 bg-white shadow-[var(--shadow-neobrutalism-sm)]">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const d = new Date(`${selectedDate}T00:00:00`);
+                            d.setDate(d.getDate() - 1);
+                            setSelectedDate(toISODate(d));
+                        }}
+                        className="text-gray-400 hover:text-black transition-colors p-1 flex items-center justify-center rounded hover:bg-gray-100"
+                        title={t('catalog.previousLine', 'Previous day')}
+                    >
+                        <span className="material-icons-outlined text-xl leading-none">chevron_left</span>
+                    </button>
+
                     <button
                         type="button"
                         onClick={openDatePicker}
-                        className="text-gray-600 hover:text-black transition-colors"
+                        className="flex items-center gap-2 hover:bg-gray-50 px-3 py-1.5 rounded transition-colors"
                         aria-label={t('dailyOrders.datePickerAria', 'Open date picker')}
                     >
-                        <span className="material-icons-outlined text-xl">calendar_today</span>
+                        <span className="material-icons-outlined text-xl text-gray-600">calendar_today</span>
+                        <span className="font-bold text-sm select-none">{dateString}</span>
                     </button>
-                    <span className="font-bold text-sm">{dateString}</span>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const d = new Date(`${selectedDate}T00:00:00`);
+                            d.setDate(d.getDate() + 1);
+                            setSelectedDate(toISODate(d));
+                        }}
+                        className="text-gray-400 hover:text-black transition-colors p-1 flex items-center justify-center rounded hover:bg-gray-100"
+                        title={t('catalog.nextLine', 'Next day')}
+                    >
+                        <span className="material-icons-outlined text-xl leading-none">chevron_right</span>
+                    </button>
+
                     <input
                         ref={dateInputRef}
                         type="date"
@@ -342,7 +386,8 @@ export default function DailyOrders() {
                             onChange={(e) => setOrderNote(e.target.value)}
                             placeholder={t('dailyOrders.notesPlaceholder')}
                             rows={4}
-                            className="w-full border-2 border-gray-200 rounded-lg p-3 text-sm focus:ring-primary focus:border-primary resize-none bg-white"
+                            disabled={isLocked}
+                            className={`w-full border-2 border-gray-200 rounded-lg p-3 text-sm focus:ring-primary focus:border-primary resize-none ${isLocked ? 'bg-gray-100 cursor-not-allowed opacity-70' : 'bg-white'}`}
                         />
                         <div className="flex justify-end mt-3 items-center gap-3">
                             {showSavedText && (
@@ -355,7 +400,7 @@ export default function DailyOrders() {
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => saveNoteMutation.mutate(orderNote)}
-                                disabled={saveNoteMutation.isPending}
+                                disabled={saveNoteMutation.isPending || isLocked}
                             >
                                 {saveNoteMutation.isPending ? t('dailyOrders.saving') : t('dailyOrders.saveNote')}
                             </Button>
@@ -396,8 +441,8 @@ export default function DailyOrders() {
                                                 </div>
                                                 <button
                                                     onClick={() => deleteBillMutation.mutate(bill.ID)}
-                                                    disabled={deleteBillMutation.isPending}
-                                                    className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                                                    disabled={deleteBillMutation.isPending || isLocked}
+                                                    className={`transition-colors ${isLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
                                                     title={t('catalog.delete')}
                                                 >
                                                     <span className="material-icons-outlined text-sm">delete</span>
@@ -420,6 +465,7 @@ export default function DailyOrders() {
                                 type="file"
                                 accept="image/*,.pdf"
                                 className="hidden"
+                                disabled={isLocked}
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
@@ -430,8 +476,11 @@ export default function DailyOrders() {
                             />
                             <button
                                 onClick={() => billInputRef.current?.click()}
-                                disabled={uploadBillMutation.isPending}
-                                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 border-2 border-dashed border-gray-300 rounded-lg py-2.5 hover:border-gray-400 transition-colors disabled:opacity-50"
+                                disabled={uploadBillMutation.isPending || isLocked}
+                                className={`w-full flex items-center justify-center gap-2 text-sm font-bold border-2 border-dashed rounded-lg py-2.5 transition-colors ${isLocked
+                                    ? 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed'
+                                    : 'text-gray-500 hover:text-gray-800 border-gray-300 hover:border-gray-400'
+                                    }`}
                             >
                                 <span className="material-icons-outlined text-base">cloud_upload</span>
                                 {uploadBillMutation.isPending ? t('dailyOrders.uploading') : t('dailyOrders.uploadMore')}
@@ -449,21 +498,80 @@ export default function DailyOrders() {
                         >
                             {t('dailyOrders.exportPdf')}
                         </Button>
-                        <Button
-                            variant="primary"
-                            fullWidth
-                            icon={<span className="material-icons-outlined">check_circle</span>}
-                        >
-                            {t('dailyOrders.markComplete')}
-                        </Button>
+                        {isLocked ? (
+                            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-50 border-2 border-green-300 text-green-700 font-semibold text-sm">
+                                <span className="material-icons text-sm">lock</span>
+                                {t('dailyOrders.isLocked')}
+                            </div>
+                        ) : (
+                            <Button
+                                variant="primary"
+                                fullWidth
+                                disabled={markCompleteMutation.isPending}
+                                icon={<span className="material-icons-outlined">check_circle</span>}
+                                onClick={() => setIsCompleteModalOpen(true)}
+                            >
+                                {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
+                            </Button>
+                        )}
                     </div>
 
-                    {/* Footer note */}
-                    {/*<p className="text-xs text-gray-400 text-center">
-                        {t('dailyOrders.ordersLockNotice')}
-                    </p>*/}
                 </div>
             </div>
+
+            {/* ── Confirm Complete Modal ─────────────────────────────────────── */}
+            {isCompleteModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                    onClick={() => setIsCompleteModalOpen(false)}
+                >
+                    <div
+                        className="bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-md mx-4 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between bg-primary px-6 py-4 border-b-4 border-black">
+                            <div className="flex items-center gap-2">
+                                <span className="material-icons text-black">verified</span>
+                                <h3 className="text-lg font-black uppercase tracking-tight font-display">
+                                    {t('dailyOrders.completeModal.title')}
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setIsCompleteModalOpen(false)}
+                                className="text-black hover:opacity-70 transition-opacity"
+                            >
+                                <span className="material-icons">close</span>
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="px-6 py-5">
+                            <div className="flex gap-3 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl mb-6">
+                                <span className="material-icons text-amber-500 flex-shrink-0 mt-0.5">warning</span>
+                                <p className="text-sm font-semibold text-gray-800">
+                                    {t('dailyOrders.completeModal.body')}
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsCompleteModalOpen(false)}
+                                    className="flex-1 px-4 py-3 rounded-xl border-2 border-black font-bold text-sm uppercase tracking-tight hover:bg-gray-100 transition-colors"
+                                >
+                                    {t('dailyOrders.completeModal.cancel')}
+                                </button>
+                                <button
+                                    onClick={() => markCompleteMutation.mutate()}
+                                    disabled={markCompleteMutation.isPending}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-primary border-2 border-black font-bold text-sm uppercase tracking-tight hover:bg-primary-hover transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none disabled:opacity-70 disabled:cursor-wait"
+                                >
+                                    {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.completeModal.confirm')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </RootLayout>
     );
 }
