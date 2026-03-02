@@ -142,6 +142,7 @@
         "uploaded": "Đã tải lên",
         "uploading": "Đang tải lên...",
         "noBills": "Chưa có hoá đơn nào",
+        "uploadBillFirst": "Vui lòng tải hoá đơn lên trước khi khoá ngày",
         "uploadMore": "Tải lên hoá đơn / chứng từ",
         "summary": "Tổng Kết",
         "subtotal": "Thành Tiền",
