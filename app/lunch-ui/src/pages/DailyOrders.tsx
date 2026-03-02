@@ -7,13 +7,10 @@ import { SoftCard } from '@/components/elements/SoftCard';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
+import { formatCurrency } from '@/config/currency';
 import { statisticsService, foodService, summaryService, dailyMenuService } from '@/services/api';
 
 // --- Helper Functions ---
-
-function formatCurrency(value: number): string {
-    return `$${value.toFixed(2)}`;
-}
 
 function toISODate(d: Date): string {
     const year = d.getFullYear();
