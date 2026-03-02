@@ -684,6 +684,22 @@ export default function DailyOrders() {
                                 <span className="material-icons leading-none" style={{ fontSize: '5rem', lineHeight: 1 }}>chevron_right</span>
                             </button>
                         )}
+
+                        {/* Dot indicators */}
+                        {imageBills.length > 1 && (
+                            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-10">
+                                {imageBills.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                                        className={`w-3 h-3 rounded-full transition-all border border-black/20 ${idx === safeIndex
+                                            ? 'bg-primary scale-125 shadow-sm'
+                                            : 'bg-primary/40 hover:bg-primary/70'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 );
             })()}
