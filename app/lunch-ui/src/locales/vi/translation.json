@@ -85,6 +85,9 @@
         "bodyPrefix": "Thao tác này sẽ xóa",
         "confirming": "Đang xóa...",
         "confirm": "Xác Nhận Xóa",
+        "confirmDelete": "Xóa Nhân Viên",
+        "undoWarning": "Hành động này không thể hoàn tác.",
+        "warning": "Bạn có chắc chắn muốn xóa nhân viên này khỏi hệ thống? Dữ liệu tài khoản và lịch sử sẽ bị xóa vĩnh viễn.",
         "cancel": "Huỷ",
         "deleteFailed": "Xóa thất bại. Vui lòng kiểm tra console để biết chi tiết."
     },
@@ -142,6 +145,17 @@
             "error": "Lỗi khi lấy dữ liệu người dùng từ CSDL công ty.",
             "success": "Đăng ký nhân viên thành công!",
             "alreadyRegistered": "Đã đăng ký"
+        },
+        "editModal": {
+            "title": "Chỉnh Sửa Thông Tin",
+            "fieldName": "Họ Tên",
+            "fieldNamePlaceholder": "Ví dụ: Nguyễn Văn A",
+            "fieldNameError": "Vui lòng nhập họ tên.",
+            "fieldStatus": "Trạng Thái Hoạt Động",
+            "fieldNotification": "Nhận Thông Báo",
+            "saveChanges": "Lưu Thay Đổi",
+            "cancel": "Huỷ",
+            "success": "Cập nhật thông tin thành công!"
         }
     },
     "selectCatalogModal": {
@@ -199,5 +213,8 @@
         },
         "isLocked": "Đơn hàng này đã được hoàn tất và bị khoá.",
         "markCompleting": "Đang xử lý..."
+    },
+    "common": {
+        "saving": "Đang lưu..."
     }
 }

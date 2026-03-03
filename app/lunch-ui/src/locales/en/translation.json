@@ -85,6 +85,9 @@
         "bodyPrefix": "This will remove",
         "confirming": "Removing...",
         "confirm": "Confirm Remove",
+        "confirmDelete": "Delete Employee",
+        "undoWarning": "This action cannot be undone.",
+        "warning": "Are you sure you want to remove this employee from the system? Their account data and history will be permanently deleted.",
         "cancel": "Cancel",
         "deleteFailed": "Failed to delete item. Check console for details."
     },
@@ -142,6 +145,17 @@
             "error": "Failed to fetch users from company database.",
             "success": "Employee registered successfully!",
             "alreadyRegistered": "Already registered"
+        },
+        "editModal": {
+            "title": "Edit Information",
+            "fieldName": "Full Name",
+            "fieldNamePlaceholder": "e.g. John Doe",
+            "fieldNameError": "Please enter a name.",
+            "fieldStatus": "Active Status",
+            "fieldNotification": "Receive Notifications",
+            "saveChanges": "Save Changes",
+            "cancel": "Cancel",
+            "success": "Information updated successfully!"
         }
     },
     "selectCatalogModal": {
@@ -199,5 +213,8 @@
         },
         "isLocked": "This order has been completed and is locked.",
         "markCompleting": "Completing..."
+    },
+    "common": {
+        "saving": "Saving..."
     }
 }
