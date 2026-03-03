@@ -16,7 +16,10 @@ export function ToggleActiveButton({ isActive, onToggle, size = 'sm', disabled }
             variant="secondary"
             size={size}
             disabled={disabled}
-            className={isActive ? 'bg-green-300 hover:bg-green-400' : ''}
+            className={isActive
+                ? 'bg-green-100 border-green-500 text-green-700 hover:bg-green-200'
+                : 'bg-orange-50 border-orange-400 text-orange-600 hover:bg-orange-100'
+            }
             onClick={onToggle}
             icon={
                 <span className="material-icons-outlined text-sm">
@@ -24,7 +27,7 @@ export function ToggleActiveButton({ isActive, onToggle, size = 'sm', disabled }
                 </span>
             }
         >
-            {isActive ? t('catalog.deactivate') : t('catalog.activate')}
+            {isActive ? t('catalog.active') : t('catalog.inactive')}
         </Button>
     );
 }
