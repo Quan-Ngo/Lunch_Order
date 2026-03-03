@@ -22,7 +22,7 @@ entity Catalog : cuid, managed {
 
 entity CatalogFile : cuid, managed {
     url          : String(2048);
-    content      : LargeBinary;
+    content      : LargeBinary @Core.MediaType: mediaType;
     mediaType    : String;
     catalog      : Association to Catalog;
 }

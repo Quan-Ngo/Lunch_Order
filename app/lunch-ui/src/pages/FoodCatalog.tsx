@@ -90,27 +90,35 @@ export default function FoodCatalog() {
     const handleSave = async (data: FoodFormData) => {
         try {
             if (editingFood) {
-                // PATCH allows partial updates so we don't accidentally wipe out the image or category 
-                // if we are only sending name, price, description in an update
                 await foodService.update(editingFood.ID, {
                     name: data.name,
                     price: parseFloat(data.price),
                     description: data.description,
                 });
+                // Upload image if a new file was chosen
+                if (data.image) {
+                    await foodService.uploadImage(editingFood.ID, data.image);
+                }
             } else {
                 await foodService.create({
                     name: data.name,
                     price: parseFloat(data.price),
                     description: data.description,
                 });
+                // Upload image if provided — we need the new item's ID
+                if (data.image) {
+                    const allFoods = await foodService.getAll();
+                    const newFood = allFoods.find(f => f.name === data.name);
+                    if (newFood) {
+                        await foodService.uploadImage(newFood.ID, data.image);
+                    }
+                }
             }
-            // Refresh list
             await refetch();
             setIsModalOpen(false);
             setEditingFood(null);
         } catch (err) {
             console.error('Failed to save food:', err);
-            // Optionally show error to user (e.g., alert or toast)
             alert(t('catalog.saveFailed'));
         }
     };
