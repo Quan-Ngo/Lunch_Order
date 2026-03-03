@@ -33,3 +33,8 @@ mta_archives/
 
 # @cap-js/cds-typer
 @cds-models
+
+# Environment
+.env
+.env.*
+!.env.example

@@ -27,24 +27,43 @@
     },
     "requires": {
       "[development]": {
+        "auth": {
+          "kind": "mocked",
+          "users": {
+            "alice": {
+              "roles": [
+                "CMNA_ADD_USER",
+                "CMNA_DELETE_USER",
+                "CMNA_READ_ASSIGNED_USER",
+                "CMNA_READ_ALL_USER",
+                "CMNA_UPDATE_USER"
+              ]
+            },
+            "bob": {
+              "roles": [
+                "CMNA_READ_ASSIGNED_USER"
+              ]
+            }
+          }
+        },
         "db": {
           "kind": "sqlite",
           "credentials": {
             "url": "db.sqlite"
+          },
+          "watch": {
+            "ignore": [
+              "app/**"
+            ]
           }
         }
       },
       "[production]": {
-        "auth": "xsuaa"
-      },
-      "destinations": true,
-      "html5-repo": true,
-      "application-logging": true
-    },
-    "watch": {
-      "ignore": [
-        "app/**"
-      ]
+        "auth": "xsuaa",
+        "destinations": true,
+        "html5-repo": true,
+        "application-logging": true
+      }
     }
   }
 }

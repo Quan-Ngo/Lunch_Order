@@ -103,8 +103,46 @@
         "fromTodaysMenu": "from today's menu"
     },
     "employees": {
-        "title": "Employees",
-        "description": "Employee management will appear here."
+        "title": "Manage Employees",
+        "description": "Manage team access and account status for office lunches.",
+        "registerNew": "Register New Employee",
+        "stats": {
+            "total": "Total Employees",
+            "active": "Active Accounts"
+        },
+        "searchPlaceholder": "Search employees by name",
+        "table": {
+            "name": "Name",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "status": {
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "actions": {
+            "grantAdmin": "Grant Admin",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "error": {
+            "title": "Unable to load employees",
+            "description": "Please check your connection and try again."
+        },
+        "empty": {
+            "noData": "No employees found.",
+            "noResults": "No employees match your search."
+        },
+        "registerModal": {
+            "title": "Register New Employee",
+            "searchPlaceholder": "Search company database...",
+            "add": "ADD",
+            "adding": "Adding...",
+            "noUsers": "No users found in company database.",
+            "error": "Failed to fetch users from company database.",
+            "success": "Employee registered successfully!",
+            "alreadyRegistered": "Already registered"
+        }
     },
     "selectCatalogModal": {
         "title": "Select from Catalog",

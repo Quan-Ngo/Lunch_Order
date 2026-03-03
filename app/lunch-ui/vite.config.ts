@@ -19,6 +19,18 @@ export default defineConfig({
         target: 'http://localhost:4005',
         changeOrigin: true,
       },
+      '/btp-auth': {
+        target: 'https://proconarum-development-system.authentication.eu10.hana.ondemand.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/btp-auth/, ''),
+        secure: true,
+      },
+      '/btp-scim': {
+        target: 'https://api.authentication.eu10.hana.ondemand.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/btp-scim/, ''),
+        secure: true,
+      },
     }
   }
 })
