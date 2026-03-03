@@ -132,6 +132,16 @@
         "empty": {
             "noData": "Không tìm thấy nhân viên nào.",
             "noResults": "Không có nhân viên nào khớp với tìm kiếm của bạn."
+        },
+        "registerModal": {
+            "title": "Đăng Ký Nhân Viên Mới",
+            "searchPlaceholder": "Tìm kiếm trong cơ sở dữ liệu công ty...",
+            "add": "THÊM",
+            "adding": "Đang thêm...",
+            "noUsers": "Không tìm thấy người dùng nào trong CSDL công ty.",
+            "error": "Lỗi khi lấy dữ liệu người dùng từ CSDL công ty.",
+            "success": "Đăng ký nhân viên thành công!",
+            "alreadyRegistered": "Đã đăng ký"
         }
     },
     "selectCatalogModal": {
