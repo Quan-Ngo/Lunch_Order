@@ -167,7 +167,7 @@ export default function Employees() {
                 onClose={() => setRemovingEmployee(null)}
                 onConfirm={handleDelete}
                 item={removingEmployee ? { id: removingEmployee.ID, name: removingEmployee.name } : null}
-                contextText={t('employees.actions.delete').toLowerCase()}
+                variant="employee"
             />
 
             {/* Stat cards */}

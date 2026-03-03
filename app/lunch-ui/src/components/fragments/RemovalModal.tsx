@@ -57,15 +57,15 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, variant = 'defa
             <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all border border-gray-100">
 
                 {/* Header with Icon */}
-                <div className="bg-red-50 p-6 flex gap-4 items-center border-b border-red-100/50">
-                    <div className="flex-shrink-0 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-red-100">
+                <div className="bg-red-50 p-6 flex gap-4 items-center border-b border-red-100">
+                    <div className="flex-shrink-0 w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-sm border border-red-100">
                         <span className="material-icons-outlined text-red-500 text-2xl">warning</span>
                     </div>
                     <div>
-                        <h3 className="text-xl font-extrabold text-gray-900 font-display leading-tight">
+                        <h3 className="text-lg font-extrabold text-gray-900 font-display leading-tight">
                             {variant === 'employee' ? t('removalModal.confirmDelete') : t('removalModal.title')}
                         </h3>
-                        <p className="text-sm font-bold text-red-500 uppercase tracking-wider mt-0.5">
+                        <p className="text-sm font-medium text-red-500 mt-0.5">
                             {t('removalModal.undoWarning')}
                         </p>
                     </div>
@@ -73,45 +73,49 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, variant = 'defa
 
                 {/* Body Content */}
                 <div className="p-6">
-                    <p className="text-gray-600 font-medium leading-relaxed mb-6">
+                    <p className="text-gray-500 font-medium leading-relaxed mb-6">
                         {variant === 'employee' ? t('removalModal.warning') : `${t('removalModal.bodyPrefix')} ${item.name}.`}
                     </p>
 
                     {/* Employee Card - only shows in employee variant */}
                     {variant === 'employee' && (
-                        <div className="bg-gray-50/80 rounded-xl p-4 flex items-center gap-4 mb-8 border border-gray-100">
-                            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden border border-primary/10 flex-shrink-0">
+                        <div className="bg-gray-50/50 rounded-2xl p-4 flex items-center gap-4 mb-8 border border-gray-200">
+                            <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden border border-primary/10 flex-shrink-0">
                                 {item.image ? (
                                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-lg">{item.name.charAt(0).toUpperCase()}</span>
+                                    <span className="text-xl">{item.name.charAt(0).toUpperCase()}</span>
                                 )}
                             </div>
                             <div className="min-w-0">
-                                <p className="font-bold text-gray-900 truncate leading-tight">{item.name}</p>
-                                {item.email && <p className="text-sm text-gray-500 font-medium truncate">{item.email}</p>}
+                                <p className="font-bold text-gray-900 truncate leading-tight text-base mb-1">{item.name}</p>
+                                {item.email ? (
+                                    <p className="text-sm text-gray-500 font-medium truncate">{item.email}</p>
+                                ) : (
+                                    <p className="text-sm text-gray-400 font-medium italic">No email provided</p>
+                                )}
                             </div>
                         </div>
                     )}
 
                     {/* Footer Actions */}
-                    <div className="flex flex-row justify-center gap-3">
+                    <div className="flex flex-row justify-center gap-4">
                         <button
                             onClick={onClose}
                             disabled={isDeleting}
-                            className="px-6 py-2.5 rounded-lg font-bold text-gray-700 hover:bg-gray-100 transition-colors border-2 border-transparent disabled:opacity-50"
+                            className="px-8 py-2.5 rounded-xl font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
                             {t('removalModal.cancel')}
                         </button>
                         <button
                             onClick={handleConfirm}
                             disabled={isDeleting}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold bg-red-600 text-white hover:bg-red-700 transition-all shadow-md shadow-red-200 active:scale-95 disabled:opacity-50"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 transition-all shadow-md shadow-red-200 active:scale-95 disabled:opacity-50"
                         >
                             {isDeleting ? (
                                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                <span className="material-icons-outlined text-xl">delete</span>
+                                <span className="material-icons-outlined text-lg">delete</span>
                             )}
                             {isDeleting ? t('removalModal.confirming') : (variant === 'employee' ? t('removalModal.confirmDelete') : t('removalModal.confirm'))}
                         </button>
