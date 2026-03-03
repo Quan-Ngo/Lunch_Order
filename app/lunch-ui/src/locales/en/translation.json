@@ -132,16 +132,6 @@
         "empty": {
             "noData": "No employees found.",
             "noResults": "No employees match your search."
-        },
-        "registerModal": {
-            "title": "Register New Employee",
-            "searchPlaceholder": "Search company database...",
-            "add": "ADD",
-            "adding": "Adding...",
-            "noUsers": "No users found in company database.",
-            "error": "Failed to fetch users from company database.",
-            "success": "Employee registered successfully!",
-            "alreadyRegistered": "Already registered"
         }
     },
     "selectCatalogModal": {

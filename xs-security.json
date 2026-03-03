@@ -1,47 +1,6 @@
 {
-  "xsappname": "cmna-internal-lunch-order",
-  "scopes": [
-    {
-      "name": "$XSAPPNAME.CMNA_READ_ASSIGNED_USER",
-      "description": "Read assigned users"
-    },
-    {
-      "name": "$XSAPPNAME.CMNA_READ_ALL_USER",
-      "description": "Read all users"
-    },
-    {
-      "name": "$XSAPPNAME.CMNA_ADD_USER",
-      "description": "Add a new user"
-    },
-    {
-      "name": "$XSAPPNAME.CMNA_UPDATE_USER",
-      "description": "Update an existing user"
-    },
-    {
-      "name": "$XSAPPNAME.CMNA_DELETE_USER",
-      "description": "Delete a user"
-    }
-  ],
-  "role-templates": [
-    {
-      "name": "CMNA_USER",
-      "description": "Standard user - can read assigned users",
-      "scope-references": [
-        "$XSAPPNAME.CMNA_READ_ASSIGNED_USER"
-      ]
-    },
-    {
-      "name": "CMNA_ADMIN",
-      "description": "Administrator - full access to user management",
-      "scope-references": [
-        "$XSAPPNAME.CMNA_ADD_USER",
-        "$XSAPPNAME.CMNA_DELETE_USER",
-        "$XSAPPNAME.CMNA_READ_ASSIGNED_USER",
-        "$XSAPPNAME.CMNA_READ_ALL_USER",
-        "$XSAPPNAME.CMNA_UPDATE_USER"
-      ]
-    }
-  ],
+  "scopes": [],
   "attributes": [],
+  "role-templates": [],
   "authorities-inheritance": false
 }

@@ -12,18 +12,15 @@ import { ErrorState } from '@/components/elements/ErrorState';
 import { EmptyState } from '@/components/elements/EmptyState';
 import { Button } from '@/components/elements/Button';
 import { employeeService, type StaffEntity } from '@/services/api';
-import { RegisterEmployeeModal } from '@/components/fragments/RegisterEmployeeModal';
 
 export default function Employees() {
     const { t } = useTranslation();
     const { employees, isLoading, error, refetch } = useEmployees();
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [togglingEmployeeIds, setTogglingEmployeeIds] = useState<Set<string>>(new Set());
-    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
     const totalEmployees: number = employees?.length ?? 0;
     const activeAccounts: number = employees?.filter((employee) => employee.status).length ?? 0;
-    const existingEmployeeNames = useMemo(() => employees?.map(e => e.name) ?? [], [employees]);
 
     const handleToggleStatus = useCallback(async (employee: StaffEntity, nextStatus: boolean) => {
         setTogglingEmployeeIds((prev) => new Set(prev).add(employee.ID));
@@ -39,10 +36,6 @@ export default function Employees() {
                 return next;
             });
         }
-    }, [refetch]);
-
-    const handleRegisterSuccess = useCallback(() => {
-        void refetch();
     }, [refetch]);
 
     const filteredEmployees = useMemo(() => {
@@ -82,7 +75,7 @@ export default function Employees() {
         {
             header: t('employees.table.actions'),
             className: 'col-span-4 flex justify-end',
-            render: (row) => (
+            render: () => (
                 <div className="flex items-center gap-2">
                     <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
                         {t('employees.actions.grantAdmin')}
@@ -107,18 +100,10 @@ export default function Employees() {
                 <Button
                     variant="primary"
                     icon={<span className="material-icons-outlined">person_add</span>}
-                    onClick={() => setIsRegisterModalOpen(true)}
                 >
                     {t('employees.registerNew')}
                 </Button>
             </PageHeader>
-
-            <RegisterEmployeeModal
-                isOpen={isRegisterModalOpen}
-                onClose={() => setIsRegisterModalOpen(false)}
-                onSuccess={handleRegisterSuccess}
-                existingEmployeeNames={existingEmployeeNames}
-            />
 
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -151,7 +136,7 @@ export default function Employees() {
                 />
             )}
 
-            {employees && filteredEmployees && filteredEmployees.length > 0 && (
+            {employees && filteredEmployees.length > 0 && (
                 <Table<StaffEntity>
                     columns={columns}
                     data={filteredEmployees}
@@ -166,7 +151,7 @@ export default function Employees() {
                 />
             )}
 
-            {employees && employees.length > 0 && filteredEmployees && filteredEmployees.length === 0 && (
+            {employees && employees.length > 0 && filteredEmployees.length === 0 && (
                 <EmptyState
                     icon="search_off"
                     message={t('employees.empty.noResults')}
@@ -175,3 +160,5 @@ export default function Employees() {
         </RootLayout>
     );
 }
+
+
