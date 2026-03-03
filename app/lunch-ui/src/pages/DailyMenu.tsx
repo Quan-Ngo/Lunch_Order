@@ -199,11 +199,11 @@ export default function DailyMenu() {
             {/* Hero Header */}
             <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                    <span className="text-4xl">🍕</span>
-                    <h1 className="text-4xl sm:text-5xl font-black font-display text-gray-900 leading-tight">
-                        {t('dailyMenu.title')} <span className="text-primary-hover italic relative inline-block scribble-underline">{t('dailyMenu.titleHighlight')}</span>
+                    <span className="text-5xl select-none" role="img" aria-label="pizza">🍕</span>
+                    <h1 className="text-4xl sm:text-5xl font-black font-sans text-slate-800 leading-tight tracking-tight">
+                        {t('dailyMenu.title')}&nbsp;<span style={{ fontFamily: "'Pacifico', cursive", color: '#C0392B' }}>{t('dailyMenu.titleHighlight')}</span>
                     </h1>
-                    <span className="text-4xl">🥑</span>
+                    <span className="text-5xl select-none" role="img" aria-label="avocado">🥑</span>
                 </div>
                 <p className="text-gray-500 font-body text-sm">
                     {t('dailyMenu.subtitle')}

@@ -64,7 +64,7 @@ export default function Navbar() {
                             <span className="material-icons text-black text-xl sm:text-2xl">lunch_dining</span>
                         </div>
                         <span className="text-base sm:text-2xl font-bold tracking-tight text-text-primary-light font-display whitespace-nowrap">
-                            conarum <span className="text-primary">Lunch</span>
+                            conarum <span style={{ color: '#E6C200' }}>Lunch</span>
                         </span>
                     </Link>
 
