@@ -132,6 +132,12 @@ export const employeeService = {
     create: async (name: string): Promise<void> => {
         await api.post('/Staff', { name, status: true, notification: true });
     },
+    update: async (id: string, data: { name: string; status: boolean; notification: boolean }): Promise<void> => {
+        await api.patch(`/Staff(${id})`, data);
+    },
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/Staff(${id})`);
+    },
 };
 
 // ─────────────────────────────────────────────

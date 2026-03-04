@@ -13,6 +13,8 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { Button } from '@/components/elements/Button';
 import { employeeService, type StaffEntity } from '@/services/api';
 import { RegisterEmployeeModal } from '@/components/fragments/RegisterEmployeeModal';
+import { EditEmployeeModal } from '@/components/fragments/EditEmployeeModal';
+import { RemovalModal } from '@/components/fragments/RemovalModal';
 
 export default function Employees() {
     const { t } = useTranslation();
@@ -20,6 +22,8 @@ export default function Employees() {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [togglingEmployeeIds, setTogglingEmployeeIds] = useState<Set<string>>(new Set());
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<StaffEntity | null>(null);
+    const [removingEmployee, setRemovingEmployee] = useState<StaffEntity | null>(null);
 
     const totalEmployees: number = employees?.length ?? 0;
     const activeAccounts: number = employees?.filter((employee) => employee.status).length ?? 0;
@@ -43,6 +47,27 @@ export default function Employees() {
 
     const handleRegisterSuccess = useCallback(() => {
         void refetch();
+    }, [refetch]);
+
+    const handleEditSave = useCallback(async (id: string, data: { name: string; status: boolean; notification: boolean }) => {
+        try {
+            await employeeService.update(id, data);
+            await refetch();
+        } catch (err) {
+            console.error('Failed to update employee:', err);
+            throw err;
+        }
+    }, [refetch]);
+
+    const handleDelete = useCallback(async (id: string) => {
+        try {
+            await employeeService.delete(id);
+            await refetch();
+            setRemovingEmployee(null);
+        } catch (err) {
+            console.error('Failed to delete employee:', err);
+            throw err; // Propagate to modal to show error
+        }
     }, [refetch]);
 
     const filteredEmployees = useMemo(() => {
@@ -87,10 +112,20 @@ export default function Employees() {
                     <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
                         {t('employees.actions.grantAdmin')}
                     </Button>
-                    <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none"
+                        onClick={() => setEditingEmployee(row)}
+                    >
                         {t('employees.actions.edit')}
                     </Button>
-                    <Button variant="danger" size="sm" className="shadow-none hover:shadow-none" onClick={() => { }}>
+                    <Button
+                        variant="danger"
+                        size="sm"
+                        className="shadow-none hover:shadow-none"
+                        onClick={() => setRemovingEmployee(row)}
+                    >
                         {t('employees.actions.delete')}
                     </Button>
                 </div>
@@ -118,6 +153,21 @@ export default function Employees() {
                 onClose={() => setIsRegisterModalOpen(false)}
                 onSuccess={handleRegisterSuccess}
                 existingEmployeeNames={existingEmployeeNames}
+            />
+
+            <EditEmployeeModal
+                isOpen={!!editingEmployee}
+                onClose={() => setEditingEmployee(null)}
+                onSave={handleEditSave}
+                employee={editingEmployee}
+            />
+
+            <RemovalModal
+                isOpen={!!removingEmployee}
+                onClose={() => setRemovingEmployee(null)}
+                onConfirm={handleDelete}
+                item={removingEmployee ? { id: removingEmployee.ID, name: removingEmployee.name } : null}
+                variant="employee"
             />
 
             {/* Stat cards */}
