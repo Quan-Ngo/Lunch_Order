@@ -19,6 +19,9 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [addingUserIds, setAddingUserIds] = useState<Set<string>>(new Set());
+    const [manualName, setManualName] = useState('');
+    const [manualEmail, setManualEmail] = useState('');
+    const [isManualAdding, setIsManualAdding] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -26,6 +29,8 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
         } else {
             setSearchTerm('');
             setError(null);
+            setManualName('');
+            setManualEmail('');
         }
     }, [isOpen]);
 
@@ -68,9 +73,10 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
 
     const handleAddUser = async (user: ScimUser) => {
         const displayName = getDisplayName(user);
+        const email = user.emails?.find(e => e.primary)?.value || user.emails?.[0]?.value || user.userName;
         setAddingUserIds(prev => new Set(prev).add(user.id));
         try {
-            await employeeService.create(displayName);
+            await employeeService.create(displayName, email);
             onSuccess();
         } catch (err) {
             console.error('Failed to register employee:', err);
@@ -80,6 +86,21 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
                 next.delete(user.id);
                 return next;
             });
+        }
+    };
+
+    const handleManualRegister = async () => {
+        if (!manualName.trim()) return;
+        setIsManualAdding(true);
+        try {
+            await employeeService.create(manualName.trim(), manualEmail.trim() || undefined);
+            setManualName('');
+            setManualEmail('');
+            onSuccess();
+        } catch (err) {
+            console.error('Failed to register employee manually:', err);
+        } finally {
+            setIsManualAdding(false);
         }
     };
 
@@ -184,11 +205,36 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
                         )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="px-6 py-4 bg-gray-50 text-center border-t border-gray-100">
-                        <p className="text-xs text-gray-400 font-medium font-display">
-                            Can't find who you're looking for? Invite by email
+                    {/* Footer – Manual registration */}
+                    <div className="px-6 py-5 bg-gray-50 border-t border-gray-100">
+                        <p className="text-xs text-gray-400 font-semibold font-display uppercase tracking-wider mb-3">
+                            {t('employees.registerModal.manualTitle') || "Or register manually"}
                         </p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                                type="text"
+                                value={manualName}
+                                onChange={e => setManualName(e.target.value)}
+                                placeholder={t('employees.registerModal.namePlaceholder') || 'Full name'}
+                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white"
+                            />
+                            <input
+                                type="email"
+                                value={manualEmail}
+                                onChange={e => setManualEmail(e.target.value)}
+                                placeholder={t('employees.registerModal.emailPlaceholder') || 'Email address'}
+                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white"
+                            />
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                disabled={!manualName.trim() || isManualAdding}
+                                onClick={handleManualRegister}
+                                className="shrink-0"
+                            >
+                                {isManualAdding ? t('employees.registerModal.adding') : t('employees.registerModal.add') || 'Add'}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
