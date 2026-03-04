@@ -7,7 +7,8 @@
     "@cap-js/notifications": "*",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
-    "express": "^4"
+    "express": "^4",
+    "nodemailer": "^8.0.1"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",

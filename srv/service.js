@@ -1,5 +1,6 @@
 const cds = require('@sap/cds');
 const axios = require('axios');
+const { sendEmail } = require('./lib/email-service');
 
 module.exports = class LunchService extends cds.ApplicationService {
     async init() {
@@ -33,6 +34,34 @@ module.exports = class LunchService extends cds.ApplicationService {
                 console.error('Failed to grant role:', error);
                 return req.error(500, `Failed to update roles via SCIM: ${error.message}`);
             }
+        });
+
+        // Send email when food is added to daily menu
+        this.after('CREATE', 'DailyMenu', (data) => {
+            // Check if it's a food creation (catalog_ID is present)
+            if (!data.catalog_ID) return;
+
+            // Format date from YYYY-MM-DD to DD/MM/YYYY
+            const rawDateStr = data.date;
+            let formattedDate = rawDateStr;
+            if (rawDateStr) {
+                const parts = rawDateStr.split('-');
+                if (parts.length === 3) {
+                    formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+
+            console.log(`[LunchService] Food added for ${formattedDate}. Sending notification in the background...`);
+
+            // TEST: Send a single email as requested. 
+            // We use standard Promise chaining (.catch) instead of await to avoid blocking the DB transaction and HTTP response.
+            sendEmail({
+                to: 'test@lunchorder.local',
+                subject: `New Lunch Option for ${formattedDate}!`,
+                text: `New food selection is available for ${formattedDate}. What would you like for lunch on that day?.`
+            }).catch((err) => {
+                console.error('[LunchService] Failed to send notification email:', err);
+            });
         });
 
         return super.init();
