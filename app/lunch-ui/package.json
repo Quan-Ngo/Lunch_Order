@@ -24,6 +24,7 @@
     "react-i18next": "^16.5.4",
     "react-router-dom": "^7.13.0",
     "react-toastify": "^11.0.5",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

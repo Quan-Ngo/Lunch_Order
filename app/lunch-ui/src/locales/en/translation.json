@@ -180,6 +180,7 @@
         "uploaded": "Uploaded",
         "uploading": "Uploading...",
         "noBills": "No receipts uploaded yet",
+        "uploadBillFirst": "Please upload a receipt before marking complete",
         "uploadMore": "Upload receipt / bill",
         "summary": "Summary",
         "subtotal": "Subtotal",

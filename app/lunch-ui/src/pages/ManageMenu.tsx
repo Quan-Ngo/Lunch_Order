@@ -11,6 +11,7 @@ import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
 import { dailyMenuService, staffCatalogService, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
 
 export default function ManageMenu() {
     const { t } = useTranslation();
@@ -18,7 +19,6 @@ export default function ManageMenu() {
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
-    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const { data: isLocked = false } = useQuery({
         queryKey: ['isComplete', selectedDate],
@@ -48,12 +48,12 @@ export default function ManageMenu() {
             return foods;
         },
         onSuccess: (foods) => {
-            setFeedback({ type: 'success', text: t('manageMenu.addedCount', { count: foods.length }) });
+            toast.success(t('manageMenu.addedCount', { count: foods.length }));
             queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
         },
         onError: (err) => {
             console.error('Failed to add foods:', err);
-            setFeedback({ type: 'error', text: t('manageMenu.addFailed') });
+            toast.error(t('manageMenu.addFailed'));
         },
     });
 
@@ -69,18 +69,17 @@ export default function ManageMenu() {
             }
         },
         onSuccess: () => {
-            setFeedback({ type: 'success', text: t('manageMenu.itemRemoved') });
+            toast.success(t('manageMenu.itemRemoved'));
             queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
         },
         onError: (err) => {
             console.error('Failed to remove food:', err);
-            setFeedback({ type: 'error', text: t('manageMenu.removeFailed') });
+            toast.error(t('manageMenu.removeFailed'));
         },
     });
 
     const handleAddFoods = async (foods: Food[]) => {
         setIsCatalogModalOpen(false);
-        setFeedback(null);
         await addFoodsMutation.mutateAsync(foods);
     };
 
@@ -108,17 +107,6 @@ export default function ManageMenu() {
                 </Button>
             </PageHeader>
 
-            {feedback && (
-                <div
-                    className={`mb-4 px-4 py-3 rounded-xl border-2 font-semibold text-sm
-                        ${feedback.type === 'success'
-                            ? 'bg-green-50 border-green-400 text-green-700'
-                            : 'bg-red-50 border-red-400 text-red-700'
-                        }`}
-                >
-                    {feedback.text}
-                </div>
-            )}
 
             {/* Locked banner */}
             {isLocked && (

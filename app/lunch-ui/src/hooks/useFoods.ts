@@ -5,7 +5,7 @@ export function useFoods() {
     const { data: foods, isLoading, error, refetch } = useQuery<Food[]>({
         queryKey: ['foods'],
         queryFn: foodService.getAll,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 0, // always refetch fresh data
     });
 
     return {

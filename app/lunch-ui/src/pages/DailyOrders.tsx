@@ -27,6 +27,9 @@ export default function DailyOrders() {
     const [orderNote, setOrderNote] = useState<string>('');
     const [showSavedText, setShowSavedText] = useState<boolean>(false);
     const [isCompleteModalOpen, setIsCompleteModalOpen] = useState<boolean>(false);
+    const [billCarouselIndex, setBillCarouselIndex] = useState<number>(0);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [deleteBillTarget, setDeleteBillTarget] = useState<string | null>(null);
     const dateInputRef = useRef<HTMLInputElement>(null);
     const billInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -417,39 +420,89 @@ export default function DailyOrders() {
                             <h2 className="text-lg font-extrabold font-display">{t('dailyOrders.receipt')}</h2>
                         </div>
                         <div className="p-4">
-                            {/* Uploaded Bills */}
+                            {/* Bill Images Carousel */}
                             {bills.length > 0 ? (
-                                <div className="space-y-3 mb-4">
-                                    {bills.map((bill) => (
-                                        <div key={bill.ID}>
-                                            {/* Bill Image Preview */}
-                                            {bill.mediaType.startsWith('image/') && (
-                                                <div className="rounded-lg border-2 border-gray-200 overflow-hidden mb-2">
+                                <div className="mb-4">
+                                    {/* Image carousel for image bills */}
+                                    {bills.some(b => b.mediaType.startsWith('image/')) && (() => {
+                                        const imageBills = bills.filter(b => b.mediaType.startsWith('image/'));
+                                        const currentIndex = Math.min(billCarouselIndex, imageBills.length - 1);
+                                        const currentBill = imageBills[currentIndex];
+                                        return (
+                                            <div className="relative rounded-xl border-2 border-gray-200 overflow-hidden mb-3 bg-gray-50">
+                                                {/* Image - landscape format */}
+                                                <div
+                                                    className="w-full aspect-video relative overflow-hidden cursor-zoom-in"
+                                                    onClick={() => {
+                                                        const imageBillsForClick = bills.filter(b => b.mediaType.startsWith('image/'));
+                                                        const clickedIdx = imageBillsForClick.findIndex(b => b.ID === currentBill.ID);
+                                                        setLightboxIndex(clickedIdx >= 0 ? clickedIdx : 0);
+                                                    }}
+                                                    title="Click to enlarge"
+                                                >
                                                     <img
-                                                        src={billService.getContentUrl(bill.ID)}
-                                                        alt={bill.fileName}
-                                                        className="w-full h-auto max-h-64 object-contain bg-gray-50"
+                                                        src={billService.getContentUrl(currentBill.ID)}
+                                                        alt={currentBill.fileName}
+                                                        className="w-full h-full object-cover"
                                                     />
+                                                    {/* Lock overlay when locked */}
+                                                    {isLocked && (
+                                                        <div className="absolute inset-0 bg-black/5" />
+                                                    )}
                                                 </div>
-                                            )}
-                                            {/* File Info */}
-                                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                <span className="material-icons-outlined text-gray-400">attach_file</span>
+                                                {/* Arrows - only if multiple images */}
+                                                {imageBills.length > 1 && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => setBillCarouselIndex((currentIndex - 1 + imageBills.length) % imageBills.length)}
+                                                            className="absolute left-1 top-1/2 -translate-y-1/2 text-primary hover:text-primary-hover transition-colors drop-shadow-md"
+                                                        >
+                                                            <span className="material-icons text-4xl font-thin">chevron_left</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setBillCarouselIndex((currentIndex + 1) % imageBills.length)}
+                                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-primary hover:text-primary-hover transition-colors drop-shadow-md"
+                                                        >
+                                                            <span className="material-icons text-4xl">chevron_right</span>
+                                                        </button>
+                                                        {/* Dot indicators */}
+                                                        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                                                            {imageBills.map((_, idx) => (
+                                                                <button
+                                                                    key={idx}
+                                                                    onClick={() => setBillCarouselIndex(idx)}
+                                                                    className={`w-2.5 h-2.5 rounded-full transition-all border border-black/20 ${idx === currentIndex
+                                                                        ? 'bg-primary scale-125 shadow-sm'
+                                                                        : 'bg-primary/40 hover:bg-primary/70'
+                                                                        }`}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                    {/* File list for all bills */}
+                                    <div className="space-y-2">
+                                        {bills.map((bill) => (
+                                            <div key={bill.ID} className="flex items-center gap-3 bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                                                <span className="material-icons-outlined text-gray-400 text-lg">attach_file</span>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-bold text-gray-800 truncate">{bill.fileName}</p>
                                                     <p className="text-xs text-gray-500">{t('dailyOrders.uploaded')}</p>
                                                 </div>
                                                 <button
-                                                    onClick={() => deleteBillMutation.mutate(bill.ID)}
-                                                    disabled={deleteBillMutation.isPending || isLocked}
+                                                    onClick={() => setDeleteBillTarget(bill.ID)}
+                                                    disabled={isLocked}
                                                     className={`transition-colors ${isLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
                                                     title={t('catalog.delete')}
                                                 >
                                                     <span className="material-icons-outlined text-sm">delete</span>
                                                 </button>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (
                                 /* Empty state placeholder */
@@ -502,6 +555,11 @@ export default function DailyOrders() {
                             <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-50 border-2 border-green-300 text-green-700 font-semibold text-sm">
                                 <span className="material-icons text-sm">lock</span>
                                 {t('dailyOrders.isLocked')}
+                            </div>
+                        ) : bills.length === 0 ? (
+                            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm font-medium">
+                                <span className="material-icons-outlined text-base">receipt_long</span>
+                                <span>{t('dailyOrders.uploadBillFirst', 'Upload a bill before marking complete')}</span>
                             </div>
                         ) : (
                             <Button
@@ -568,6 +626,117 @@ export default function DailyOrders() {
                                     {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.completeModal.confirm')}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Bill Image Lightbox ───────────────────────────────────────── */}
+            {lightboxIndex !== null && (() => {
+                const imageBills = bills.filter(b => b.mediaType.startsWith('image/'));
+                const safeIndex = Math.min(lightboxIndex, imageBills.length - 1);
+                const currentBill = imageBills[safeIndex];
+                if (!currentBill) return null;
+                return (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+                        onClick={() => setLightboxIndex(null)}
+                    >
+                        {/* Close button */}
+                        <button
+                            className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/80 rounded-full w-10 h-10 flex items-center justify-center transition-colors z-10"
+                            onClick={() => setLightboxIndex(null)}
+                        >
+                            <span className="material-icons">close</span>
+                        </button>
+
+                        {/* Counter */}
+                        {imageBills.length > 1 && (
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white text-sm font-bold bg-black/40 px-3 py-1 rounded-full">
+                                {safeIndex + 1} / {imageBills.length}
+                            </div>
+                        )}
+
+                        {/* Left arrow */}
+                        {imageBills.length > 1 && (
+                            <button
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-primary hover:text-primary-hover transition-colors drop-shadow-lg z-10"
+                                onClick={(e) => { e.stopPropagation(); setLightboxIndex((safeIndex - 1 + imageBills.length) % imageBills.length); }}
+                            >
+                                <span className="material-icons leading-none" style={{ fontSize: '5rem', lineHeight: 1 }}>chevron_left</span>
+                            </button>
+                        )}
+
+                        {/* Image */}
+                        <img
+                            src={billService.getContentUrl(currentBill.ID)}
+                            alt={currentBill.fileName}
+                            className="max-w-[85vw] max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+
+                        {/* Right arrow */}
+                        {imageBills.length > 1 && (
+                            <button
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-primary hover:text-primary-hover transition-colors drop-shadow-lg z-10"
+                                onClick={(e) => { e.stopPropagation(); setLightboxIndex((safeIndex + 1) % imageBills.length); }}
+                            >
+                                <span className="material-icons leading-none" style={{ fontSize: '5rem', lineHeight: 1 }}>chevron_right</span>
+                            </button>
+                        )}
+
+                        {/* Dot indicators */}
+                        {imageBills.length > 1 && (
+                            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-10">
+                                {imageBills.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                                        className={`w-3 h-3 rounded-full transition-all border border-black/20 ${idx === safeIndex
+                                            ? 'bg-primary scale-125 shadow-sm'
+                                            : 'bg-primary/40 hover:bg-primary/70'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
+            {/* ── Delete Bill Confirmation Modal ───────────────────────────── */}
+            {deleteBillTarget && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                    onClick={() => setDeleteBillTarget(null)}
+                >
+                    <div
+                        className="bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm mx-4 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 text-center">
+                            <div className="w-14 h-14 bg-red-100 border-2 border-red-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="material-icons text-red-500 text-2xl">delete_forever</span>
+                            </div>
+                            <h3 className="text-xl font-black font-display mb-2">{t('dailyOrders.deleteBillTitle', 'Delete Receipt?')}</h3>
+                            <p className="text-gray-500 text-sm">{t('dailyOrders.deleteBillDesc', 'This action cannot be undone.')}</p>
+                        </div>
+                        <div className="flex border-t-2 border-black">
+                            <button
+                                onClick={() => setDeleteBillTarget(null)}
+                                className="flex-1 px-4 py-3 font-bold text-sm hover:bg-gray-50 transition-colors border-r-2 border-black"
+                            >
+                                {t('manageMenu.cancel', 'Cancel')}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    deleteBillMutation.mutate(deleteBillTarget);
+                                    setDeleteBillTarget(null);
+                                }}
+                                disabled={deleteBillMutation.isPending}
+                                className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-colors disabled:opacity-70"
+                            >
+                                {t('catalog.delete', 'Delete')}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -28,6 +28,7 @@ interface CatalogEntity {
     category: string;
     isActive: boolean;
     file?: {
+        ID: string;
         url: string;
     };
 }
@@ -89,6 +90,31 @@ export const foodService = {
     },
     toggleActive: async (id: string, isActive: boolean): Promise<void> => {
         await api.patch(`/Catalog(${id})`, { isActive });
+    },
+    uploadImage: async (catalogId: string, file: File): Promise<void> => {
+        // Step 1: Delete existing CatalogFile for this catalog item if any
+        try {
+            const existing = await api.get<{ value: { ID: string }[] }>(`/CatalogFile?$filter=catalog_ID eq ${catalogId}`);
+            for (const f of existing.data.value) {
+                await api.delete(`/CatalogFile(${f.ID})`);
+            }
+        } catch {
+            // Ignore if no existing file
+        }
+        // Step 2: Create metadata record
+        const response = await api.post('/CatalogFile', {
+            catalog_ID: catalogId,
+            mediaType: file.type,
+            url: '',
+        });
+        const fileId = response.data.ID;
+        // Step 3: PUT binary content
+        await api.put(`/CatalogFile(${fileId})/content`, file, {
+            headers: { 'Content-Type': file.type },
+        });
+        // Step 4: Persist the content URL into the url field so $expand=file returns it
+        const contentUrl = `/odata/v4/lunch/CatalogFile(${fileId})/content`;
+        await api.patch(`/CatalogFile(${fileId})`, { url: contentUrl });
     },
 };
 

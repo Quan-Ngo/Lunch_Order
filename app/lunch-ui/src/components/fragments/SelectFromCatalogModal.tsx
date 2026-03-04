@@ -169,7 +169,7 @@ export function SelectFromCatalogModal({
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border-2
                                             ${activeTab === cat
                                                 ? 'bg-primary border-black shadow-[var(--shadow-neobrutalism-sm)]'
-                                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50 hover:text-gray-800'
                                             }`}
                                     >
                                         {t(`categories.${cat}`, cat)}

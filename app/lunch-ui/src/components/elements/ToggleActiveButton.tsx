@@ -3,56 +3,31 @@ import { Button } from '@/components/elements/Button';
 
 interface ToggleActiveButtonProps {
     isActive: boolean;
-    onToggle?: () => void;
-    onActivate?: () => void;
-    onDeactivate?: () => void;
+    onToggle: () => void;
     size?: 'sm' | 'md';
     disabled?: boolean;
-    activeLabel?: string;
-    inactiveLabel?: string;
-    className?: string;
 }
 
-export function ToggleActiveButton({
-    isActive,
-    onToggle,
-    onActivate,
-    onDeactivate,
-    size = 'sm',
-    disabled,
-    activeLabel,
-    inactiveLabel,
-    className,
-}: ToggleActiveButtonProps) {
+export function ToggleActiveButton({ isActive, onToggle, size = 'sm', disabled }: ToggleActiveButtonProps) {
     const { t } = useTranslation();
-    const handleClick = () => {
-        if (isActive && onDeactivate) {
-            onDeactivate();
-            return;
-        }
-
-        if (!isActive && onActivate) {
-            onActivate();
-            return;
-        }
-
-        onToggle?.();
-    };
 
     return (
         <Button
             variant="secondary"
             size={size}
             disabled={disabled}
-            className={`${isActive ? 'bg-green-300 hover:bg-green-400' : ''} ${className ?? ''}`.trim()}
-            onClick={handleClick}
+            className={isActive
+                ? 'bg-green-100 border-green-500 text-green-700 hover:bg-green-200'
+                : 'bg-orange-50 border-orange-400 text-orange-600 hover:bg-orange-100'
+            }
+            onClick={onToggle}
             icon={
                 <span className="material-icons-outlined text-sm">
                     {isActive ? 'toggle_on' : 'toggle_off'}
                 </span>
             }
         >
-            {isActive ? (activeLabel ?? t('catalog.deactivate')) : (inactiveLabel ?? t('catalog.activate'))}
+            {isActive ? t('catalog.active') : t('catalog.inactive')}
         </Button>
     );
 }
