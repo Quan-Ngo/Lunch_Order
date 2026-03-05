@@ -36,6 +36,7 @@ interface CatalogEntity {
 export interface StaffEntity {
     ID: string;
     name: string;
+    email?: string;
     notification: boolean;
     status: boolean;
 }
@@ -129,8 +130,8 @@ export const employeeService = {
     setStatus: async (id: string, status: boolean): Promise<void> => {
         await api.patch(`/Staff(${id})`, { status });
     },
-    create: async (name: string): Promise<void> => {
-        await api.post('/Staff', { name, status: true, notification: true });
+    create: async (name: string, email?: string): Promise<void> => {
+        await api.post('/Staff', { name, email: email || '', status: true, notification: true });
     },
     update: async (id: string, data: { name: string; status: boolean; notification: boolean }): Promise<void> => {
         await api.patch(`/Staff(${id})`, data);

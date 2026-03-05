@@ -166,7 +166,7 @@ export default function Employees() {
                 isOpen={!!removingEmployee}
                 onClose={() => setRemovingEmployee(null)}
                 onConfirm={handleDelete}
-                item={removingEmployee ? { id: removingEmployee.ID, name: removingEmployee.name } : null}
+                item={removingEmployee ? { id: removingEmployee.ID, name: removingEmployee.name, email: removingEmployee.email } : null}
                 variant="employee"
             />
 
