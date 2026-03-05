@@ -37,7 +37,7 @@ module.exports = class LunchService extends cds.ApplicationService {
         });
 
         // Send email when food is added to daily menu
-        this.after('CREATE', 'DailyMenu', (data) => {
+        this.after('CREATE', 'DailyMenu', async (data) => {
             // Check if it's a food creation (catalog_ID is present)
             if (!data.catalog_ID) return;
 
@@ -51,17 +51,39 @@ module.exports = class LunchService extends cds.ApplicationService {
                 }
             }
 
-            console.log(`[LunchService] Food added for ${formattedDate}. Sending notification in the background...`);
+            console.log(`[LunchService] Food added for ${formattedDate}. Gathering recipients...`);
 
-            // TEST: Send a single email as requested. 
-            // We use standard Promise chaining (.catch) instead of await to avoid blocking the DB transaction and HTTP response.
-            sendEmail({
-                to: 'test@lunchorder.local',
-                subject: `New Lunch Option for ${formattedDate}!`,
-                text: `New food selection is available for ${formattedDate}. What would you like for lunch on that day?.`
-            }).catch((err) => {
-                console.error('[LunchService] Failed to send notification email:', err);
-            });
+            try {
+                // Fetch staff from the database where status = true and notification = true
+                const staffMembers = await SELECT.from(Staff).where({ status: true, notification: true });
+
+                // Guard against users without email, or if email looks incorrect/malformed
+                const validEmails = staffMembers
+                    .map(staff => staff.email?.trim())
+                    .filter(email => {
+                        // Basic validation: string exists, contains '@' and '.'
+                        return email && email.includes('@') && email.includes('.');
+                    });
+
+                if (validEmails.length === 0) {
+                    console.log(`[LunchService] No valid staff emails found. Skipping notification.`);
+                    return;
+                }
+
+                console.log(`[LunchService] Found ${validEmails.length} valid recipients. Sending notifications in the background...`);
+
+                // We use standard Promise chaining (.catch) instead of await 
+                // to avoid waiting on the SMTP dispatch (which keeps the UI fast)
+                sendEmail({
+                    to: validEmails.join(', '), // Send to array of valid emails
+                    subject: `New Lunch Option for ${formattedDate}!`,
+                    text: `New food selection is available for ${formattedDate}. What would you like for lunch on that day?.`
+                }).catch((err) => {
+                    console.error('[LunchService] Failed to send notification email:', err);
+                });
+            } catch (err) {
+                console.error('[LunchService] Error fetching staff for notifications:', err);
+            }
         });
 
         return super.init();

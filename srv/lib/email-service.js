@@ -1,11 +1,12 @@
 const nodemailer = require('nodemailer');
 
+// Pull SMTP configuration from environment variables (e.g., .env file)
 const transporter = nodemailer.createTransport({
-    host: 'sandbox.smtp.mailtrap.io',
-    port: 587,
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
     auth: {
-        user: '4566f536ba86e6',
-        pass: '75d87a9d9243b3',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
     },
 });
 
