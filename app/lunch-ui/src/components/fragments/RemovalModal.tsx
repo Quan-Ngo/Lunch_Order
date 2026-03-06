@@ -14,9 +14,10 @@ interface RemovalModalProps {
     onConfirm: (id: string) => Promise<void>;
     item: RemovalItem | null;
     variant?: 'default' | 'employee';
+    contextText?: string;
 }
 
-export function RemovalModal({ isOpen, onClose, onConfirm, item, variant = 'default' }: RemovalModalProps) {
+export function RemovalModal({ isOpen, onClose, onConfirm, item, variant = 'default', contextText }: RemovalModalProps) {
     const { t } = useTranslation();
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -74,7 +75,11 @@ export function RemovalModal({ isOpen, onClose, onConfirm, item, variant = 'defa
                 {/* Body Content */}
                 <div className="p-6">
                     <p className="text-gray-500 font-medium leading-relaxed mb-6">
-                        {variant === 'employee' ? t('removalModal.warning') : `${t('removalModal.bodyPrefix')} ${item.name}.`}
+                        {variant === 'employee'
+                            ? t('removalModal.warning')
+                            : contextText
+                                ? `${t('removalModal.bodyPrefix')} ${item.name} ${contextText}`
+                                : `${t('removalModal.bodyPrefix')} ${item.name}.`}
                     </p>
 
                     {/* Employee Card - only shows in employee variant */}

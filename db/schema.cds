@@ -55,13 +55,13 @@ view DailyCatalogStatistics as
   select from lunch.StaffCatalog as SC
   inner join lunch.Catalog as C on SC.Catalog_ID = C.ID
   {
-    SC.date                as OrderDate,
-    C.ID                   as CatalogID,
+    key SC.date            as OrderDate,
+    key C.ID               as CatalogID,
     C.name                 as CatalogName,
     C.price                as CatalogPrice,
     C.description          as CatalogDescription,
-    count(*)               as OrderCount,
-    count(*) * C.price     as SubTotal
+    cast(count(*) as Integer)                          as OrderCount,
+    cast(cast(count(*) as Decimal(15,2)) * C.price as Decimal(15,2)) as SubTotal
   }
   group by
     SC.date,
@@ -72,9 +72,9 @@ view DailyCatalogStatistics as
 
 view DailyOrderSummary as
   select from DailyCatalogStatistics {
-    OrderDate,
-    sum(OrderCount) as TotalOrders,
-    sum(SubTotal)   as TotalAmount
+    key OrderDate,
+    cast(sum(OrderCount) as Integer)       as TotalOrders,
+    cast(sum(SubTotal) as Decimal(15,2))   as TotalAmount
   }
   group by
     OrderDate;
