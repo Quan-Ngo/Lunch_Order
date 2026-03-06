@@ -74,7 +74,7 @@ modules:
 
   - name: Lunch_Order-app-deployer
     type: com.sap.application.content
-    path: gen
+    path: .
     requires:
       - name: Lunch_Order-auth
       - name: srv-api
@@ -84,7 +84,7 @@ modules:
           config:
             HTML5Runtime_enabled: true
     build-parameters:
-      build-result: app/
+      build-result: resources/
       requires:
         - name: Lunch_Order-lunch-ui
           artifacts:
