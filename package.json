@@ -62,6 +62,7 @@
       },
       "[production]": {
         "auth": "xsuaa",
+        "db": "hana",
         "destinations": true,
         "html5-repo": true,
         "application-logging": true
