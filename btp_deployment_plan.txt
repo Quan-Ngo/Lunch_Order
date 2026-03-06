@@ -1,0 +1,188 @@
+# Fix BTP Deployment Configuration
+
+The app's backend (CAP srv + HANA DB deployer) is properly configured, but the frontend (`lunch-ui` React app) is not wired into the MTA build/deploy pipeline, and several BTP-specific config files are missing. This plan addresses all 5 issues.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **BTP Auth & SCIM Destinations (Item 5):** The `mta.yaml` will declare destination *service instances*, but the actual destination entries (URL, credentials) for your IAS/SCIM endpoints must be configured manually in your **BTP Subaccount Cockpit → Destinations** after deployment. The MTA can only ensure the Destination service instance exists.
+
+> [!WARNING]
+> **Existing deployment:** If you have already deployed with the old MTA ID (`Lunch_Order`), the new `cnma.Lunch_Order` ID will create a **separate** MTA. You would need to manually undeploy the old one via `cf undeploy Lunch_Order --delete-services`.
+
+---
+
+## Proposed Changes
+
+### 1. Frontend Runtime Config
+
+#### [NEW] [xs-app.json](file:///c:/Users/Quan/Lunch_Order/app/lunch-ui/xs-app.json)
+
+Creates routing rules for the HTML5 Application Runtime (manages how the deployed SPA reaches the backend):
+
+```json
+{
+  "welcomeFile": "/index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/odata/v4/(.*)$",
+      "target": "/odata/v4/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": true
+    },
+    {
+      "source": "^(.*)$",
+      "target": "$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
+    }
+  ]
+}
+```
+
+#### [NEW] [manifest.json](file:///c:/Users/Quan/Lunch_Order/app/lunch-ui/manifest.json)
+
+Required by the HTML5 App Repository to identify the app. Uses the `cnma` namespace prefix:
+
+```json
+{
+  "sap.app": {
+    "id": "cnma.LunchOrder",
+    "type": "application",
+    "applicationVersion": { "version": "1.0.0" },
+    "title": "Conarum Lunch"
+  }
+}
+```
+
+---
+
+### 2. MTA Build Pipeline
+
+#### [MODIFY] [mta.yaml](file:///c:/Users/Quan/Lunch_Order/mta.yaml)
+
+**a) Add a new module to build `lunch-ui`:**
+
+```yaml
+  - name: Lunch_Order-lunch-ui
+    type: html5
+    path: app/lunch-ui
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms: []
+```
+
+**b) Wire it into `Lunch_Order-app-deployer`** (currently has empty `requires:`):
+
+```yaml
+  - name: Lunch_Order-app-deployer
+    type: com.sap.application.content
+    path: gen
+    requires:
+      - name: Lunch_Order-auth
+      - name: srv-api
+      - name: Lunch_Order-html5-repo-host
+        parameters:
+          content-target: true
+          config:
+            HTML5Runtime_enabled: true
+    build-parameters:
+      build-result: app/
+      requires:
+        - name: Lunch_Order-lunch-ui
+          artifacts:
+            - dist/**
+          target-path: resources/cnma.LunchOrder/
+```
+
+---
+
+### 3. Approuter Routing
+
+#### [MODIFY] [xs-app.json](file:///c:/Users/Quan/Lunch_Order/app/router/xs-app.json)
+
+Fix catch-all route to serve frontend from HTML5 repo and forward only API calls to backend:
+
+```json
+{
+  "welcomeFile": "/cnma.LunchOrder/index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/odata/v4/(.*)$",
+      "target": "/odata/v4/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": true
+    },
+    {
+      "source": "^/cnma\\.LunchOrder/(.*)$",
+      "target": "$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
+    }
+  ]
+}
+```
+
+---
+
+### 4. BTP Destination Configuration
+
+#### [MODIFY] [mta.yaml](file:///c:/Users/Quan/Lunch_Order/mta.yaml) — resources section
+
+Add destination configuration with `srv-api` sub-account level destination so the Approuter and HTML5 runtime can reach the CAP backend:
+
+```yaml
+  - name: Lunch_Order-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      config:
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Name: srv-api
+                Type: HTTP
+                URL: ~{srv-api/srv-url}
+                Authentication: NoAuthentication
+                forwardAuthToken: true
+                ProxyType: Internet
+                HTML5.ForwardAuthToken: true
+                HTML5.DynamicDestination: true
+    requires:
+      - name: srv-api
+```
+
+---
+
+## Verification Plan
+
+### Manual Verification
+
+Since BTP deployment requires cloud infrastructure, verification must be done manually:
+
+1. **Build the MTA archive locally** to confirm the config is valid:
+   ```
+   npx mbt build
+   ```
+   This will validate `mta.yaml` syntax, run the `lunch-ui` build, and produce an `.mtar` file in `mta_archives/`.
+
+2. **Deploy to BTP** (requires CF CLI login):
+   ```
+   cf deploy mta_archives/cnma.Lunch_Order_1.0.0.mtar
+   ```
+
+3. **Verify in BTP Cockpit:**
+   - Check that `Lunch_Order-srv`, `Lunch_Order`, and `Lunch_Order-lunch-ui` apps appear
+   - Check that the HTML5 App Repository contains `cnma.LunchOrder`
+   - Navigate to the Approuter URL and confirm the React app loads
+   - Confirm OData calls from the UI reach the backend successfully

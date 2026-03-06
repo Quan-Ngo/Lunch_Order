@@ -1,0 +1,10 @@
+{
+    "sap.app": {
+        "id": "cnma.LunchOrder",
+        "type": "application",
+        "applicationVersion": {
+            "version": "1.0.0"
+        },
+        "title": "Conarum Lunch"
+    }
+}

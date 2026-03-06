@@ -9,6 +9,10 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+/** @type {boolean} */
+let isEmailDisabled;
+isEmailDisabled = true; // Set to true to temporarily disable email services
+
 /**
  * Send an email via the configured SMTP transporter.
  * @param {Object}  options
@@ -19,6 +23,11 @@ const transporter = nodemailer.createTransport({
  * @returns {Promise<import('nodemailer').SentMessageInfo>}
  */
 async function sendEmail({ to, subject, text, html }) {
+    if (isEmailDisabled) {
+        console.log(`[EmailService] Email sending is currently disabled. Skipping email to: ${to}`);
+        return { messageId: 'disabled' };
+    }
+
     const info = await transporter.sendMail({
         from: '"Lunch Order" <noreply@lunchorder.dev>',
         to,

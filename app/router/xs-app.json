@@ -1,10 +1,19 @@
 {
+  "welcomeFile": "/cnma.LunchOrder/index.html",
+  "authenticationMethod": "route",
   "routes": [
     {
-      "source": "^/(.*)$",
-      "target": "$1",
+      "source": "^/odata/v4/(.*)$",
+      "target": "/odata/v4/$1",
       "destination": "srv-api",
+      "authenticationType": "xsuaa",
       "csrfProtection": true
+    },
+    {
+      "source": "^/cnma\\.LunchOrder/(.*)$",
+      "target": "$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
     }
   ]
 }

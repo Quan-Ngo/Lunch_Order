@@ -1,5 +1,5 @@
 _schema-version: 3.3.0
-ID: Lunch_Order
+ID: cnma.Lunch_Order
 version: 1.0.0
 description: "A simple CAP project."
 parameters:
@@ -61,6 +61,17 @@ modules:
           app-protocol: ${protocol}
           app-uri: ${default-uri}
 
+  - name: Lunch_Order-lunch-ui
+    type: html5
+    path: app/lunch-ui
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms: []
+
   - name: Lunch_Order-app-deployer
     type: com.sap.application.content
     path: gen
@@ -75,6 +86,10 @@ modules:
     build-parameters:
       build-result: app/
       requires:
+        - name: Lunch_Order-lunch-ui
+          artifacts:
+            - dist/**
+          target-path: resources/cnma.LunchOrder/
 
   - name: notification-content-deployment
     type: nodejs
@@ -99,7 +114,7 @@ resources:
       service-plan: application
       path: ./xs-security.json
       config:
-        xsappname: Lunch_Order-${org}-${space}
+        xsappname: cnma.Lunch_Order-${org}-${space}
         tenant-mode: dedicated
         oauth2-configuration:
           credential-types:
@@ -119,6 +134,21 @@ resources:
     parameters:
       service: destination
       service-plan: lite
+      config:
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Name: srv-api
+                Type: HTTP
+                URL: ~{srv-api/srv-url}
+                Authentication: NoAuthentication
+                forwardAuthToken: true
+                ProxyType: Internet
+                HTML5.ForwardAuthToken: true
+                HTML5.DynamicDestination: true
+    requires:
+      - name: srv-api
 
   - name: Lunch_Order-html5-repo-host
     type: org.cloudfoundry.managed-service
