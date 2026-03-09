@@ -1,6 +1,6 @@
 {
     "sap.app": {
-        "id": "cnma.LunchOrder",
+        "id": "lunchorder",
         "type": "application",
         "applicationVersion": {
             "version": "1.0.0"

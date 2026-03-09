@@ -1,5 +1,5 @@
 {
-  "xsappname": "cmna-internal-lunch-order",
+  "xsappname": "lunchorder",
   "scopes": [
     {
       "name": "$XSAPPNAME.CMNA_READ_ASSIGNED_USER",

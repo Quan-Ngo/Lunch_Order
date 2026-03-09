@@ -19,8 +19,9 @@
   "scripts": {
     "start": "cds-serve",
     "watch": "cds watch",
+    "watch-without-livereload": "cds watch --no-live-reload",
     "start-ui": "cd app/lunch-ui && npm run dev",
-    "start-local": "concurrently \"npm run watch\" \"cd app/lunch-ui && npm run dev\""
+    "start-local": "concurrently \"npm run watch-without-livereload\" \"cd app/lunch-ui && npm run dev\""
   },
   "private": true,
   "cds": {

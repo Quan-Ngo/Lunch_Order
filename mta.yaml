@@ -1,167 +1,208 @@
 _schema-version: 3.3.0
-ID: cnma.Lunch_Order
+ID: cnma-internallunchorder
 version: 1.0.0
-description: "A simple CAP project."
+description: "Lunch Order Cloud Foundry MTA"
 parameters:
   enable-parallel-deployments: true
-  deploy_mode: html5-repo
+
 build-parameters:
   before-all:
     - builder: custom
       commands:
-        - npm ci
+        - npm install
         - npx cds build --production
-modules:
-  - name: Lunch_Order-srv
-    type: nodejs
-    path: gen/srv
-    parameters:
-      instances: 1
-      buildpack: nodejs_buildpack
-    build-parameters:
-      builder: npm-ci
-    provides:
-      - name: srv-api # required by consumers of CAP services (e.g. approuter)
-        properties:
-          srv-url: ${default-url}
-    requires:
-      - name: Lunch_Order-auth
-      - name: Lunch_Order-db
-      - name: Lunch_Order-destination
-      - name: Lunch_Order-logging
 
-  - name: Lunch_Order-db-deployer
+# = = = = = = = = = = = = = = = = = = = = = = = = = = MODULE SPACE = = = = = = = = = = = = = = = = = = = = = = = = = = #
+modules:
+  # ------------------------------------------------------------
+  # (1) DB MODULE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_db
     type: hdb
     path: gen/db
     parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: Lunch_Order-db
-  - name: Lunch_Order
-    type: approuter.nodejs
-    path: app/router
-    parameters:
-      keep-existing-routes: true
-      disk-quota: 256M
       memory: 256M
+      disk-quota: 512M
+      no-route: true
+      no-start: true
+      tasks: # execute hdi deployer on app creation/update
+        - name: hdi-deploy
+          command: npm run start
     requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: srv-api # must be used in xs-app.json as well
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: Lunch_Order-auth
-      - name: Lunch_Order-destination
-      - name: Lunch_Order-html5-runtime
-      - name: Lunch_Order-logging
-    provides:
-      - name: app-api
-        properties:
-          app-protocol: ${protocol}
-          app-uri: ${default-uri}
+      - name: cnma_hdi_container
+      - name: cnma_internallunchorder_xsuaa
 
-  - name: Lunch_Order-lunch-ui
+  # ------------------------------------------------------------
+  # (2) SERVICE MODULE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: "${default-url}"
+    requires:
+      - name: cnma_hdi_container
+      - name: cnma_internallunchorder_xsuaa
+      - name: cnma_internallunchorder_destination
+      - name: cnma_internallunchorder_connectivity
+
+  # ------------------------------------------------------------
+  # (3) UI MODULE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_ui
     type: html5
     path: app/lunch-ui
+    parameters:
+      no-route: true
+      no-start: true
+    requires:
+      - name: cnma_internallunchorder_destination
     build-parameters:
-      build-result: dist
+      supported-platforms: []
+      build-result: .
       builder: custom
       commands:
         - npm ci
         - npm run build
-      supported-platforms: []
+      ignore: ["node_modules/", "src/", "public/", "dist/"]
 
-  - name: Lunch_Order-app-deployer
+  # ------------------------------------------------------------
+  # (4) UI DEPLOYER MODULE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_ui_deployer
     type: com.sap.application.content
-    path: .
+    path: app/ui-deployer
     requires:
-      - name: Lunch_Order-auth
-      - name: srv-api
-      - name: Lunch_Order-html5-repo-host
+      - name: cnma_internallunchorder_html5_host
         parameters:
           content-target: true
-          config:
-            HTML5Runtime_enabled: true
     build-parameters:
-      build-result: resources/
+      build-result: .
       requires:
-        - name: Lunch_Order-lunch-ui
-          artifacts:
-            - dist/**
-          target-path: resources/cnma.LunchOrder/
+        - artifacts:
+            - lunchorder.zip
+          name: cnma_internallunchorder_ui
+          target-path: .
 
-  - name: notification-content-deployment
-    type: nodejs
-    path: gen/srv
-    parameters:
-      no-route: true
-      no-start: true
-      memory: 256MB
-      disk-quota: 1GB
-      tasks:
-        - name: notification-content-deployment
-          command: "node node_modules/@cap-js/notifications/lib/content-deployment.js"
-          memory: 256MB
-          disk-quota: 1GB
+  # ------------------------------------------------------------
+  # (5) UI REPO REGISTRY MODULE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_destination_content
+    type: com.sap.application.content    
+
     requires:
-      - name: Lunch_Order-destination
+    - name: cnma_internallunchorder_xsuaa
+      parameters:
+        service-key:
+          name: cnma_internallunchorder_xsuaa_key
+
+    - name: cnma_internallunchorder_html5_host
+      parameters:
+        service-key:
+          name: cnma_internallunchorder_html5_host_key
+
+    - name: cnma_internallunchorder_destination
+      parameters:
+        content-target: true   
+
+    - name: cnma_internallunchorder_connectivity
+
+    build-parameters:
+      no-source: true
+    parameters:      
+      content:
+        instance:
+          existing_destinations_policy: update                     
+          destinations:
+          - Name: cnma_internallunchorder_html5_dest
+            ServiceInstanceName: cnma_internallunchorder_html5_host
+            ServiceKeyName: cnma_internallunchorder_html5_host_key
+            sap.cloud.service: lunchorder    
+              
+          - Name: cnma_internallunchorder_xsuaa_dest
+            Authentication: OAuth2UserTokenExchange
+            ServiceInstanceName: cnma_internallunchorder_xsuaa
+            ServiceKeyName: cnma_internallunchorder_xsuaa_key
+            sap.cloud.service: lunchorder
+# = = = = = = = = = = = = = = = = = = = = = = = = = = RESOURCE SPACE = = = = = = = = = = = = = = = = = = = = = = = = = = #
 resources:
-  - name: Lunch_Order-auth
+  # ------------------------------------------------------------
+  # (1) XSUAA RESOURCE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_xsuaa
     type: org.cloudfoundry.managed-service
     parameters:
+      path: ./xs-security.json
       service: xsuaa
       service-plan: application
-      path: ./xs-security.json
       config:
-        xsappname: cnma.Lunch_Order-${org}-${space}
+        xsappname: lunchorder
         tenant-mode: dedicated
-        oauth2-configuration:
-          credential-types:
-            - "binding-secret"
-            - "x509"
-          redirect-uris:
-            - https://*~{app-api/app-uri}/**
-    requires:
-      - name: app-api
-  - name: Lunch_Order-db
+
+  # ------------------------------------------------------------
+  # (2) HANA HDI CONTAINER SERVICE INSTANCE
+  # ------------------------------------------------------------
+  - name: cnma_hdi_container
     type: com.sap.xs.hdi-container
     parameters:
       service: hana
       service-plan: hdi-shared
-  - name: Lunch_Order-destination
+
+  # ------------------------------------------------------------
+  # (3) HTML5 APP REPO HOST INSTANCE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_html5_host
     type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+
+  # ------------------------------------------------------------
+  # (4) DESTINATION SERVICE INSTANCE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_destination
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: srv-api
     parameters:
       service: destination
       service-plan: lite
       config:
+        HTML5Runtime_enabled: true
         init_data:
           instance:
             existing_destinations_policy: update
             destinations:
               - Name: srv-api
+                Description: Lunch Order Service destination
+                Authentication: NoAuthentication
+                ProxyType: Internet
                 Type: HTTP
                 URL: ~{srv-api/srv-url}
-                Authentication: NoAuthentication
-                forwardAuthToken: true
-                ProxyType: Internet
-                HTML5.ForwardAuthToken: true
                 HTML5.DynamicDestination: true
-    requires:
-      - name: srv-api
+                HTML5.ForwardAuthToken: true
+                HTML5.Timeout: 600000
 
-  - name: Lunch_Order-html5-repo-host
+  # ------------------------------------------------------------
+  # (5) CONNECTIVITY INSTANCES
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_connectivity
     type: org.cloudfoundry.managed-service
     parameters:
-      service: html5-apps-repo
-      service-plan: app-host
-  - name: Lunch_Order-html5-runtime
+      service: connectivity
+      service-plan: lite
+
+  # ------------------------------------------------------------
+  # (6) HTML5 RUNTIME
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_html5_runtime
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
       service-plan: app-runtime
-  - name: Lunch_Order-logging
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: application-logs
-      service-plan: standard
+
