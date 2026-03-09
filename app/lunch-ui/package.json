@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && cmd /c \"cd dist && npx bestzip ../lunchorder.zip *\"",
+    "build_powershell": "tsc -b && vite build && cmd /c \"cd dist && npx bestzip ../lunchorder.zip *\"",
+    "build_bash": "tsc -b && vite build && cd dist && npx bestzip ../lunchorder.zip *",
     "lint": "eslint .",
     "preview": "vite preview"
   },
