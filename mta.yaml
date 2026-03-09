@@ -64,12 +64,11 @@ modules:
       - name: cnma_internallunchorder_destination
     build-parameters:
       supported-platforms: []
-      build-result: .
+      build-result: dist
       builder: custom
       commands:
         - npm ci
         - npm run build
-      ignore: ["node_modules/", "src/", "public/", "dist/"]
 
   # ------------------------------------------------------------
   # (4) UI DEPLOYER MODULE
