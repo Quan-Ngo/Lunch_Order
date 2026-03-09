@@ -9,7 +9,8 @@
         "admin": "Admin",
         "staff": "Staff",
         "clearSelection": "Clear Selection",
-        "toggleLanguage": "Toggle Language"
+        "toggleLanguage": "Toggle Language",
+        "logout": "Logout"
     },
     "dailyMenu": {
         "title": "What's for",

@@ -1,6 +1,10 @@
 {
   "welcomeFile": "/lunchorder/index.html",
   "authenticationMethod": "route",
+  "logout": {
+    "logoutEndpoint": "/logout",
+    "logoutPage": "/lunchorder/index.html"
+  },
   "routes": [
     {
       "source": "^/odata/v4/(.*)$",

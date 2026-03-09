@@ -9,7 +9,8 @@
         "admin": "Quản Trị",
         "staff": "Nhân Viên",
         "clearSelection": "Bỏ Chọn Đăng Nhập",
-        "toggleLanguage": "Đổi Ngôn Ngữ"
+        "toggleLanguage": "Đổi Ngôn Ngữ",
+        "logout": "Đăng Xuất"
     },
     "dailyMenu": {
         "title": "Trưa nay",
