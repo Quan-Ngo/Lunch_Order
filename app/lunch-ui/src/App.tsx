@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route, HashRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DailyMenu from '@/pages/DailyMenu';
 import FoodCatalog from '@/pages/FoodCatalog';
@@ -21,7 +21,7 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/" element={<DailyMenu />} />
           <Route path="/catalog" element={<FoodCatalog />} />
@@ -29,7 +29,7 @@ export default function App() {
           <Route path="/manage-menu" element={<ManageMenu />} />
           <Route path="/daily-orders" element={<DailyOrders />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
       <style>{`
         .Toastify__progress-bar.Toastify__progress-bar--success { background: #16a34a !important; height: 3px !important; }
         .Toastify__progress-bar.Toastify__progress-bar--error { background: #dc2626 !important; height: 3px !important; }

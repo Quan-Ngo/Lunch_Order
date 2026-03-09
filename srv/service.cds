@@ -1,6 +1,7 @@
 using lunch from '../db/schema';
 
-service LunchService @(path: '/odata/v4/lunch') {
+@path: '/odata/v4/lunch'
+service LunchService {
     entity Catalog      as projection on lunch.Catalog;
     
     entity Staff        as projection on lunch.Staff;

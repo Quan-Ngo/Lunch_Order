@@ -1,5 +1,5 @@
 {
-  "welcomeFile": "/cnma.LunchOrder/index.html",
+  "welcomeFile": "/lunchorder/index.html",
   "authenticationMethod": "route",
   "routes": [
     {
@@ -10,7 +10,7 @@
       "csrfProtection": true
     },
     {
-      "source": "^/cnma\\.LunchOrder/(.*)$",
+      "source": "^/lunchorder/(.*)$",
       "target": "$1",
       "service": "html5-apps-repo-rt",
       "authenticationType": "xsuaa"
