@@ -5,6 +5,65 @@ const api = axios.create({
 });
 
 // ─────────────────────────────────────────────
+// CSRF Token Handling (required by SAP Approuter)
+// ─────────────────────────────────────────────
+let csrfToken: string | null = null;
+
+const fetchCsrfToken = async (): Promise<string> => {
+    try {
+        const response = await api.head('/', {
+            headers: {
+                'x-csrf-token': 'fetch',
+                'x-requested-with': 'XMLHttpRequest'
+            }
+        });
+        return response.headers['x-csrf-token'] || '';
+    } catch (err) {
+        console.warn('[CSRF] Fetch failed, returning empty string:', err);
+        return '';
+    }
+};
+
+api.interceptors.request.use(async (config) => {
+    const mutatingMethods: string[] = ['post', 'put', 'patch', 'delete'];
+    if (mutatingMethods.includes(config.method || '')) {
+        if (!csrfToken) {
+            try {
+                csrfToken = await fetchCsrfToken();
+            } catch (err) {
+                console.warn('[CSRF] Failed to fetch token, proceeding without it:', err);
+            }
+        }
+        if (csrfToken) {
+            config.headers['x-csrf-token'] = csrfToken;
+        }
+    }
+    return config;
+});
+
+// If a request fails with 403, the token may have expired — refetch and retry once
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+        if (
+            error.response?.status === 403 &&
+            !originalRequest._csrfRetry
+        ) {
+            originalRequest._csrfRetry = true;
+            try {
+                csrfToken = await fetchCsrfToken();
+                originalRequest.headers['x-csrf-token'] = csrfToken;
+                return api(originalRequest);
+            } catch (retryErr) {
+                return Promise.reject(retryErr);
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
+// ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
 
