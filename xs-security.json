@@ -1,5 +1,6 @@
 {
   "xsappname": "lunchorder",
+  "tenant-mode": "dedicated",
   "scopes": [
     {
       "name": "$XSAPPNAME.CMNA_READ_ASSIGNED_USER",
