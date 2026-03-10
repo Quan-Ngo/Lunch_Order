@@ -36,6 +36,39 @@ module.exports = class LunchService extends cds.ApplicationService {
             }
         });
 
+        this.on('getBtpUsers', async (req) => {
+            const BTP_CLIENT_ID = "sb-na-0dc1b295-8545-4401-b294-6912d269cc66!a203402";
+            const BTP_CLIENT_SECRET = "b5e721dc-6cb7-4a21-8ebd-46a7cc099cc2$OO_PT7anPElmD3SSuQ9Y5L10W5F-LoBQyBb-7Vz1Frg=";
+            const credentials = Buffer.from(`${BTP_CLIENT_ID}:${BTP_CLIENT_SECRET}`).toString('base64');
+            const tokenUrl = 'https://proconarum-development-system.authentication.eu10.hana.ondemand.com/oauth/token?grant_type=client_credentials';
+            const usersUrl = 'https://api.authentication.eu10.hana.ondemand.com/Users';
+
+            try {
+                // 1. Fetch OAuth Token
+                const tokenRes = await axios.post(tokenUrl, null, {
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+                const token = tokenRes.data.access_token;
+
+                // 2. Fetch Users from SCIM API
+                const usersRes = await axios.get(usersUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // Return as stringyfied JSON since results might be complex
+                return JSON.stringify(usersRes.data);
+            } catch (err) {
+                console.error("Failed to fetch BTP users in backend:", err.response?.data || err.message);
+                return req.error(500, "Failed to fetch BTP users: " + err.message);
+            }
+        });
+
         // Send email when food is added to daily menu
         this.after('CREATE', 'DailyMenu', (data) => {
             // Check if it's a food creation (catalog_ID is present)

@@ -173,7 +173,7 @@ export const foodService = {
             headers: { 'Content-Type': file.type },
         });
         // Step 4: Persist the content URL into the url field so $expand=file returns it
-        const contentUrl = `odata/v4/lunch/CatalogFile(${fileId})/content`;
+        const contentUrl = `/odata/v4/lunch/CatalogFile(${fileId})/content`;
         await api.patch(`/CatalogFile(${fileId})`, { url: contentUrl });
     },
 };
@@ -412,36 +412,11 @@ export const billService = {
 
     /** Get content URL for displaying a bill */
     getContentUrl: (id: string): string => {
-        return `odata/v4/lunch/DailyOrderBill(${id})/content`;
+        return `/odata/v4/lunch/DailyOrderBill(${id})/content`;
     },
 };
 
 export default api;
-
-// ─────────────────────────────────────────────
-// BTP SCIM Service (via Vite proxy to avoid CORS)
-// ─────────────────────────────────────────────
-
-// Decode BTP credentials from Base64 (stored in .env to avoid $ expansion bugs)
-// Decode BTP credentials from HEX (stored in .env to avoid $ expansion and base64 issues)
-const hexToString = (hex: string) => {
-    if (!hex) return '';
-    let str = '';
-    for (let i = 0; i < hex.length; i += 2) {
-        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    }
-    return str;
-};
-
-const BTP_CLIENT_ID = hexToString(import.meta.env.VITE_BTP_CLIENT_ID_HEX || '');
-const BTP_CLIENT_SECRET = hexToString(import.meta.env.VITE_BTP_CLIENT_SECRET_HEX || '');
-
-// TODO: Remove this log after verification
-console.log('DEBUG Decoded BTP Credentials:', {
-    ID: BTP_CLIENT_ID,
-    Secret: BTP_CLIENT_SECRET,
-    Success: BTP_CLIENT_SECRET.includes('$') // Kiểm tra xem có dấu $ chưa
-});
 
 export interface ScimUser {
     id: string;
@@ -461,73 +436,35 @@ export interface ScimUsersResponse {
 }
 
 export const scimService = {
-    /** Step 1: Get OAuth access token via client_credentials */
-    getToken: async (): Promise<string> => {
-        if (!BTP_CLIENT_ID || !BTP_CLIENT_SECRET) {
-            console.error('BTP Credentials missing in .env!');
-            throw new Error('Missing BTP Credentials');
-        }
-
-        // DEBUG: Check if env vars are loaded correctly without revealing the full secret
-        console.log('DEBUG Env Load:', {
-            idLength: BTP_CLIENT_ID.length,
-            idStart: BTP_CLIENT_ID.substring(0, 5),
-            secretLength: BTP_CLIENT_SECRET.length,
-            secretStart: BTP_CLIENT_SECRET.substring(0, 5),
-            secretEnd: BTP_CLIENT_SECRET.substring(BTP_CLIENT_SECRET.length - 5),
-            hasDollar: BTP_CLIENT_SECRET.includes('$'),
-        });
-
-        const credentials = btoa(`${BTP_CLIENT_ID}:${BTP_CLIENT_SECRET}`);
+    /** 
+     * Fetch users securely via CAP backend.
+     * This avoids CORS issues on the frontend and keeps credentials secure on the backend.
+     */
+    fetchBtpUsers: async (): Promise<ScimUser[]> => {
         try {
-            const response = await axios.post<{ access_token: string }>(
-                '/btp-auth/oauth/token?grant_type=client_credentials',
-                null,
-                {
-                    headers: {
-                        Authorization: `Basic ${credentials}`,
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                }
-            );
-            return response.data.access_token;
+            // Call the custom OData function on the backend
+            const response = await api.get<{ value: string }>('/getBtpUsers()');
+
+            // OData functions return the result in a 'value' property
+            const dataStr = response.data.value;
+            if (!dataStr) return [];
+
+            // Backend returns a JSON string, so we parse it
+            const parsedData = JSON.parse(dataStr);
+
+            console.log('DEBUG: scimService.fetchBtpUsers from backend:', parsedData);
+
+            // Handle different possible response structures from SCIM/Identity API
+            if (Array.isArray(parsedData)) return parsedData;
+            if (parsedData.Resources && Array.isArray(parsedData.Resources)) return parsedData.Resources;
+            if (parsedData.resources && Array.isArray(parsedData.resources)) return parsedData.resources;
+            if (parsedData.value && Array.isArray(parsedData.value)) return parsedData.value;
+
+            return [];
         } catch (error: any) {
-            console.error('Token request failed:', error.response?.status, error.response?.data);
+            console.error('fetchBtpUsers failed:', error.response?.status, error.response?.data || error.message);
             throw error;
         }
-    },
-
-    /** Step 2: Get list of users from SCIM API */
-    getUsers: async (token: string): Promise<ScimUser[]> => {
-        const response = await axios.get<any>('/btp-scim/Users', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        });
-
-        console.log('DEBUG: scimService.getUsers raw data:', response.data);
-
-        const data = response.data;
-        if (!data) return [];
-
-        // Direct array
-        if (Array.isArray(data)) return data;
-
-        // Wrapped in Resources (SCIM standard)
-        if (Array.isArray(data.Resources)) return data.Resources;
-        if (Array.isArray(data.resources)) return data.resources;
-
-        // Wrapped in value (OData standard)
-        if (Array.isArray(data.value)) return data.value;
-
-        return [];
-    },
-
-    /** Fetch token then users in one call */
-    fetchBtpUsers: async (): Promise<ScimUser[]> => {
-        const token = await scimService.getToken();
-        return scimService.getUsers(token);
     },
 };
 

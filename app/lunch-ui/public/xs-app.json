@@ -3,6 +3,20 @@
     "authenticationMethod": "route",
     "routes": [
         {
+            "source": "^/btp-auth/(.*)$",
+            "target": "/$1",
+            "destination": "btp-auth-dest",
+            "authenticationType": "none",
+            "csrfProtection": false
+        },
+        {
+            "source": "^/btp-scim/(.*)$",
+            "target": "/$1",
+            "destination": "btp-scim-dest",
+            "authenticationType": "none",
+            "csrfProtection": false
+        },
+        {
             "source": "^/odata/v4/(.*)$",
             "target": "/odata/v4/$1",
             "destination": "srv-api",
