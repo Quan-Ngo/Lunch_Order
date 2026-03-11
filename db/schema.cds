@@ -14,6 +14,7 @@ entity Catalog : cuid, managed {
     name         : String(100);
     isActive     : Boolean;
     price        : Decimal(15,2);
+    currency     : String(10) default 'VND'; // ISO 4217 e.g. 'VND', 'USD', 'EUR'
     description  : String(500); // Added to support existing UI
     category     : String(50);  // Added to support existing UI
     menus        : Association to many DailyMenu on menus.catalog = $self;
@@ -59,6 +60,7 @@ view DailyCatalogStatistics as
     key C.ID               as CatalogID,
     C.name                 as CatalogName,
     C.price                as CatalogPrice,
+    C.currency             as CatalogCurrency,
     C.description          as CatalogDescription,
     cast(count(*) as Integer)                          as OrderCount,
     cast(cast(count(*) as Decimal(15,2)) * C.price as Decimal(15,2)) as SubTotal
@@ -68,6 +70,7 @@ view DailyCatalogStatistics as
     C.ID,
     C.name,
     C.price,
+    C.currency,
     C.description;
 
 view DailyOrderSummary as

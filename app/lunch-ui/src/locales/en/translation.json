@@ -13,7 +13,8 @@
         "logout": "Logout"
     },
     "dailyMenu": {
-        "title": "What's for",
+        "title": "What's",
+        "titleMid": "for",
         "titleHighlight": "Lunch?",
         "subtitle": "Choose your fuel for the day. Place your order before 10:30 AM.",
         "noMeals": "No meals available for this day. Ask the manager to set up the menu!",
@@ -75,11 +76,22 @@
         "fieldNamePlaceholder": "e.g. Cheese Burger",
         "fieldNameError": "Name is required.",
         "fieldPrice": "Price",
+        "fieldCurrency": "Currency",
         "fieldPriceError": "Price is required.",
         "fieldDescription": "Description",
         "fieldDescriptionPlaceholder": "Describe the dish...",
         "saveChanges": "Save Changes",
         "cancel": "Cancel"
+    },
+    "currencies": {
+        "VND": "Vietnamese Dong",
+        "USD": "US Dollar",
+        "EUR": "Euro",
+        "SGD": "Singapore Dollar",
+        "JPY": "Japanese Yen",
+        "KRW": "South Korean Won",
+        "THB": "Thai Baht",
+        "GBP": "British Pound"
     },
     "removalModal": {
         "title": "Remove Item?",

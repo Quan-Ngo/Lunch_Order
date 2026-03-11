@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/elements/Button';
 import { FoodModal, type FoodFormData } from '@/components/fragments/FoodModal';
-import { formatCurrency } from '@/config/currency';
+import { useFormatters } from '@/hooks/useFormatters';
 import { foodService, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +24,7 @@ export function SelectFromCatalogModal({
     existingCatalogIds,
 }: SelectFromCatalogModalProps) {
     const { t } = useTranslation();
+    const { formatPriceLabel } = useFormatters();
     const [catalogItems, setCatalogItems] = useState<Food[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -88,9 +89,9 @@ export function SelectFromCatalogModal({
             await foodService.create({
                 name: data.name,
                 price: parseFloat(data.price),
+                currency: data.currency,
                 description: data.description,
             });
-            // Refresh catalog list
             const items = await foodService.getAll();
             setCatalogItems(items.filter((f) => f.isActive));
             setIsFoodModalOpen(false);
@@ -239,7 +240,7 @@ export function SelectFromCatalogModal({
 
                                             {/* Price */}
                                             <span className="flex-shrink-0 font-black text-sm font-display">
-                                                {formatCurrency(food.price)}
+                                                {formatPriceLabel(food.price, food.currency)}
                                             </span>
 
                                             {/* Already on menu badge */}

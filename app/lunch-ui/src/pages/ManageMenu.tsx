@@ -144,6 +144,7 @@ export default function ManageMenu() {
                             name: entry.catalog.name,
                             description: entry.catalog.description || '',
                             price: entry.catalog.price,
+                            currency: entry.catalog.currency || 'VND',
                             image: entry.catalog.file?.url || '',
                             category: entry.catalog.category || 'General',
                             isActive: entry.catalog.isActive,

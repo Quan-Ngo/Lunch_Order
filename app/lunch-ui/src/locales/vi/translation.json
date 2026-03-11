@@ -14,6 +14,7 @@
     },
     "dailyMenu": {
         "title": "Trưa nay",
+        "titleMid": "",
         "titleHighlight": "Ăn gì?",
         "subtitle": "Chọn năng lượng căng tràn cho ngày mới. Vui lòng đặt trước 10:30 sáng.",
         "noMeals": "Chưa có món ăn nào cho ngày này. Vui lòng nhắc Admin thiết lập Menu!",
@@ -75,11 +76,22 @@
         "fieldNamePlaceholder": "Ví dụ: Bánh mì phô mai",
         "fieldNameError": "Vui lòng nhập tên món.",
         "fieldPrice": "Giá",
+        "fieldCurrency": "Đơn vị tiền tệ",
         "fieldPriceError": "Vui lòng nhập giá.",
         "fieldDescription": "Mô tả",
         "fieldDescriptionPlaceholder": "Mô tả món ăn...",
         "saveChanges": "Lưu thay đổi",
         "cancel": "Huỷ"
+    },
+    "currencies": {
+        "VND": "Viá»‡t Nam Äá»“ng",
+        "USD": "ÄÃ´ la Má»¹",
+        "EUR": "Euro",
+        "SGD": "ÄÃ´ la Singapore",
+        "JPY": "YÃªn Nháº­t",
+        "KRW": "Won HÃ n Quá»‘c",
+        "THB": "Baht ThÃ¡i",
+        "GBP": "Báº£ng Anh"
     },
     "removalModal": {
         "title": "Xác nhận xóa?",
