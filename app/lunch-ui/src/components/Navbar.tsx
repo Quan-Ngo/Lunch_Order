@@ -4,6 +4,7 @@ import { NavigationPageSelect } from '@/components/elements/NavigationPageSelect
 import { useAuth, type AuthUser } from '@/contexts/AuthContext';
 import { employeeService, type StaffEntity } from '@/services/api';
 import { useTranslation } from 'react-i18next';
+import { APP_LANGUAGE_STORAGE_KEY } from '@/i18n';
 
 const navLinks = [
     { to: '/', labelKey: 'navbar.dailyMenu' },
@@ -33,7 +34,9 @@ export default function Navbar() {
     };
 
     const toggleLanguage = () => {
-        i18n.changeLanguage(i18n.language === 'en' ? 'vi' : 'en');
+        const nextLanguage = i18n.language === 'en' ? 'vi' : 'en';
+        localStorage.setItem(APP_LANGUAGE_STORAGE_KEY, nextLanguage);
+        i18n.changeLanguage(nextLanguage);
     };
 
     const displayName = currentUser
@@ -89,7 +92,7 @@ export default function Navbar() {
                         <button
                             onClick={toggleLanguage}
                             className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all font-bold text-xs sm:text-sm hover:bg-primary/20"
-                            title="Toggle Language"
+                            title={t('navbar.toggleLanguage')}
                         >
                             {i18n.language === 'vi' ? 'VI' : 'EN'}
                         </button>

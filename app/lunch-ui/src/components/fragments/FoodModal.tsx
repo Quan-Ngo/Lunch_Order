@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/elements/Button';
-import { currencyConfig } from '@/config/currency';
+import { CURRENCY_OPTIONS } from '@/config/currency';
 
 export interface FoodFormData {
     name: string;
     price: string;
+    currency: string;
     description: string;
     image: File | null;
 }
@@ -22,6 +23,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
     const { t } = useTranslation();
     const [name, setName] = useState<string>('');
     const [price, setPrice] = useState<string>('');
+    const [currency, setCurrency] = useState<string>('VND');
     const [description, setDescription] = useState<string>('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -33,15 +35,15 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
             if (mode === 'edit' && initialData) {
                 setName(initialData.name || '');
                 setPrice(initialData.price?.toString() || '');
+                setCurrency(initialData.currency || 'VND');
                 setDescription(initialData.description || '');
-                // Note: Image population requires URL or File logic. Assuming image Preview URL is passed or handled via separate prop if needed,
-                // but for now per requirement: "Ignore image for now."
                 setImageFile(null);
                 setImagePreview(null);
             } else {
                 // Reset for create
                 setName('');
                 setPrice('');
+                setCurrency('VND');
                 setDescription('');
                 setImageFile(null);
                 setImagePreview(null);
@@ -78,7 +80,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
             return;
         }
 
-        onSave({ name, price, description, image: imageFile });
+        onSave({ name, price, currency, description, image: imageFile });
     };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -196,32 +198,45 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                 {errors.name && <p className="mt-1 text-xs text-red-500 font-bold">{t('foodModal.fieldNameError')}</p>}
                             </div>
 
-                            {/* Price */}
+                            {/* Price + Currency */}
                             <div className="sm:col-span-2">
                                 <label
                                     htmlFor="food-price"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
                                 >
-                                    {t('foodModal.fieldPrice')} ({currencyConfig.currency})
+                                    {t('foodModal.fieldPrice')}
                                 </label>
-                                <input
-                                    id="food-price"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    value={price}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        // Basic numeric validation to ensure we only set relevant values
-                                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                                            setPrice(val);
-                                            if (errors.price) setErrors({ ...errors, price: false });
-                                        }
-                                    }}
-                                    className={`block w-full border rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 font-medium bg-white ${errors.price ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
-                                        }`}
-                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        id="food-price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        value={price}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                                setPrice(val);
+                                                if (errors.price) setErrors({ ...errors, price: false });
+                                            }
+                                        }}
+                                        className={`flex-1 min-w-0 border rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 font-medium bg-white ${errors.price ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'}`}
+                                    />
+                                    <select
+                                        id="food-currency"
+                                        value={currency}
+                                        onChange={(e) => setCurrency(e.target.value)}
+                                        aria-label={t('foodModal.fieldCurrency')}
+                                        className="border border-gray-200 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm py-2 px-2 font-bold bg-white text-gray-800 cursor-pointer"
+                                    >
+                                        {CURRENCY_OPTIONS.map((opt) => (
+                                            <option key={opt} value={opt}>
+                                                {opt} - {t(`currencies.${opt}`)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                                 {errors.price && <p className="mt-1 text-xs text-red-500 font-bold">{t('foodModal.fieldPriceError')}</p>}
                             </div>
 

@@ -73,6 +73,7 @@ export interface Food {
     name: string;
     description: string;
     price: number;
+    currency: string;
     image: string;
     category: string;
     isActive: boolean;
@@ -84,6 +85,7 @@ interface CatalogEntity {
     name: string;
     description: string;
     price: number;
+    currency: string;
     category: string;
     isActive: boolean;
     file?: {
@@ -111,6 +113,7 @@ export const foodService = {
             name: item.name,
             description: item.description || '',
             price: item.price,
+            currency: item.currency || 'VND',
             image: item.file?.url || '',
             category: item.category || 'General',
             isActive: item.isActive,
@@ -124,6 +127,7 @@ export const foodService = {
             name: item.name,
             description: item.description || '',
             price: item.price,
+            currency: item.currency || 'VND',
             image: item.file?.url || '',
             category: item.category || 'General',
             isActive: item.isActive,
@@ -132,19 +136,21 @@ export const foodService = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/Catalog(${id})`);
     },
-    create: async (data: { name: string; price: number; description: string }): Promise<void> => {
+    create: async (data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.post('/Catalog', {
             name: data.name,
             price: data.price,
+            currency: data.currency,
             description: data.description,
             category: 'General',
             isActive: true,
         });
     },
-    update: async (id: string, data: { name: string; price: number; description: string }): Promise<void> => {
+    update: async (id: string, data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.put(`/Catalog(${id})`, {
             name: data.name,
             price: data.price,
+            currency: data.currency,
             description: data.description,
         });
     },
@@ -272,6 +278,7 @@ export interface DailyCatalogStatistics {
     CatalogID: string;
     CatalogName: string;
     CatalogPrice: number;
+    CatalogCurrency: string;
     CatalogDescription: string;
     OrderCount: number;
     SubTotal: number;
@@ -314,6 +321,7 @@ export interface StaffCatalogEntity {
         name: string;
         description: string;
         price: number;
+        currency: string;
         category: string;
         isActive: boolean;
         file?: { url: string };

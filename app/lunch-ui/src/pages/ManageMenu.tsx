@@ -156,6 +156,7 @@ export default function ManageMenu() {
                                 name: catalog.name,
                                 description: catalog.description || '',
                                 price: catalog.price,
+                                currency: catalog.currency || 'VND',
                                 image: catalog.file?.url || '',
                                 category: catalog.category || 'General',
                                 isActive: catalog.isActive,

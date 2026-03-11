@@ -111,23 +111,24 @@ export default function FoodCatalog() {
 
     const handleSave = async (data: FoodFormData) => {
         try {
+            const parsedPrice = parseFloat(data.price);
             if (editingFood) {
                 await foodService.update(editingFood.ID, {
                     name: data.name,
-                    price: parseFloat(data.price),
+                    price: parsedPrice,
+                    currency: data.currency,
                     description: data.description,
                 });
-                // Upload image if a new file was chosen
                 if (data.image) {
                     await foodService.uploadImage(editingFood.ID, data.image);
                 }
             } else {
                 await foodService.create({
                     name: data.name,
-                    price: parseFloat(data.price),
+                    price: parsedPrice,
+                    currency: data.currency,
                     description: data.description,
                 });
-                // Upload image if provided — we need the new item's ID
                 if (data.image) {
                     const allFoods = await foodService.getAll();
                     const newFood = allFoods.find(f => f.name === data.name);
@@ -136,7 +137,7 @@ export default function FoodCatalog() {
                     }
                 }
             }
-            invalidateFoods(); // fire-and-forget
+            invalidateFoods();
             setIsModalOpen(false);
             setEditingFood(null);
             toast.success(
@@ -265,6 +266,7 @@ export default function FoodCatalog() {
                         ? {
                             name: editingFood.name,
                             price: editingFood.price.toString(),
+                            currency: editingFood.currency,
                             description: editingFood.description,
                         }
                         : null
