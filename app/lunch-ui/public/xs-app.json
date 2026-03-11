@@ -1,6 +1,11 @@
 {
     "welcomeFile": "/index.html",
     "authenticationMethod": "route",
+    "logout": {
+        "logoutEndpoint": "/logout",
+        "logoutPage": "/index.html",
+        "logoutMethod": "GET"
+    },
     "routes": [
         {
             "source": "^/btp-auth/(.*)$",
