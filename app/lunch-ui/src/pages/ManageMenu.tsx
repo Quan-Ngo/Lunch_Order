@@ -185,6 +185,7 @@ export default function ManageMenu() {
                 onConfirm={handleRemoveFood}
                 item={removalTarget}
                 contextText={t('manageMenu.fromTodaysMenu')}
+                variant="food"
             />
         </RootLayout>
     );
