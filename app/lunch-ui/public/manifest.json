@@ -5,6 +5,19 @@
         "applicationVersion": {
             "version": "1.0.0"
         },
-        "title": "Conarum Lunch"
+        "title": "Conarum Lunch",
+        "crossNavigation": {
+            "inbounds": {
+                "manage": {
+                    "semanticObject": "internal_lunch",
+                    "action": "manage",
+                    "title": "Manage",
+                    "signature": {
+                        "parameters": {},
+                        "additionalParameters": "allowed"
+                    }
+                }
+            }
+        }
     }
 }
