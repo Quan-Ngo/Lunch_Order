@@ -284,6 +284,7 @@ export default function FoodCatalog() {
                 onConfirm={handleConfirmDelete}
                 item={removalTarget}
                 contextText={t('catalog.removalContext')}
+                variant="food"
             />
         </RootLayout >
     );
