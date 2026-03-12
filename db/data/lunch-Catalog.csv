@@ -1,7 +1,7 @@
-ID,name,price,description,category,isActive
-1d3f5a7b-9c2e-4b6a-8f1d-3e5c7a9b0d2f,Big Hamburger,12.50,Juicy beef patty with fresh lettuce tomatoes and our signature sauce.,Burger,true
-2e416b8c-0d3f-5c7b-912e-4f6d8b0c2e41,Classic Pepperoni,15.00,Authentic Italian pepperoni with mozzarella and tomato sauce on a thin crust.,Pizza,true
-3f527c9d-1e41-6d8c-023f-517e9c1d3f52,Power Green Bowl,10.99,A mix of kale spinach avocado quinoa and lemon vinaigrette.,Salad,true
-41638d0e-2f52-7e9d-1341-628f0d2e4163,Spicy Miso Ramen,14.00,Traditional broth with chashu pork egg and spicy miso paste.,Asian,true
-52749e1f-3163-8f0e-2452-73911e3f5274,Salmon Poke Bowl,13.50,Fresh salmon cubes edamame cucumber and spicy mayo over rice.,Seafood,true
-63850f21-4274-911f-3563-84022f416385,New York Cheesecake,6.50,Rich and creamy cheesecake with a graham cracker crust.,Dessert,true
+ID,name,price,description,category,isActive,dailyMenu_ID
+1d3f5a7b-9c2e-4b6a-8f1d-3e5c7a9b0d2f,Big Hamburger,12.50,Juicy beef patty with fresh lettuce tomatoes and our signature sauce.,Burger,true,f1a2b3c4-d5e6-4a7b-8c9d-1e2f3a4b5c6d
+2e416b8c-0d3f-5c7b-912e-4f6d8b0c2e41,Classic Pepperoni,15.00,Authentic Italian pepperoni with mozzarella and tomato sauce on a thin crust.,Pizza,true,e2b3c4d5-f6a7-4b8c-9012-1f2a3b4c5d6e
+3f527c9d-1e41-6d8c-023f-517e9c1d3f52,Power Green Bowl,10.99,A mix of kale spinach avocado quinoa and lemon vinaigrette.,Salad,true,d3c4d5e6-f7a8-4c9d-0123-1a2b3c4d5e6f
+41638d0e-2f52-7e9d-1341-628f0d2e4163,Spicy Miso Ramen,14.00,Traditional broth with chashu pork egg and spicy miso paste.,Asian,true,f1a2b3c4-d5e6-4a7b-8c9d-1e2f3a4b5c6d
+52749e1f-3163-8f0e-2452-73911e3f5274,Salmon Poke Bowl,13.50,Fresh salmon cubes edamame cucumber and spicy mayo over rice.,Seafood,true,e2b3c4d5-f6a7-4b8c-9012-1f2a3b4c5d6e
+63850f21-4274-911f-3563-84022f416385,New York Cheesecake,6.50,Rich and creamy cheesecake with a graham cracker crust.,Dessert,true,d3c4d5e6-f7a8-4c9d-0123-1a2b3c4d5e6f

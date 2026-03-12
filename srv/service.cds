@@ -16,5 +16,6 @@ service LunchService {
     entity DailyOrderSummary as projection on lunch.DailyOrderSummary;
 
     action grantAdminRole(userEmail : String) returns String;
+    action confirmMenu(date : String) returns String;
     function getBtpUsers() returns String;
 }
