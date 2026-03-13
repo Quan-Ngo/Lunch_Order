@@ -126,9 +126,7 @@ module.exports = class LunchService extends cds.ApplicationService {
 
             const { DailyMenu, Staff } = this.entities;
 
-            // 1. Mark all DailyMenu entries for this date as complete
-            await UPDATE(DailyMenu).set({ isComplete: true }).where({ date });
-            console.log(`[LunchService] confirmMenu: Marked all entries for ${date} as complete.`);
+            console.log(`[LunchService] confirmMenu: Skipping mark as complete for ${date}.`);
 
             // 2. Format date DD/MM/YYYY for the email body
             const parts = date.split('-');

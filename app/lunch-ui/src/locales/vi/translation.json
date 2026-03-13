@@ -126,6 +126,7 @@
         "itemCount_one": "{{count}} món trong thực đơn",
         "itemCount_other": "{{count}} món trong thực đơn",
         "emptyMenu": "Chưa có món nào trong thực đơn hôm nay. Bấm 'Chọn Từ Danh Mục' để thêm!",
+        "menuCompleted": "Thực đơn đã được gửi đến tất cả nhân viên!",
         "fromTodaysMenu": "khỏi thực đơn hôm nay"
     },
     "employees": {
@@ -225,6 +226,7 @@
         "deliveryFee": "Phí Giao Hàng",
         "total": "Tổng Cộng",
         "exportPdf": "Xuất file PDF",
+        "completeOrder": "Hoàn Tất Đơn Hàng",
         "markComplete": "Đánh dấu Hoàn Thành",
         "lockNote": "Đơn hàng sẽ tự động khoá lúc 11:30 sáng",
         "pdfTitle": "Báo Cáo Đơn Hàng",

@@ -126,6 +126,7 @@
         "itemCount_one": "{{count}} item on the menu",
         "itemCount_other": "{{count}} items on the menu",
         "emptyMenu": "No food on the menu for this day yet. Click 'Select from Catalog' to add some!",
+        "menuCompleted": "Menu sent to all staff!",
         "fromTodaysMenu": "from today's menu"
     },
     "employees": {
@@ -225,6 +226,7 @@
         "deliveryFee": "Delivery Fee",
         "total": "Total",
         "exportPdf": "Export to PDF",
+        "completeOrder": "Complete Order",
         "markComplete": "Mark as Complete",
         "lockNote": "Orders lock automatically at 11:30 AM",
         "pdfTitle": "Daily Order Report",
