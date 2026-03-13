@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { NavigationPageSelect } from '@/components/elements/NavigationPageSelect';
-import { useAuth, type AuthUser } from '@/contexts/AuthContext';
-import { employeeService, type StaffEntity } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { APP_LANGUAGE_STORAGE_KEY, SUPPORTED_LANGUAGES } from '@/i18n';
 
 const navLinks = [
     { to: '/', labelKey: 'navbar.dailyMenu' },
@@ -13,52 +13,141 @@ const navLinks = [
     { to: '/daily-orders', labelKey: 'navbar.dailyOrders' },
 ];
 
+const LANGUAGE_LABELS: Record<string, string> = {
+    en: 'English',
+    vi: 'Tiếng Việt',
+    de: 'Deutsch',
+    ja: '日本語',
+};
+
 export default function Navbar() {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState<boolean>(false);
-    const [staffList, setStaffList] = useState<StaffEntity[]>([]);
-    const { currentUser, setCurrentUser } = useAuth();
+    const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+    const { currentUser, isLoadingUser, setCurrentUser } = useAuth();
     const { t, i18n } = useTranslation();
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const isActive = (path: string): boolean => location.pathname === path;
 
+    const displayName = currentUser?.role === 'admin'
+        ? t('navbar.admin')
+        : currentUser?.staff?.name ?? t('navbar.staffProfileMissing');
+
+    const mobileDisplayName = currentUser?.role === 'admin'
+        ? t('navbar.admin')
+        : currentUser?.staff?.name?.trim().split(/\s+/)[0] ?? t('navbar.staffProfileMissing');
+
+    const avatarInitial = currentUser?.role === 'admin'
+        ? 'A'
+        : (currentUser?.staff?.name?.[0] ?? '?');
+
+    const handleLogout = () => {
+        setCurrentUser(null);
+        setIsDropdownOpen(false);
+        setIsMobileMenuOpen(false);
+        if (!import.meta.env.DEV) {
+            window.location.assign('/logout');
+        }
+    };
+
+    const handleLanguageChange = (lang: string) => {
+        i18n.changeLanguage(lang);
+        localStorage.setItem(APP_LANGUAGE_STORAGE_KEY, lang);
+        setIsDropdownOpen(false);
+    };
+
+    // Close dropdown when clicking outside
     useEffect(() => {
-        employeeService.getAll().then(setStaffList).catch(console.error);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleSelectUser = (user: AuthUser | null) => {
-        setCurrentUser(user);
-        setIsUserDropdownOpen(false);
-    };
+    const userDropdown = (
+        <div ref={dropdownRef} className="relative">
+            <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center border-2 border-accent-green text-xs sm:text-sm font-bold bg-primary text-black">
+                    {avatarInitial}
+                </div>
+                <span className="text-sm font-semibold text-gray-800 hidden sm:block">
+                    {displayName}
+                </span>
+                <span className="material-icons text-sm text-gray-500 hidden sm:block" style={{ transition: 'transform 0.2s', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>
+                    expand_more
+                </span>
+            </button>
 
-    const toggleLanguage = () => {
-        i18n.changeLanguage(i18n.language === 'en' ? 'vi' : 'en');
-    };
+            {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white border-2 border-black rounded-xl shadow-[var(--shadow-neobrutalism)] z-50 overflow-hidden">
+                    {/* User info header */}
+                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                        <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
+                        <p className="text-xs text-gray-500 truncate">{currentUser?.staff?.email ?? t('navbar.staff')}</p>
+                    </div>
 
-    const displayName = currentUser
-        ? currentUser.role === 'admin'
-            ? t('navbar.admin')
-            : currentUser.staff?.name ?? t('navbar.staff')
-        : t('navbar.selectUser');
+                    {/* Language section */}
+                    <div className="px-4 py-2 border-b border-gray-200">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('navbar.toggleLanguage')}</p>
+                        <div className="flex flex-wrap gap-1">
+                            {SUPPORTED_LANGUAGES.map((lang) => (
+                                <button
+                                    key={lang}
+                                    onClick={() => handleLanguageChange(lang)}
+                                    className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${
+                                        i18n.language === lang
+                                            ? 'bg-primary border-black text-black'
+                                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
+                                    }`}
+                                >
+                                    {LANGUAGE_LABELS[lang] ?? lang.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-    const avatarInitial = currentUser
-        ? currentUser.role === 'admin'
-            ? 'A'
-            : (currentUser.staff?.name?.[0] ?? 'S')
-        : '?';
+                    {/* Logout */}
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                        <span className="material-icons text-base">logout</span>
+                        {t('navbar.logout')}
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 
-    const ringColor = currentUser
-        ? currentUser.role === 'admin'
-            ? 'border-accent-pink'
-            : 'border-accent-green'
-        : 'border-gray-300';
+    const noProfileBadge = (
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] text-sm font-semibold text-gray-800">
+            <span className="material-icons text-base">person_off</span>
+            <span>{t('navbar.staffProfileMissing')}</span>
+        </div>
+    );
+
+    const mobileUserBadge = (
+        <div className="md:hidden flex items-center gap-2 px-2.5 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)]">
+            <div className="h-7 w-7 rounded-full flex items-center justify-center border-2 border-accent-green text-xs font-bold bg-primary text-black">
+                {avatarInitial}
+            </div>
+            <span className="text-sm font-semibold text-gray-800 max-w-20 truncate">
+                {mobileDisplayName}
+            </span>
+        </div>
+    );
 
     return (
         <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16 sm:h-20 items-center">
-                    {/* Logo */}
+                <div className="flex justify-between h-16 sm:h-20 items-center gap-3">
                     <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
                         <div className="bg-primary p-1.5 sm:p-2 rounded-lg border-2 border-black shadow-[var(--shadow-neobrutalism)] transition-transform group-hover:rotate-3">
                             <span className="material-icons text-black text-xl sm:text-2xl">lunch_dining</span>
@@ -68,7 +157,6 @@ export default function Navbar() {
                         </span>
                     </Link>
 
-                    {/* Desktop Nav Links */}
                     <div className="hidden md:flex items-center gap-6">
                         {navLinks.map((link) => (
                             <Link key={link.to} to={link.to}>
@@ -83,92 +171,23 @@ export default function Navbar() {
                         ))}
                     </div>
 
-                    {/* User Selector & Lang Toggle */}
-                    <div className="flex items-center gap-2 sm:gap-4 relative shrink-0">
-                        {/* Language Toggle */}
-                        <button
-                            onClick={toggleLanguage}
-                            className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all font-bold text-xs sm:text-sm hover:bg-primary/20"
-                            title="Toggle Language"
-                        >
-                            {i18n.language === 'vi' ? 'VI' : 'EN'}
-                        </button>
-
-                        <button
-                            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)] hover:shadow-[var(--shadow-neobrutalism)] hover:-translate-y-0.5 transition-all"
-                        >
-                            {/* Avatar circle */}
-                            <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center border-2 ${ringColor} text-xs sm:text-sm font-bold bg-primary text-black`}>
-                                {avatarInitial}
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                        {isLoadingUser ? (
+                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-black bg-white shadow-[var(--shadow-neobrutalism-sm)]">
+                                <span className="material-icons animate-spin text-base">progress_activity</span>
+                                <span className="text-sm font-semibold text-gray-800">{t('navbar.loadingUser')}</span>
                             </div>
-                            <span className="text-sm font-semibold text-gray-800 hidden sm:block">{displayName}</span>
-                            <span className="material-icons text-sm text-gray-500">
-                                {isUserDropdownOpen ? 'expand_less' : 'expand_more'}
-                            </span>
-                        </button>
-
-                        {/* Dropdown */}
-                        {isUserDropdownOpen && (
-                            <div
-                                className="absolute right-0 top-12 bg-white border-2 border-black rounded-xl shadow-[var(--shadow-neobrutalism-lg)] z-50 min-w-[200px] overflow-hidden"
-                            >
-                                {/* Admin option */}
-                                <button
-                                    onClick={() => handleSelectUser({ role: 'admin' })}
-                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary/20 transition-colors text-left ${currentUser?.role === 'admin' ? 'bg-primary/30 font-bold' : ''}`}
-                                >
-                                    <span className="h-7 w-7 rounded-full border-2 border-accent-pink bg-primary flex items-center justify-center font-bold text-xs">A</span>
-                                    <span>{t('navbar.admin')}</span>
-                                    {currentUser?.role === 'admin' && <span className="material-icons text-accent-green text-sm ml-auto">check_circle</span>}
-                                </button>
-
-                                {/* Divider */}
-                                <div className="border-t border-gray-100 mx-3 my-1" />
-
-                                {/* Staff options */}
-                                {staffList.map((staff) => (
-                                    <button
-                                        key={staff.ID}
-                                        onClick={() => handleSelectUser({ role: 'staff', staff })}
-                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary/20 transition-colors text-left ${currentUser?.staff?.ID === staff.ID ? 'bg-primary/30 font-bold' : ''}`}
-                                    >
-                                        <span className="h-7 w-7 rounded-full border-2 border-accent-green bg-gray-100 flex items-center justify-center font-bold text-xs">
-                                            {staff.name?.[0] ?? '?'}
-                                        </span>
-                                        <span>{staff.name}</span>
-                                        {currentUser?.staff?.ID === staff.ID && <span className="material-icons text-accent-green text-sm ml-auto">check_circle</span>}
-                                    </button>
-                                ))}
-
-                                {/* Clear */}
-                                {currentUser && (
-                                    <>
-                                        <div className="border-t border-gray-100 mx-3 my-1" />
-                                        <button
-                                            onClick={() => handleSelectUser(null)}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors text-left"
-                                        >
-                                            <span className="material-icons text-sm">swap_horiz</span>
-                                            <span>{t('navbar.clearSelection')}</span>
-                                        </button>
-                                    </>
-                                )}
-                                <div className="border-t border-gray-100 mx-3 my-1" />
-                                <button
-                                    onClick={() => {
-                                        setCurrentUser(null);
-                                        window.location.assign('logout');
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-accent-pink hover:bg-red-50 transition-colors text-left"
-                                >
-                                    <span className="material-icons text-sm">logout</span>
-                                    <span>{t('navbar.logout', 'Logout')}</span>
-                                </button>
-                            </div>
+                        ) : currentUser ? (
+                            <>
+                                <div className="hidden md:block">
+                                    {userDropdown}
+                                </div>
+                                {mobileUserBadge}
+                            </>
+                        ) : (
+                            noProfileBadge
                         )}
 
-                        {/* Mobile Hamburger */}
                         <button
                             className="md:hidden p-1.5 rounded-lg hover:bg-gray-100"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -181,10 +200,53 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Mobile Menu */}
             {isMobileMenuOpen && (
                 <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
                     <div className="px-4 py-4 space-y-3">
+                        {isLoadingUser ? (
+                            <div className="flex items-center gap-2 pb-3 border-b border-gray-200 text-sm font-semibold text-gray-800">
+                                <span className="material-icons animate-spin text-base">progress_activity</span>
+                                <span>{t('navbar.loadingUser')}</span>
+                            </div>
+                        ) : currentUser ? (
+                            <div className="pb-3 border-b border-gray-200 space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-bold text-gray-900 truncate">{mobileDisplayName}</p>
+                                        <p className="text-xs text-gray-500 truncate">{currentUser.staff?.email ?? t('navbar.staff')}</p>
+                                    </div>
+                                </div>
+                                {/* Language switcher mobile */}
+                                <div className="flex flex-wrap gap-1">
+                                    {SUPPORTED_LANGUAGES.map((lang) => (
+                                        <button
+                                            key={lang}
+                                            onClick={() => handleLanguageChange(lang)}
+                                            className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${
+                                                i18n.language === lang
+                                                    ? 'bg-primary border-black text-black'
+                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {LANGUAGE_LABELS[lang] ?? lang.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
+                                {/* Logout mobile */}
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700 cursor-pointer"
+                                >
+                                    <span className="material-icons text-base">logout</span>
+                                    {t('navbar.logout')}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="pb-3 border-b border-gray-200 text-sm font-semibold text-gray-800">
+                                {t('navbar.staffProfileMissing')}
+                            </div>
+                        )}
+
                         {navLinks.map((link) => (
                             <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
                                 <NavigationPageSelect

@@ -123,7 +123,7 @@ modules:
             ServiceInstanceName: cnma_internallunchorder_html5_host
             ServiceKeyName: cnma_internallunchorder_html5_host_key
             sap.cloud.service: lunchorder    
-              
+
           - Name: cnma_internallunchorder_xsuaa_dest
             Authentication: OAuth2UserTokenExchange
             ServiceInstanceName: cnma_internallunchorder_xsuaa
@@ -205,4 +205,3 @@ resources:
     parameters:
       service: html5-apps-repo
       service-plan: app-runtime
-

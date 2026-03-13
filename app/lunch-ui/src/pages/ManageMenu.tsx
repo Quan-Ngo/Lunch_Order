@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
-import { dailyMenuService, staffCatalogService, type Food } from '@/services/api';
+import { dailyMenuService, staffCatalogService, normalizeImageUrl, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 
@@ -156,7 +156,8 @@ export default function ManageMenu() {
                                 name: catalog.name,
                                 description: catalog.description || '',
                                 price: catalog.price,
-                                image: catalog.file?.url || '',
+                                currency: catalog.currency || 'VND',
+                                image: normalizeImageUrl(catalog.file?.url),
                                 category: catalog.category || 'General',
                                 isActive: catalog.isActive,
                             };

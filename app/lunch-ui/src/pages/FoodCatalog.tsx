@@ -88,9 +88,9 @@ export default function FoodCatalog() {
         try {
             await foodService.delete(id);
             invalidateFoods(); // fire-and-forget
-            toast.success(`"${removalTarget?.name}" deleted successfully!`);
+            toast.success(t('catalog.deleteSuccess', { name: removalTarget?.name ?? '' }));
         } catch {
-            toast.error(`Failed to delete "${removalTarget?.name}".`);
+            toast.error(t('catalog.deleteFailed', { name: removalTarget?.name ?? '' }));
         }
     };
 
@@ -100,34 +100,35 @@ export default function FoodCatalog() {
             invalidateFoods(); // fire-and-forget
             toast.success(
                 food.isActive
-                    ? t('catalog.deactivatedSuccess', `"${food.name}" deactivated.`)
-                    : t('catalog.activatedSuccess', `"${food.name}" activated.`)
+                    ? t('catalog.deactivatedSuccess', { name: food.name })
+                    : t('catalog.activatedSuccess', { name: food.name })
             );
         } catch (err) {
             console.error('Failed to toggle active status:', err);
-            toast.error(t('catalog.toggleFailed', 'Failed to update status.'));
+            toast.error(t('catalog.toggleFailed'));
         }
     };
 
     const handleSave = async (data: FoodFormData) => {
         try {
+            const parsedPrice = parseFloat(data.price);
             if (editingFood) {
                 await foodService.update(editingFood.ID, {
                     name: data.name,
-                    price: parseFloat(data.price),
+                    price: parsedPrice,
+                    currency: data.currency,
                     description: data.description,
                 });
-                // Upload image if a new file was chosen
                 if (data.image) {
                     await foodService.uploadImage(editingFood.ID, data.image);
                 }
             } else {
                 await foodService.create({
                     name: data.name,
-                    price: parseFloat(data.price),
+                    price: parsedPrice,
+                    currency: data.currency,
                     description: data.description,
                 });
-                // Upload image if provided — we need the new item's ID
                 if (data.image) {
                     const allFoods = await foodService.getAll();
                     const newFood = allFoods.find(f => f.name === data.name);
@@ -136,13 +137,13 @@ export default function FoodCatalog() {
                     }
                 }
             }
-            invalidateFoods(); // fire-and-forget
+            invalidateFoods();
             setIsModalOpen(false);
             setEditingFood(null);
             toast.success(
                 editingFood
-                    ? `"${editingFood.name}" updated successfully!`
-                    : `"${data.name}" added successfully!`
+                    ? t('catalog.saveSuccessUpdated', { name: editingFood.name })
+                    : t('catalog.saveSuccessAdded', { name: data.name })
             );
         } catch (err) {
             console.error('Failed to save food:', err);
@@ -252,7 +253,7 @@ export default function FoodCatalog() {
                 foods && foods.length > 0 && filteredFoods.length === 0 && (
                     <EmptyState
                         icon="search_off"
-                        message="No dishes match your search."
+                        message={t('catalog.noSearchResults')}
                     />
                 )
             }
@@ -265,6 +266,7 @@ export default function FoodCatalog() {
                         ? {
                             name: editingFood.name,
                             price: editingFood.price.toString(),
+                            currency: editingFood.currency,
                             description: editingFood.description,
                         }
                         : null
