@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
     dailyMenuService,
     staffCatalogService,
+    normalizeImageUrl,
     type DailyMenuEntity,
 } from '@/services/api';
 import { useTranslation } from 'react-i18next';
@@ -26,17 +27,16 @@ const CARD_ACCENTS = [
 // ─── Date Timeline ──────────────────────────────────────────────────────────────
 
 interface FoodCardProps {
-    entry: DailyMenuEntity;
+    catalog: NonNullable<DailyMenuEntity['catalogs']>[0];
     index: number;
     isSelected: boolean;
     onSelect: () => void;
 }
 
-function FoodCard({ entry, index, isSelected, onSelect }: FoodCardProps) {
-    const catalog = entry.catalog;
+function FoodCard({ catalog, index, isSelected, onSelect }: FoodCardProps) {
     if (!catalog) return null;
 
-    const imageUrl = catalog.file?.url || '';
+    const imageUrl = normalizeImageUrl(catalog.file?.url);
     const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
     return (
         <div
@@ -110,11 +110,14 @@ export default function DailyMenu() {
         queryFn: () => dailyMenuService.getByDate(selectedDate),
     });
 
+    const dailyMenu = rawMenuEntries[0];
+    const rawCatalogs = dailyMenu?.catalogs || [];
+
     // Deduplicate and filter active items
     const seen = new Set<string>();
-    const menuEntries = rawMenuEntries.filter((e) => {
-        if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
-            seen.add(e.catalog.ID);
+    const menuEntries = rawCatalogs.filter((catalog) => {
+        if (catalog && catalog.isActive && !seen.has(catalog.ID)) {
+            seen.add(catalog.ID);
             return true;
         }
         return false;
@@ -155,7 +158,7 @@ export default function DailyMenu() {
             }
         },
         onSuccess: (_, catalogId) => {
-            const catalogItem = menuEntries.find(m => m.catalog?.ID === catalogId)?.catalog;
+            const catalogItem = menuEntries.find(c => c.ID === catalogId);
             const itemName = catalogItem?.name || t('dailyMenu.foodItem');
             if (catalogId) {
                 toast.success(t('dailyMenu.orderSuccessToast', { itemName, date: selectedDate }));
@@ -198,14 +201,49 @@ export default function DailyMenu() {
         <RootLayout>
             {/* Hero Header */}
             <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-3 mb-2">
+                <div className="flex items-center justify-center gap-3 mb-2 flex-wrap">
                     <span className="text-5xl select-none" role="img" aria-label="pizza">🍕</span>
-                    <h1 className="text-4xl sm:text-5xl font-black font-sans text-slate-800 leading-tight tracking-tight">
-                        {t('dailyMenu.title')}&nbsp;<span style={{ fontFamily: "'Pacifico', cursive", color: '#C0392B' }}>{t('dailyMenu.titleHighlight')}</span>
-                    </h1>
+
+                    {/* Neo-brutalism title box */}
+                    <div
+                        className="inline-block px-8 py-4 border-4 border-black rounded-xl"
+                        style={{
+                            backgroundColor: 'var(--color-primary)',
+                            boxShadow: '6px 6px 0px 0px #000',
+                        }}
+                    >
+                        <h1
+                            className="leading-tight m-0"
+                            style={{
+                                fontFamily: "'Playfair Display', serif",
+                                fontSize: 'clamp(2rem, 5.5vw, 4rem)',
+                                fontWeight: 900,
+                                fontStyle: 'italic',
+                                letterSpacing: '-1px',
+                            }}
+                        >
+                            <span style={{ color: '#1A1A1A' }}>
+                                {t('dailyMenu.title')}
+                            </span>
+
+                            {t('dailyMenu.titleMid') && (
+                                <span style={{
+                                    color: 'var(--color-accent-pink)',
+                                    margin: '0 0.25em',
+                                }}>
+                                    {t('dailyMenu.titleMid')}
+                                </span>
+                            )}
+
+                            <span style={{ color: '#1A1A1A' }}>
+                                {t('dailyMenu.titleHighlight')}
+                            </span>
+                        </h1>
+                    </div>
+
                     <span className="text-5xl select-none" role="img" aria-label="avocado">🥑</span>
                 </div>
-                <p className="text-gray-500 font-body text-sm">
+                <p className="text-gray-500 font-body text-sm mt-2">
                     {t('dailyMenu.subtitle')}
                 </p>
             </div>
@@ -253,15 +291,15 @@ export default function DailyMenu() {
 
                     {/* Food Cards - horizontal scrollable row */}
                     <div className="flex gap-4 overflow-x-auto no-scrollbar mt-1 pt-8 pb-8 px-2">
-                        {menuEntries.map((entry, i) => {
-                            const catalogId = entry.catalog?.ID;
+                        {menuEntries.map((catalog, i) => {
+                            const catalogId = catalog.ID;
                             if (!catalogId) return null;
                             const isSelected = selectedCatalogId === catalogId;
 
                             return (
                                 <FoodCard
-                                    key={entry.ID}
-                                    entry={entry}
+                                    key={catalogId}
+                                    catalog={catalog}
                                     index={i}
                                     isSelected={isSelected}
                                     onSelect={() => handleSelect(catalogId)}

@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
-import { dailyMenuService, staffCatalogService, type Food } from '@/services/api';
+import { dailyMenuService, staffCatalogService, normalizeImageUrl, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 
@@ -30,11 +30,14 @@ export default function ManageMenu() {
         queryFn: () => dailyMenuService.getByDate(selectedDate),
     });
 
+    const dailyMenu = rawMenuEntries[0];
+    const rawCatalogs = dailyMenu?.catalogs || [];
+
     // Deduplicate and filter active items
     const seen = new Set<string>();
-    const menuEntries = rawMenuEntries.filter((e) => {
-        if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
-            seen.add(e.catalog.ID);
+    const menuEntries = rawCatalogs.filter((catalog) => {
+        if (catalog && catalog.isActive && !seen.has(catalog.ID)) {
+            seen.add(catalog.ID);
             return true;
         }
         return false;
@@ -58,15 +61,9 @@ export default function ManageMenu() {
     });
 
     const removeFoodMutation = useMutation({
-        mutationFn: async (dailyMenuId: string) => {
-            const removedEntry = menuEntries.find((entry) => entry.ID === dailyMenuId);
-            const removedCatalogId = removedEntry?.catalog?.ID;
-
-            await dailyMenuService.removeFoodFromDate(dailyMenuId);
-
-            if (removedCatalogId) {
-                await staffCatalogService.clearCatalogSelectionsByDate(removedCatalogId, selectedDate);
-            }
+        mutationFn: async (catalogId: string) => {
+            await dailyMenuService.removeFoodFromDate(catalogId);
+            await staffCatalogService.clearCatalogSelectionsByDate(catalogId, selectedDate);
         },
         onSuccess: () => {
             toast.success(t('manageMenu.itemRemoved'));
@@ -78,18 +75,34 @@ export default function ManageMenu() {
         },
     });
 
+    const completeMenuMutation = useMutation({
+        mutationFn: () => dailyMenuService.markCompleteByDate(selectedDate),
+        onSuccess: () => {
+            toast.success(t('manageMenu.menuCompleted', { defaultValue: 'Menu marked as complete!' }));
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['isComplete', selectedDate] });
+        },
+        onError: (err) => {
+            console.error('Failed to complete menu:', err);
+            toast.error(t('manageMenu.completeFailed', { defaultValue: 'Failed to complete menu.' }));
+        },
+    });
+
     const handleAddFoods = async (foods: Food[]) => {
         setIsCatalogModalOpen(false);
         await addFoodsMutation.mutateAsync(foods);
     };
 
-    const handleRemoveFood = async (dailyMenuId: string) => {
-        await removeFoodMutation.mutateAsync(dailyMenuId);
+    const handleRemoveFood = async (catalogId: string) => {
+        await removeFoodMutation.mutateAsync(catalogId);
     };
 
-    const existingCatalogIds = menuEntries
-        .map((e) => e.catalog?.ID)
-        .filter((id): id is string => !!id);
+    const handleCompleteMenu = async () => {
+        if (isLocked || menuEntries.length === 0) return;
+        await completeMenuMutation.mutateAsync();
+    };
+
+    const existingCatalogIds = menuEntries.map((c) => c.ID);
 
     return (
         <RootLayout>
@@ -135,42 +148,75 @@ export default function ManageMenu() {
                     message={t('manageMenu.emptyMenu')}
                 />
             ) : (
-                <div className="flex flex-col gap-3">
-                    {menuEntries.map((entry) => {
-                        if (!entry.catalog) return null;
+                <>
+                    <div className="flex flex-col gap-3">
+                        {menuEntries.map((catalog) => {
+                            const catalogFood: Food = {
+                                ID: catalog.ID,
+                                name: catalog.name,
+                                description: catalog.description || '',
+                                price: catalog.price,
+                                currency: catalog.currency || 'VND',
+                                image: normalizeImageUrl(catalog.file?.url),
+                                category: catalog.category || 'General',
+                                isActive: catalog.isActive,
+                            };
 
-                        const catalogFood: Food = {
-                            ID: entry.catalog.ID,
-                            name: entry.catalog.name,
-                            description: entry.catalog.description || '',
-                            price: entry.catalog.price,
-                            image: entry.catalog.file?.url || '',
-                            category: entry.catalog.category || 'General',
-                            isActive: entry.catalog.isActive,
-                        };
+                            return (
+                                <div
+                                    key={catalog.ID}
+                                    className="group"
+                                >
+                                    <CatalogItem
+                                        food={catalogFood}
+                                        onEdit={() => { }}
+                                        onDelete={() =>
+                                            isLocked ? undefined : setRemovalTarget({
+                                                id: catalog.ID,
+                                                name: catalog.name,
+                                                image: catalog.file?.url || undefined,
+                                            })
+                                        }
+                                        showEdit={false}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
 
-                        return (
-                            <div
-                                key={entry.ID}
-                                className="group"
+                    {/* Confirm Menu button - inline below items */}
+                    {!isLocked && (
+                        <div className="flex justify-end mt-6">
+                            <button
+                                id="btn-complete-menu"
+                                onClick={handleCompleteMenu}
+                                disabled={completeMenuMutation.isPending}
+                                className={`
+                                    group flex items-center gap-2 px-6 py-3
+                                    rounded-full border-[3px] border-black
+                                    bg-primary text-black font-black text-sm uppercase tracking-widest
+                                    shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]
+                                    transition-all duration-150
+                                    hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                    disabled:opacity-60 disabled:cursor-wait
+                                `}
                             >
-                                <CatalogItem
-                                    food={catalogFood}
-                                    onEdit={() => { }}
-                                    onDelete={() =>
-                                        isLocked ? undefined : setRemovalTarget({
-                                            id: entry.ID,
-                                            name: entry.catalog?.name || 'Unknown',
-                                            image: entry.catalog?.file?.url || undefined,
-                                        })
-                                    }
-                                    showEdit={false}
-                                />
-                            </div>
-                        );
-                    })}
-                </div>
+                                <span>
+                                    {completeMenuMutation.isPending
+                                        ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
+                                        : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
+                                </span>
+                                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-primary transition-transform group-hover:scale-110">
+                                    <span className="material-icons text-sm">
+                                        {completeMenuMutation.isPending ? 'hourglass_empty' : 'done'}
+                                    </span>
+                                </span>
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
+
 
             <SelectFromCatalogModal
                 isOpen={isCatalogModalOpen}

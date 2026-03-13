@@ -41,4 +41,6 @@ service LunchService {
     function getBtpUsers() returns String;
 
     function userInfo() returns String;
+    action confirmMenu(date : String) returns String;
+    function getCurrentUser() returns String;
 }

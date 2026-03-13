@@ -9,16 +9,19 @@
         "admin": "Admin",
         "staff": "Staff",
         "clearSelection": "Clear Selection",
+        "loadingUser": "Loading user...",
+        "staffProfileMissing": "No linked staff profile",
         "toggleLanguage": "Toggle Language",
         "logout": "Logout"
     },
     "dailyMenu": {
-        "title": "What's for",
+        "title": "What's",
+        "titleMid": "for",
         "titleHighlight": "Lunch?",
         "subtitle": "Choose your fuel for the day. Place your order before 10:30 AM.",
         "noMeals": "No meals available for this day. Ask the manager to set up the menu!",
         "adminHint": "Admin view — browsing the menu. Switch to a Staff account to place an order.",
-        "selectUserHint": "Select a user from the top-right dropdown to place an order.",
+        "selectUserHint": "Your portal account must be linked to a staff profile to place an order.",
         "currentOrder": "Your current order:",
         "cancel": "Cancel",
         "confirmOrder": "Confirm Order",
@@ -61,7 +64,15 @@
         "inactive": "Inactive",
         "activate": "Activate",
         "deactivate": "Deactivate",
-        "searchHint": "Search for dishes..."
+        "searchHint": "Search for dishes...",
+        "deleteSuccess": "\"{{name}}\" deleted successfully!",
+        "deleteFailed": "Failed to delete \"{{name}}\".",
+        "activatedSuccess": "\"{{name}}\" activated.",
+        "deactivatedSuccess": "\"{{name}}\" deactivated.",
+        "toggleFailed": "Failed to update status.",
+        "saveSuccessAdded": "\"{{name}}\" added successfully!",
+        "saveSuccessUpdated": "\"{{name}}\" updated successfully!",
+        "noSearchResults": "No dishes match your search."
     },
     "foodModal": {
         "titleCreate": "Add New Food",
@@ -75,11 +86,22 @@
         "fieldNamePlaceholder": "e.g. Cheese Burger",
         "fieldNameError": "Name is required.",
         "fieldPrice": "Price",
+        "fieldCurrency": "Currency",
         "fieldPriceError": "Price is required.",
         "fieldDescription": "Description",
         "fieldDescriptionPlaceholder": "Describe the dish...",
         "saveChanges": "Save Changes",
         "cancel": "Cancel"
+    },
+    "currencies": {
+        "VND": "Vietnamese Dong",
+        "USD": "US Dollar",
+        "EUR": "Euro",
+        "SGD": "Singapore Dollar",
+        "JPY": "Japanese Yen",
+        "KRW": "South Korean Won",
+        "THB": "Thai Baht",
+        "GBP": "British Pound"
     },
     "removalModal": {
         "title": "Remove Item?",

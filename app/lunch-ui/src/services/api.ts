@@ -73,6 +73,7 @@ export interface Food {
     name: string;
     description: string;
     price: number;
+    currency: string;
     image: string;
     category: string;
     isActive: boolean;
@@ -84,6 +85,7 @@ interface CatalogEntity {
     name: string;
     description: string;
     price: number;
+    currency: string;
     category: string;
     isActive: boolean;
     file?: {
@@ -101,6 +103,15 @@ export interface StaffEntity {
 }
 
 // ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+/** Strip leading slash from image URLs so they resolve relative to the app base path (required for Managed Approuter). */
+export function normalizeImageUrl(url: string | undefined): string {
+    if (!url) return '';
+    return url.startsWith('/') ? url.slice(1) : url;
+}
+
+// ─────────────────────────────────────────────
 // Food / Catalog Service
 // ─────────────────────────────────────────────
 export const foodService = {
@@ -111,7 +122,8 @@ export const foodService = {
             name: item.name,
             description: item.description || '',
             price: item.price,
-            image: item.file?.url || '',
+            currency: item.currency || 'VND',
+            image: normalizeImageUrl(item.file?.url),
             category: item.category || 'General',
             isActive: item.isActive,
         }));
@@ -124,7 +136,8 @@ export const foodService = {
             name: item.name,
             description: item.description || '',
             price: item.price,
-            image: item.file?.url || '',
+            currency: item.currency || 'VND',
+            image: normalizeImageUrl(item.file?.url),
             category: item.category || 'General',
             isActive: item.isActive,
         };
@@ -132,19 +145,21 @@ export const foodService = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/Catalog(${id})`);
     },
-    create: async (data: { name: string; price: number; description: string }): Promise<void> => {
+    create: async (data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.post('/Catalog', {
             name: data.name,
             price: data.price,
+            currency: data.currency,
             description: data.description,
             category: 'General',
             isActive: true,
         });
     },
-    update: async (id: string, data: { name: string; price: number; description: string }): Promise<void> => {
+    update: async (id: string, data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.put(`/Catalog(${id})`, {
             name: data.name,
             price: data.price,
+            currency: data.currency,
             description: data.description,
         });
     },
@@ -173,7 +188,7 @@ export const foodService = {
             headers: { 'Content-Type': file.type },
         });
         // Step 4: Persist the content URL into the url field so $expand=file returns it
-        const contentUrl = `/odata/v4/lunch/CatalogFile(${fileId})/content`;
+        const contentUrl = `odata/v4/lunch/CatalogFile(${fileId})/content`;
         await api.patch(`/CatalogFile(${fileId})`, { url: contentUrl });
     },
 };
@@ -207,8 +222,7 @@ export interface DailyMenuEntity {
     ID: string;
     date: string;
     isComplete: boolean;
-    catalog?: CatalogEntity & { file?: { url: string } };
-    catalog_ID?: string;
+    catalogs?: Array<CatalogEntity & { file?: { url: string } }>;
     note?: string;
 }
 
@@ -216,23 +230,29 @@ export const dailyMenuService = {
     /** Get all menu items for a given date */
     getByDate: async (dateString: string): Promise<DailyMenuEntity[]> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
-            `/DailyMenu?$filter=date eq '${dateString}'&$expand=catalog($expand=file)`
+            `/DailyMenu?$filter=date eq '${dateString}'&$expand=catalogs($expand=file)`
         );
         return response.data.value;
     },
 
     /** Add a food item to a day's menu */
     addFoodToDate: async (dateString: string, catalogId: string): Promise<void> => {
-        await api.post('/DailyMenu', {
-            date: dateString,
-            catalog_ID: catalogId,
-            isComplete: false,
-        });
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=date eq '${dateString}'`
+        );
+        let menuId = response.data.value[0]?.ID;
+
+        if (!menuId) {
+            const createRes = await api.post('/DailyMenu', { date: dateString, isComplete: false });
+            menuId = createRes.data.ID;
+        }
+
+        await api.patch(`/Catalog(${catalogId})`, { dailyMenu_ID: menuId });
     },
 
     /** Remove a food item from a day's menu */
-    removeFoodFromDate: async (dailyMenuId: string): Promise<void> => {
-        await api.delete(`/DailyMenu(${dailyMenuId})`);
+    removeFoodFromDate: async (catalogId: string): Promise<void> => {
+        await api.patch(`/Catalog(${catalogId})`, { dailyMenu_ID: null });
     },
 
     /** Update note on a daily menu entry */
@@ -245,15 +265,9 @@ export const dailyMenuService = {
         await api.post('/DailyMenu', { date: dateString, note, isComplete: false });
     },
 
-    /** Mark all entries for a date as complete (locked) */
+    /** Confirm menu: marks complete AND sends email notifications to eligible staff */
     markCompleteByDate: async (dateString: string): Promise<void> => {
-        const response = await api.get<{ value: DailyMenuEntity[] }>(
-            `/DailyMenu?$filter=date eq '${dateString}'`
-        );
-        const entries = response.data.value;
-        await Promise.all(
-            entries.map((entry) => api.patch(`/DailyMenu(${entry.ID})`, { isComplete: true }))
-        );
+        await api.post('/confirmMenu', { date: dateString });
     },
 
     /** Check if any entry for a date is marked complete */
@@ -273,6 +287,7 @@ export interface DailyCatalogStatistics {
     CatalogID: string;
     CatalogName: string;
     CatalogPrice: number;
+    CatalogCurrency: string;
     CatalogDescription: string;
     OrderCount: number;
     SubTotal: number;
@@ -315,6 +330,7 @@ export interface StaffCatalogEntity {
         name: string;
         description: string;
         price: number;
+        currency: string;
         category: string;
         isActive: boolean;
         file?: { url: string };
@@ -412,7 +428,7 @@ export const billService = {
 
     /** Get content URL for displaying a bill */
     getContentUrl: (id: string): string => {
-        return `/odata/v4/lunch/DailyOrderBill(${id})/content`;
+        return `odata/v4/lunch/DailyOrderBill(${id})/content`;
     },
 };
 

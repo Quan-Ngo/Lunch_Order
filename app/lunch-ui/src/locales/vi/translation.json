@@ -9,16 +9,19 @@
         "admin": "Quản Trị",
         "staff": "Nhân Viên",
         "clearSelection": "Bỏ Chọn Đăng Nhập",
+        "loadingUser": "Đang tải người dùng...",
+        "staffProfileMissing": "Không có hồ sơ nhân viên liên kết",
         "toggleLanguage": "Đổi Ngôn Ngữ",
         "logout": "Đăng Xuất"
     },
     "dailyMenu": {
         "title": "Trưa nay",
+        "titleMid": "",
         "titleHighlight": "Ăn gì?",
         "subtitle": "Chọn năng lượng căng tràn cho ngày mới. Vui lòng đặt trước 10:30 sáng.",
         "noMeals": "Chưa có món ăn nào cho ngày này. Vui lòng nhắc Admin thiết lập Menu!",
         "adminHint": "Chế độ Quản trị — chỉ xem menu. Chuyển sang tài khoản Staff để đặt món.",
-        "selectUserHint": "Vui lòng chọn người dùng ở góc trên bên phải để bắt đầu đặt món.",
+        "selectUserHint": "Tài khoản Portal của bạn phải được liên kết với hồ sơ nhân viên để đặt món.",
         "currentOrder": "Món bạn đã chọn:",
         "cancel": "Huỷ",
         "confirmOrder": "Xác Nhận Đặt",
@@ -61,7 +64,15 @@
         "inactive": "Ngưng Bán",
         "activate": "Mở Bán",
         "deactivate": "Ngưng Bán",
-        "searchHint": "Tìm món ăn..."
+        "searchHint": "Tìm món ăn...",
+        "deleteSuccess": "Đã xóa \"{{name}}\" thành công!",
+        "deleteFailed": "Không thể xóa \"{{name}}\".",
+        "activatedSuccess": "\"{{name}}\" đã được mở bán.",
+        "deactivatedSuccess": "\"{{name}}\" đã được ngưng bán.",
+        "toggleFailed": "Không thể cập nhật trạng thái.",
+        "saveSuccessAdded": "Đã thêm \"{{name}}\" thành công!",
+        "saveSuccessUpdated": "Đã cập nhật \"{{name}}\" thành công!",
+        "noSearchResults": "Không có món nào khớp với tìm kiếm."
     },
     "foodModal": {
         "titleCreate": "Thêm Món Mới",
@@ -75,11 +86,22 @@
         "fieldNamePlaceholder": "Ví dụ: Bánh mì phô mai",
         "fieldNameError": "Vui lòng nhập tên món.",
         "fieldPrice": "Giá",
+        "fieldCurrency": "Đơn vị tiền tệ",
         "fieldPriceError": "Vui lòng nhập giá.",
         "fieldDescription": "Mô tả",
         "fieldDescriptionPlaceholder": "Mô tả món ăn...",
         "saveChanges": "Lưu thay đổi",
         "cancel": "Huỷ"
+    },
+    "currencies": {
+        "VND": "Viá»‡t Nam Äá»“ng",
+        "USD": "ÄÃ´ la Má»¹",
+        "EUR": "Euro",
+        "SGD": "ÄÃ´ la Singapore",
+        "JPY": "YÃªn Nháº­t",
+        "KRW": "Won HÃ n Quá»‘c",
+        "THB": "Baht ThÃ¡i",
+        "GBP": "Báº£ng Anh"
     },
     "removalModal": {
         "title": "Xác nhận xóa?",

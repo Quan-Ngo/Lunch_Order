@@ -1,43 +1,44 @@
-const nodemailer = require('nodemailer');
+const { MailtrapClient } = require('mailtrap');
 
-const transporter = nodemailer.createTransport({
-    host: 'sandbox.smtp.mailtrap.io',
-    port: 587,
-    auth: {
-        user: '4566f536ba86e6',
-        pass: '75d87a9d9243b3',
-    },
-});
+const TOKEN = 'b2afc7af46c8f9bce4b185654f0f8750';
 
-/** @type {boolean} */
-let isEmailDisabled;
-isEmailDisabled = true; // Set to true to temporarily disable email services
+const client = new MailtrapClient({ token: TOKEN });
+
+const sender = {
+    email: 'hello@demomailtrap.co',
+    name: 'Lunch Order',
+};
 
 /**
- * Send an email via the configured SMTP transporter.
+ * Send an email via the Mailtrap API client.
  * @param {Object}  options
- * @param {string}  options.to      - Recipient email address(es).
+ * @param {string}  options.to      - Recipient email address (single address string).
  * @param {string}  options.subject - Email subject line.
  * @param {string}  [options.text]  - Plain-text body.
  * @param {string}  [options.html]  - HTML body.
- * @returns {Promise<import('nodemailer').SentMessageInfo>}
+ * @returns {Promise<any>}
  */
 async function sendEmail({ to, subject, text, html }) {
-    if (isEmailDisabled) {
-        console.log(`[EmailService] Email sending is currently disabled. Skipping email to: ${to}`);
-        return { messageId: 'disabled' };
+    const recipients = typeof to === 'string'
+        ? to.split(',').map(email => ({ email: email.trim() }))
+        : to;
+
+    try {
+        const response = await client.send({
+            from: sender,
+            to: recipients,
+            subject,
+            text: text || '',
+            html: html || undefined,
+            category: 'Lunch Notification',
+        });
+
+        console.log(`[EmailService] Message sent to ${to}:`, response);
+        return response;
+    } catch (err) {
+        console.error(`[EmailService] Failed to send email to ${to}:`, err?.message || err);
+        throw err;
     }
-
-    const info = await transporter.sendMail({
-        from: '"Lunch Order" <noreply@lunchorder.dev>',
-        to,
-        subject,
-        text,
-        html,
-    });
-
-    console.log(`[EmailService] Message sent: ${info.messageId}`);
-    return info;
 }
 
 module.exports = { sendEmail };
