@@ -154,14 +154,33 @@ module.exports = class LunchService extends cds.ApplicationService {
                 return req.error(401, 'No authenticated user found');
             }
 
+            const email = (user.id || '').trim().toLowerCase();
+            const firstname = user.attr?.given_name ?? '';
+            const lastname = user.attr?.family_name ?? '';
+            const displayName = (firstname && lastname)
+                ? `${firstname} ${lastname}`
+                : user.id;
+            const normalizedDisplayName = displayName.trim().toLowerCase();
+
+            // Match the authenticated user against the Staff table server-side
+            const staffList = await SELECT.from(Staff);
+            const matchedStaff = staffList.find((s) => {
+                const staffEmail = (s.email || '').trim().toLowerCase();
+                const staffName = (s.name || '').trim().toLowerCase();
+                return (
+                    (email && staffEmail === email) ||
+                    (normalizedDisplayName && staffName === normalizedDisplayName) ||
+                    (email && staffName === email)
+                );
+            });
+
             return JSON.stringify({
                 name: user.id,
                 email: user.id,
-                firstname: user.attr?.given_name ?? '',
-                lastname: user.attr?.family_name ?? '',
-                displayName: user.attr?.given_name && user.attr?.family_name
-                    ? `${user.attr.given_name} ${user.attr.family_name}`
-                    : user.id
+                firstname,
+                lastname,
+                displayName,
+                staff: matchedStaff || null
             });
         });
 

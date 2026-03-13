@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { employeeService, type StaffEntity } from '@/services/api';
+import { type StaffEntity } from '@/services/api';
 import api from '@/services/api';
 
 export type UserRole = 'admin' | 'staff';
@@ -7,14 +7,6 @@ export type UserRole = 'admin' | 'staff';
 export interface AuthUser {
     role: UserRole;
     staff?: StaffEntity;
-}
-
-interface PortalCurrentUser {
-    firstname?: string;
-    lastname?: string;
-    name?: string;
-    email?: string;
-    displayName?: string;
 }
 
 interface AuthContextType {
@@ -25,36 +17,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const normalize = (value?: string): string => value?.trim().toLowerCase() ?? '';
-
-function buildPortalDisplayName(user: PortalCurrentUser): string {
-    const fullName = `${user.firstname ?? ''} ${user.lastname ?? ''}`.trim();
-    return fullName || user.displayName || '';
-}
-
-function resolvePortalEmail(user: PortalCurrentUser): string {
-    if (user.email) return user.email;
-    if (user.name?.includes('@')) return user.name;
-    return '';
-}
-
-function matchStaff(portalUser: PortalCurrentUser, staffList: StaffEntity[]): StaffEntity | undefined {
-    const email = normalize(resolvePortalEmail(portalUser));
-    const displayName = normalize(buildPortalDisplayName(portalUser));
-    const principalName = normalize(portalUser.name);
-
-    return staffList.find((staff) => {
-        const staffEmail = normalize(staff.email);
-        const staffName = normalize(staff.name);
-
-        return (
-            (!!email && staffEmail === email) ||
-            (!!displayName && staffName === displayName) ||
-            (!!principalName && staffName === principalName)
-        );
-    });
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -77,15 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (!isMounted) return;
 
-                // 2. Fetch staff profile
+                // 2. Fetch current user + matched staff profile (resolved server-side)
                 let staff: StaffEntity | undefined;
                 try {
                     const response = await api.get<{ value: string }>('/getCurrentUser()');
-                    const portalUser = JSON.parse(response.data.value) as PortalCurrentUser;
-                    const staffList = await employeeService.getAll();
-                    staff = matchStaff(portalUser, staffList);
+                    const userData = JSON.parse(response.data.value);
+                    staff = userData.staff ?? undefined;
                     if (!staff) {
-                        console.warn('[Auth] No matching staff profile found for portal user:', portalUser);
+                        console.warn('[Auth] No matching staff profile found for portal user:', userData);
                     }
                 } catch (error) {
                     console.error('[Auth] Failed to resolve current user profile:', error);
@@ -125,3 +86,4 @@ export function useAuth() {
     if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
     return ctx;
 }
+
