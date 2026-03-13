@@ -205,9 +205,6 @@ export default function Navbar() {
             {isMobileMenuOpen && (
                 <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
                     <div className="px-4 py-4 space-y-3">
-                        {navLinks
-                            .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
-                            .map((link) => (
                         {isLoadingUser ? (
                             <div className="flex items-center gap-2 pb-3 border-b border-gray-200 text-sm font-semibold text-gray-800">
                                 <span className="material-icons animate-spin text-base">progress_activity</span>
@@ -218,7 +215,7 @@ export default function Navbar() {
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="min-w-0">
                                         <p className="text-sm font-bold text-gray-900 truncate">{mobileDisplayName}</p>
-                                        <p className="text-xs text-gray-500 truncate">{currentUser.staff?.email ?? t('navbar.staff')}</p>
+                                        <p className="text-xs text-gray-500 truncate">{currentUser?.staff?.email ?? t('navbar.staff')}</p>
                                     </div>
                                 </div>
                                 {/* Language switcher mobile */}
@@ -252,7 +249,9 @@ export default function Navbar() {
                             </div>
                         )}
 
-                        {navLinks.map((link) => (
+                        {navLinks
+                            .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
+                            .map((link) => (
                             <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
                                 <NavigationPageSelect
                                     fullWidth

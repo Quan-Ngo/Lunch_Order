@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { employeeService, type StaffEntity } from '@/services/api';
 import api from '@/services/api';
 
@@ -21,7 +21,6 @@ interface AuthContextType {
     currentUser: AuthUser | null;
     isLoadingUser: boolean;
     setCurrentUser: (user: AuthUser | null) => void;
-    isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,42 +62,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let isMounted = true;
 
-        const loadAuthData = async () => {
+        const loadCurrentUser = async () => {
             try {
-                // 1. Fetch user role
-                let role: UserRole = 'staff';
-                try {
-                    const roleRes = await api.get<{ value: string }>('/userInfo()');
-                    const info = JSON.parse(roleRes.data.value);
-                    role = info.role as UserRole;
-                } catch (err) {
-                    console.warn('[AuthContext] Failed to fetch userInfo, defaulting to staff:', err);
-                }
+                const response = await api.get<{ value: string }>('/getCurrentUser()');
+                const portalUser = JSON.parse(response.data.value) as PortalCurrentUser;
+                const staffList = await employeeService.getAll();
+                const matchedStaff = matchStaff(portalUser, staffList);
 
                 if (!isMounted) return;
 
-                // 2. Fetch staff profile
-                let staff: StaffEntity | undefined;
-                try {
-                    const response = await api.get<{ value: string }>('/getCurrentUser()');
-                    const portalUser = JSON.parse(response.data.value) as PortalCurrentUser;
-                    const staffList = await employeeService.getAll();
-                    staff = matchStaff(portalUser, staffList);
-                    if (!staff) {
-                        console.warn('[Auth] No matching staff profile found for portal user:', portalUser);
-                    }
-                } catch (error) {
-                    console.error('[Auth] Failed to resolve current user profile:', error);
-                }
-
-                if (!isMounted) return;
-
-                if (staff || role === 'admin') {
-                    setCurrentUser({ role, staff });
+                if (matchedStaff) {
+                    setCurrentUser({ role: 'staff', staff: matchedStaff });
                 } else {
-                    console.warn('[Auth] Not admin and no staff profile, setting user to null');
+                    console.warn('[Auth] No matching staff profile found for portal user:', portalUser);
                     setCurrentUser(null);
                 }
+            } catch (error) {
+                if (!isMounted) return;
+                console.error('[Auth] Failed to resolve current user:', error);
+                setCurrentUser(null);
             } finally {
                 if (isMounted) {
                     setIsLoadingUser(false);
@@ -106,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         };
 
-        void loadAuthData();
+        void loadCurrentUser();
 
         return () => {
             isMounted = false;
@@ -114,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ currentUser, isLoadingUser, setCurrentUser, isLoading: isLoadingUser }}>
+        <AuthContext.Provider value={{ currentUser, isLoadingUser, setCurrentUser }}>
             {children}
         </AuthContext.Provider>
     );
