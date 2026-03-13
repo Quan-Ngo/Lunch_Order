@@ -42,9 +42,18 @@ api.interceptors.request.use(async (config) => {
 });
 
 // If a request fails with 403, the token may have expired — refetch and retry once
+// If a request fails with 401, the user session is missing or expired — reload to trigger BTP login
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        if (error.response?.status === 401) {
+            if (!import.meta.env.DEV) {
+                // Reloading the page forces the BTP AppRouter to redirect the user to the XSUAA login page
+                window.location.reload();
+                return Promise.reject(error);
+            }
+        }
+
         const originalRequest = error.config;
         if (
             error.response?.status === 403 &&

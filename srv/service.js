@@ -7,6 +7,10 @@ module.exports = class LunchService extends cds.ApplicationService {
         const { Staff } = this.entities;
 
         this.on('userInfo', async (req) => {
+            if (req.user.is('anonymous')) {
+                return req.error(401, 'Not authenticated');
+            }
+
             const isAdmin = req.user.is('CMNA_ADMIN');
             return JSON.stringify({ role: isAdmin ? 'admin' : 'staff' });
         });
@@ -146,7 +150,7 @@ module.exports = class LunchService extends cds.ApplicationService {
         });
         this.on('getCurrentUser', async (req) => {
             const user = req.user;
-            if (!user) {
+            if (!user || user.is('anonymous')) {
                 return req.error(401, 'No authenticated user found');
             }
 
