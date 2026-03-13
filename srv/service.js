@@ -138,7 +138,6 @@ module.exports = class LunchService extends cds.ApplicationService {
 
             return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
         });
-
         this.on('getCurrentUser', async (req) => {
             const user = req.user;
             if (!user) {
