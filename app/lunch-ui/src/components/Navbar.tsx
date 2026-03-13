@@ -51,6 +51,10 @@ export default function Navbar() {
             // We use the app's base path so it triggers the 'logoutEndpoint' in our local xs-app.json instead.
             const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             window.location.assign(basePath + 'logout');
+            window.location.reload();
+        } else {
+            // Local dev: force reload to clean cache
+            window.location.reload();
         }
     };
 
@@ -104,11 +108,10 @@ export default function Navbar() {
                                 <button
                                     key={lang}
                                     onClick={() => handleLanguageChange(lang)}
-                                    className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${
-                                        i18n.language === lang
+                                    className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${i18n.language === lang
                                             ? 'bg-primary border-black text-black'
                                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
-                                    }`}
+                                        }`}
                                 >
                                     {LANGUAGE_LABELS[lang] ?? lang.toUpperCase()}
                                 </button>
@@ -164,16 +167,16 @@ export default function Navbar() {
                         {navLinks
                             .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
                             .map((link) => (
-                            <Link key={link.to} to={link.to}>
-                                <NavigationPageSelect
-                                    variant={isActive(link.to) ? 'primary' : 'ghost'}
-                                    size="sm"
-                                    className={isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'}
-                                >
-                                    {t(link.labelKey)}
-                                </NavigationPageSelect>
-                            </Link>
-                        ))}
+                                <Link key={link.to} to={link.to}>
+                                    <NavigationPageSelect
+                                        variant={isActive(link.to) ? 'primary' : 'ghost'}
+                                        size="sm"
+                                        className={isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'}
+                                    >
+                                        {t(link.labelKey)}
+                                    </NavigationPageSelect>
+                                </Link>
+                            ))}
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -227,11 +230,10 @@ export default function Navbar() {
                                         <button
                                             key={lang}
                                             onClick={() => handleLanguageChange(lang)}
-                                            className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${
-                                                i18n.language === lang
+                                            className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${i18n.language === lang
                                                     ? 'bg-primary border-black text-black'
                                                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'
-                                            }`}
+                                                }`}
                                         >
                                             {LANGUAGE_LABELS[lang] ?? lang.toUpperCase()}
                                         </button>
@@ -255,16 +257,16 @@ export default function Navbar() {
                         {navLinks
                             .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
                             .map((link) => (
-                            <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
-                                <NavigationPageSelect
-                                    fullWidth
-                                    variant={isActive(link.to) ? 'primary' : 'ghost'}
-                                    className="justify-start"
-                                >
-                                    {t(link.labelKey)}
-                                </NavigationPageSelect>
-                            </Link>
-                        ))}
+                                <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
+                                    <NavigationPageSelect
+                                        fullWidth
+                                        variant={isActive(link.to) ? 'primary' : 'ghost'}
+                                        className="justify-start"
+                                    >
+                                        {t(link.labelKey)}
+                                    </NavigationPageSelect>
+                                </Link>
+                            ))}
                     </div>
                 </div>
             )}
