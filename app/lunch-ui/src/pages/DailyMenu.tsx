@@ -94,7 +94,7 @@ export default function DailyMenu() {
 
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
 
-    const isStaff = currentUser?.role === 'staff' && !!currentUser.staff;
+    const canOrder = !!currentUser?.staff;
     const staffId = currentUser?.staff?.ID;
     const queryClient = useQueryClient();
 
@@ -126,10 +126,10 @@ export default function DailyMenu() {
     const { data: savedOrder = null } = useQuery({
         queryKey: ['staffOrder', staffId, selectedDate],
         queryFn: () =>
-            isStaff && staffId
+            canOrder && staffId
                 ? staffCatalogService.getForStaffAndDate(staffId, selectedDate)
                 : Promise.resolve(null),
-        enabled: isStaff && !!staffId,
+        enabled: canOrder && !!staffId,
     });
 
     const isLoading = menuLoading;
@@ -143,7 +143,7 @@ export default function DailyMenu() {
     // ─── Handlers ───────────────────────────────────────────────────────────────
 
     const handleSelect = (catalogId: string) => {
-        if (!isStaff || isLocked) return;
+        if (!canOrder || isLocked) return;
         setSelectedCatalogId((prev) => (prev === catalogId ? null : catalogId));
     };
 
