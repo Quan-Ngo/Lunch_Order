@@ -16,7 +16,7 @@ entity Catalog : cuid, managed {
     price        : Decimal(15,2);
     description  : String(500); // Added to support existing UI
     category     : String(50);  // Added to support existing UI
-    menus        : Association to many DailyMenu on menus.catalog = $self;
+    dailyMenu    : Association to DailyMenu;
     staffCatalogs: Association to many StaffCatalog on staffCatalogs.catalog = $self;
     file         : Composition of one CatalogFile on file.catalog = $self;
 }
@@ -31,8 +31,7 @@ entity CatalogFile : cuid, managed {
 entity DailyMenu : cuid, managed {
     date         : Date;
     isComplete   : Boolean;
-    catalog      : Association to Catalog; // "Association to many DailyMenu" implies Catalog -> DailyMenu 1:n? Or n:m? User said "Association to many DailyMenu" in Catalog. So DailyMenu has one Catalog?
-    parent       : Association to DailyMenu; // "Association to one DailyMenu"
+    catalogs     : Association to many Catalog on catalogs.dailyMenu = $self;
     note         : String(500);
 }
 

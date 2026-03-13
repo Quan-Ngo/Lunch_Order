@@ -97,6 +97,48 @@ module.exports = class LunchService extends cds.ApplicationService {
             });
         });
 
+        this.on('confirmMenu', async (req) => {
+            const { date } = req.data;
+            if (!date) return req.error(400, 'date is required');
+
+            const { DailyMenu, Staff } = this.entities;
+
+            // 1. Mark all DailyMenu entries for this date as complete
+            await UPDATE(DailyMenu).set({ isComplete: true }).where({ date });
+            console.log(`[LunchService] confirmMenu: Marked all entries for ${date} as complete.`);
+
+            // 2. Format date DD/MM/YYYY for the email body
+            const parts = date.split('-');
+            const formattedDate = parts.length === 3
+                ? `${parts[2]}/${parts[1]}/${parts[0]}`
+                : date;
+
+            // 3. Fetch all Staff with status=true and notification=true and a valid email
+            const staffList = await SELECT.from(Staff).where({ status: true, notification: true });
+            const recipients = staffList.filter(s => s.email && s.email.trim() !== '');
+
+            if (recipients.length === 0) {
+                console.log('[LunchService] confirmMenu: No eligible staff to notify.');
+                return `Menu confirmed for ${formattedDate}. No staff eligible for notification.`;
+            }
+
+            console.log(`[LunchService] confirmMenu: Sending notification to ${recipients.length} staff member(s).`);
+
+            // 4. Send email to each eligible staff member (fire-and-forget)
+            recipients.forEach((staff) => {
+                sendEmail({
+                    to: staff.email,
+                    subject: `Lunch Menu Ready for ${formattedDate}`,
+                    text: `I have add food menu for ${formattedDate}`,
+                    html: `<p>I have add food menu for <strong>${formattedDate}</strong></p>`,
+                }).catch((err) => {
+                    console.error(`[LunchService] Failed to send email to ${staff.email}:`, err);
+                });
+            });
+
+            return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
+        });
+
         return super.init();
     }
 }

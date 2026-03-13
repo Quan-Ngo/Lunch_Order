@@ -26,14 +26,13 @@ const CARD_ACCENTS = [
 // ─── Date Timeline ──────────────────────────────────────────────────────────────
 
 interface FoodCardProps {
-    entry: DailyMenuEntity;
+    catalog: NonNullable<DailyMenuEntity['catalogs']>[0];
     index: number;
     isSelected: boolean;
     onSelect: () => void;
 }
 
-function FoodCard({ entry, index, isSelected, onSelect }: FoodCardProps) {
-    const catalog = entry.catalog;
+function FoodCard({ catalog, index, isSelected, onSelect }: FoodCardProps) {
     if (!catalog) return null;
 
     const imageUrl = catalog.file?.url || '';
@@ -110,11 +109,14 @@ export default function DailyMenu() {
         queryFn: () => dailyMenuService.getByDate(selectedDate),
     });
 
+    const dailyMenu = rawMenuEntries[0];
+    const rawCatalogs = dailyMenu?.catalogs || [];
+
     // Deduplicate and filter active items
     const seen = new Set<string>();
-    const menuEntries = rawMenuEntries.filter((e) => {
-        if (e.catalog && e.catalog.isActive && !seen.has(e.catalog.ID)) {
-            seen.add(e.catalog.ID);
+    const menuEntries = rawCatalogs.filter((catalog) => {
+        if (catalog && catalog.isActive && !seen.has(catalog.ID)) {
+            seen.add(catalog.ID);
             return true;
         }
         return false;
@@ -155,7 +157,7 @@ export default function DailyMenu() {
             }
         },
         onSuccess: (_, catalogId) => {
-            const catalogItem = menuEntries.find(m => m.catalog?.ID === catalogId)?.catalog;
+            const catalogItem = menuEntries.find(c => c.ID === catalogId);
             const itemName = catalogItem?.name || t('dailyMenu.foodItem');
             if (catalogId) {
                 toast.success(t('dailyMenu.orderSuccessToast', { itemName, date: selectedDate }));
@@ -253,15 +255,15 @@ export default function DailyMenu() {
 
                     {/* Food Cards - horizontal scrollable row */}
                     <div className="flex gap-4 overflow-x-auto no-scrollbar mt-1 pt-8 pb-8 px-2">
-                        {menuEntries.map((entry, i) => {
-                            const catalogId = entry.catalog?.ID;
+                        {menuEntries.map((catalog, i) => {
+                            const catalogId = catalog.ID;
                             if (!catalogId) return null;
                             const isSelected = selectedCatalogId === catalogId;
 
                             return (
                                 <FoodCard
-                                    key={entry.ID}
-                                    entry={entry}
+                                    key={catalogId}
+                                    catalog={catalog}
                                     index={i}
                                     isSelected={isSelected}
                                     onSelect={() => handleSelect(catalogId)}
