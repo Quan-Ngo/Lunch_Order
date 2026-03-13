@@ -34,7 +34,7 @@
         "auth": {
           "kind": "mocked",
           "users": {
-            "alice": {
+            "sarah.johnson@example.com": {
               "roles": [
                 "CMNA_ADMIN",
                 "CMNA_ADD_USER",

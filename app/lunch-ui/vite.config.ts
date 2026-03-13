@@ -38,6 +38,7 @@ export default defineConfig({
       '/odata/v4/lunch': {
         target: 'http://localhost:4005',
         changeOrigin: true,
+        auth: 'sarah.johnson@example.com:', // Automatically inject Basic Auth for CAP mock user
       },
       '/btp-auth': {
         target: 'https://proconarum-development-system.authentication.eu10.hana.ondemand.com',
