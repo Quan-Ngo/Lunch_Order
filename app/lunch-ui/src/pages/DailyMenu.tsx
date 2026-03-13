@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
     dailyMenuService,
     staffCatalogService,
+    normalizeImageUrl,
     type DailyMenuEntity,
 } from '@/services/api';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +36,7 @@ interface FoodCardProps {
 function FoodCard({ catalog, index, isSelected, onSelect }: FoodCardProps) {
     if (!catalog) return null;
 
-    const imageUrl = catalog.file?.url || '';
+    const imageUrl = normalizeImageUrl(catalog.file?.url);
     const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
     return (
         <div

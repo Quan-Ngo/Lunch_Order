@@ -5,9 +5,11 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 // Translation files
 import enTranslation from './locales/en/translation.json';
 import viTranslation from './locales/vi/translation.json';
+import deTranslation from './locales/de/translation.json';
+import jaTranslation from './locales/ja/translation.json';
 
 export const APP_LANGUAGE_STORAGE_KEY = 'app-language';
-export const SUPPORTED_LANGUAGES = ['en', 'vi'] as const;
+export const SUPPORTED_LANGUAGES = ['en', 'vi', 'de', 'ja'] as const;
 
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
@@ -30,14 +32,16 @@ i18n
     .init({
         resources: {
             en: { translation: enTranslation },
-            vi: { translation: viTranslation }
+            vi: { translation: viTranslation },
+            de: { translation: deTranslation },
+            ja: { translation: jaTranslation }
         },
         supportedLngs: SUPPORTED_LANGUAGES,
         nonExplicitSupportedLngs: true,
         load: 'languageOnly',
         fallbackLng: 'en',
         detection: {
-            order: ['localStorage', 'navigator'],
+            order: ['localStorage'],
             lookupLocalStorage: APP_LANGUAGE_STORAGE_KEY,
             caches: ['localStorage'],
         },

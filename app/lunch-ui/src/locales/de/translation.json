@@ -1,0 +1,236 @@
+{
+    "navbar": {
+        "dailyMenu": "Tagesmenü",
+        "employees": "Mitarbeiter",
+        "catalog": "Katalog",
+        "manageMenu": "Menüverwaltung",
+        "dailyOrders": "Tagesbestellungen",
+        "selectUser": "Benutzer auswählen",
+        "admin": "Administrator",
+        "staff": "Mitarbeiter",
+        "clearSelection": "Auswahl aufheben",
+        "loadingUser": "Benutzer wird geladen...",
+        "staffProfileMissing": "Kein verknüpftes Mitarbeiterprofil",
+        "toggleLanguage": "Sprache wechseln",
+        "logout": "Abmelden"
+    },
+    "dailyMenu": {
+        "title": "Was gibt's",
+        "titleMid": "zum",
+        "titleHighlight": "Mittagessen?",
+        "subtitle": "Wähle deine Energie für den Tag. Bitte bestelle vor 10:30 Uhr.",
+        "noMeals": "Für diesen Tag sind keine Gerichte verfügbar. Bitte den Manager, das Menü einzurichten.",
+        "adminHint": "Admin-Ansicht - nur das Menü ansehen. Wechsle zu einem Mitarbeiterkonto, um zu bestellen.",
+        "selectUserHint": "Dein Portal-Konto muss mit einem Mitarbeiterprofil verknüpft sein, um eine Bestellung aufzugeben.",
+        "currentOrder": "Deine aktuelle Bestellung:",
+        "cancel": "Abbrechen",
+        "confirmOrder": "Bestellung bestätigen",
+        "saving": "Speichert...",
+        "orderConfirmed": "Bestellung bestätigt. Guten Appetit.",
+        "orderFailed": "Bestellung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+        "orderCancelled": "Bestellung storniert.",
+        "cancelFailed": "Stornierung fehlgeschlagen. Bitte versuche es erneut.",
+        "today": "HEUTE",
+        "foodItem": "Gericht",
+        "orderSuccessToast": "Du hast \"{{itemName}}\" für den {{date}} ausgewählt."
+    },
+    "categories": {
+        "All": "Alle",
+        "Healthy": "Gesund",
+        "Vegan": "Vegan",
+        "Popular": "Beliebt",
+        "General": "Allgemein",
+        "Comfort": "Comfort Food",
+        "Seafood": "Meeresfrüchte",
+        "Salad": "Salat",
+        "Pizza": "Pizza",
+        "Burger": "Burger",
+        "Ramen": "Ramen",
+        "Bowl": "Bowl",
+        "Dessert": "Dessert"
+    },
+    "catalog": {
+        "title": "Speisekatalog",
+        "description": "Verwalte eure leckeren Angebote für das Team.",
+        "addNew": "Neues Gericht hinzufügen",
+        "errorMessage": "Gerichte konnten nicht geladen werden. Läuft das Backend?",
+        "errorDescription": "Führe im Projektstamm `cds watch` aus.",
+        "empty": "Noch keine Gerichte vorhanden. Füge dein erstes Gericht hinzu.",
+        "saveFailed": "Gericht konnte nicht gespeichert werden. Details in der Konsole prüfen.",
+        "removalContext": "aus dem Speisekatalog",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "activate": "Aktivieren",
+        "deactivate": "Deaktivieren",
+        "searchHint": "Nach Gerichten suchen..."
+    },
+    "foodModal": {
+        "titleCreate": "Neues Gericht hinzufügen",
+        "titleEdit": "Gericht bearbeiten",
+        "closeAriaLabel": "Dialog schließen",
+        "imageSectionLabel": "Bild des Gerichts",
+        "uploadCta": "Datei hochladen",
+        "uploadOr": " oder per Drag & Drop",
+        "uploadHint": "PNG, JPG, GIF bis 5 MB",
+        "fieldName": "Name des Gerichts",
+        "fieldNamePlaceholder": "z. B. Cheeseburger",
+        "fieldNameError": "Name ist erforderlich.",
+        "fieldPrice": "Preis",
+        "fieldCurrency": "Währung",
+        "fieldPriceError": "Preis ist erforderlich.",
+        "fieldDescription": "Beschreibung",
+        "fieldDescriptionPlaceholder": "Beschreibe das Gericht...",
+        "saveChanges": "Änderungen speichern",
+        "cancel": "Abbrechen"
+    },
+    "currencies": {
+        "VND": "Vietnamesischer Dong",
+        "USD": "US-Dollar",
+        "EUR": "Euro",
+        "SGD": "Singapur-Dollar",
+        "JPY": "Japanischer Yen",
+        "KRW": "Südkoreanischer Won",
+        "THB": "Thailändischer Baht",
+        "GBP": "Britisches Pfund"
+    },
+    "removalModal": {
+        "title": "Element entfernen?",
+        "bodyPrefix": "Dadurch wird",
+        "confirming": "Wird entfernt...",
+        "confirm": "Entfernen bestätigen",
+        "confirmDelete": "Mitarbeiter löschen",
+        "undoWarning": "Diese Aktion kann nicht rückgängig gemacht werden.",
+        "warning": "Möchtest du diesen Mitarbeiter wirklich aus dem System entfernen? Kontodaten und Historie werden dauerhaft gelöscht.",
+        "cancel": "Abbrechen",
+        "deleteFailed": "Element konnte nicht gelöscht werden. Details in der Konsole prüfen."
+    },
+    "manageMenu": {
+        "title": "Wochenplanung",
+        "description": "Plane das Tagesmenü für dein Team.",
+        "selectFromCatalog": "Aus Katalog auswählen",
+        "addedCount_one": "{{count}} Element zum Menü hinzugefügt.",
+        "addedCount_other": "{{count}} Elemente zum Menü hinzugefügt.",
+        "addFailed": "Elemente konnten nicht hinzugefügt werden. Bitte versuche es erneut.",
+        "itemRemoved": "Element aus dem Menü entfernt.",
+        "removeFailed": "Element konnte nicht entfernt werden. Bitte versuche es erneut.",
+        "itemCount_one": "{{count}} Element im Menü",
+        "itemCount_other": "{{count}} Elemente im Menü",
+        "emptyMenu": "Für diesen Tag ist noch kein Gericht im Menü. Klicke auf 'Aus Katalog auswählen', um etwas hinzuzufügen.",
+        "fromTodaysMenu": "aus dem heutigen Menü"
+    },
+    "employees": {
+        "title": "Mitarbeiter verwalten",
+        "description": "Verwalte Teamzugriff und Kontostatus für Office Lunches.",
+        "registerNew": "Neuen Mitarbeiter registrieren",
+        "stats": {
+            "total": "Mitarbeiter gesamt",
+            "active": "Aktive Konten"
+        },
+        "searchPlaceholder": "Mitarbeiter nach Namen suchen",
+        "table": {
+            "name": "Name",
+            "status": "Status",
+            "actions": "Aktionen"
+        },
+        "status": {
+            "active": "Aktiv",
+            "inactive": "Inaktiv"
+        },
+        "actions": {
+            "grantAdmin": "Adminrechte vergeben",
+            "edit": "Bearbeiten",
+            "delete": "Löschen"
+        },
+        "error": {
+            "title": "Mitarbeiter konnten nicht geladen werden",
+            "description": "Bitte überprüfe deine Verbindung und versuche es erneut."
+        },
+        "empty": {
+            "noData": "Keine Mitarbeiter gefunden.",
+            "noResults": "Keine Mitarbeiter entsprechen deiner Suche."
+        },
+        "registerModal": {
+            "title": "Neuen Mitarbeiter registrieren",
+            "searchPlaceholder": "Unternehmensdatenbank durchsuchen...",
+            "add": "HINZUFÜGEN",
+            "adding": "Wird hinzugefügt...",
+            "noUsers": "Keine Benutzer in der Unternehmensdatenbank gefunden.",
+            "error": "Benutzer aus der Unternehmensdatenbank konnten nicht geladen werden.",
+            "success": "Mitarbeiter erfolgreich registriert.",
+            "alreadyRegistered": "Bereits registriert"
+        },
+        "editModal": {
+            "title": "Informationen bearbeiten",
+            "fieldName": "Vollständiger Name",
+            "fieldNamePlaceholder": "z. B. Max Mustermann",
+            "fieldNameError": "Bitte einen Namen eingeben.",
+            "fieldStatus": "Aktivstatus",
+            "fieldNotification": "Benachrichtigungen erhalten",
+            "saveChanges": "Änderungen speichern",
+            "cancel": "Abbrechen",
+            "success": "Informationen erfolgreich aktualisiert."
+        }
+    },
+    "selectCatalogModal": {
+        "title": "Aus Katalog auswählen",
+        "closeAriaLabel": "Dialog schließen",
+        "searchPlaceholder": "Gerichte suchen...",
+        "noItems": "Keine Elemente gefunden.",
+        "added": "Hinzugefügt",
+        "addNewFood": "Neues Gericht zum Katalog hinzufügen",
+        "cancel": "Abbrechen",
+        "add": "Hinzufügen",
+        "addFailed": "Gericht konnte nicht hinzugefügt werden. Details in der Konsole prüfen."
+    },
+    "dailyOrders": {
+        "title": "Tagesbestellungen",
+        "description": "Verwalte und verfolge die heutigen Office-Lunch-Bestellungen effizient.",
+        "prevDay": "Vorheriger Tag",
+        "nextDay": "Nächster Tag",
+        "dateLocale": "de-DE",
+        "totalOrderValue": "Gesamtwert der Bestellungen",
+        "loading": "Bestellungen werden geladen...",
+        "noOrders": "Für dieses Datum wurden keine Bestellungen aufgegeben.",
+        "orderDetails": "Bestelldetails",
+        "table": {
+            "item": "Artikel",
+            "unitPrice": "Einzelpreis",
+            "qty": "Menge",
+            "tableSubtotal": "Zwischensumme"
+        },
+        "orderNotes": "Bestellnotizen",
+        "notesPlaceholder": "Besondere Hinweise zur Bestellung...",
+        "noteSaved": "Notiz gespeichert",
+        "saving": "Speichert...",
+        "saveNote": "Notiz speichern",
+        "receipt": "Beleg / Rechnung",
+        "uploaded": "Hochgeladen",
+        "uploading": "Wird hochgeladen...",
+        "noBills": "Noch keine Belege hochgeladen",
+        "uploadBillFirst": "Bitte lade einen Beleg hoch, bevor du den Tag abschließt.",
+        "uploadMore": "Beleg / Rechnung hochladen",
+        "summary": "Zusammenfassung",
+        "subtotal": "Zwischensumme",
+        "tax": "Steuer (10 %)",
+        "deliveryFee": "Liefergebühr",
+        "total": "Gesamt",
+        "exportPdf": "Als PDF exportieren",
+        "markComplete": "Als abgeschlossen markieren",
+        "lockNote": "Bestellungen werden automatisch um 11:30 Uhr gesperrt",
+        "pdfTitle": "Tagesbestellbericht",
+        "pdfDate": "Datum",
+        "completeModal": {
+            "title": "Bestellung abschließen?",
+            "body": "Sobald diese Bestellung als abgeschlossen markiert ist, kann sie nicht mehr bearbeitet werden. Möchtest du fortfahren?",
+            "confirm": "Ja, Bestellung abschließen",
+            "cancel": "Abbrechen"
+        },
+        "isLocked": "Diese Bestellung wurde abgeschlossen und ist gesperrt.",
+        "markCompleting": "Wird abgeschlossen..."
+    },
+    "common": {
+        "saving": "Speichert..."
+    }
+}

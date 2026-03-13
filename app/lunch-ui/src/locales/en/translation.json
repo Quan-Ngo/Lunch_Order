@@ -9,6 +9,8 @@
         "admin": "Admin",
         "staff": "Staff",
         "clearSelection": "Clear Selection",
+        "loadingUser": "Loading user...",
+        "staffProfileMissing": "No linked staff profile",
         "toggleLanguage": "Toggle Language",
         "logout": "Logout"
     },
@@ -19,7 +21,7 @@
         "subtitle": "Choose your fuel for the day. Place your order before 10:30 AM.",
         "noMeals": "No meals available for this day. Ask the manager to set up the menu!",
         "adminHint": "Admin view — browsing the menu. Switch to a Staff account to place an order.",
-        "selectUserHint": "Select a user from the top-right dropdown to place an order.",
+        "selectUserHint": "Your portal account must be linked to a staff profile to place an order.",
         "currentOrder": "Your current order:",
         "cancel": "Cancel",
         "confirmOrder": "Confirm Order",
