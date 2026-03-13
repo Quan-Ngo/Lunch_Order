@@ -64,7 +64,15 @@
         "inactive": "Ngưng Bán",
         "activate": "Mở Bán",
         "deactivate": "Ngưng Bán",
-        "searchHint": "Tìm món ăn..."
+        "searchHint": "Tìm món ăn...",
+        "deleteSuccess": "Đã xóa \"{{name}}\" thành công!",
+        "deleteFailed": "Không thể xóa \"{{name}}\".",
+        "activatedSuccess": "\"{{name}}\" đã được mở bán.",
+        "deactivatedSuccess": "\"{{name}}\" đã được ngưng bán.",
+        "toggleFailed": "Không thể cập nhật trạng thái.",
+        "saveSuccessAdded": "Đã thêm \"{{name}}\" thành công!",
+        "saveSuccessUpdated": "Đã cập nhật \"{{name}}\" thành công!",
+        "noSearchResults": "Không có món nào khớp với tìm kiếm."
     },
     "foodModal": {
         "titleCreate": "Thêm Món Mới",

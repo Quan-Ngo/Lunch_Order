@@ -64,7 +64,15 @@
         "inactive": "無効",
         "activate": "有効化",
         "deactivate": "無効化",
-        "searchHint": "料理を検索..."
+        "searchHint": "料理を検索...",
+        "deleteSuccess": "「{{name}}」を削除しました。",
+        "deleteFailed": "「{{name}}」を削除できませんでした。",
+        "activatedSuccess": "「{{name}}」を有効化しました。",
+        "deactivatedSuccess": "「{{name}}」を無効化しました。",
+        "toggleFailed": "状態を更新できませんでした。",
+        "saveSuccessAdded": "「{{name}}」を追加しました。",
+        "saveSuccessUpdated": "「{{name}}」を更新しました。",
+        "noSearchResults": "検索に一致する料理がありません。"
     },
     "foodModal": {
         "titleCreate": "新しい料理を追加",

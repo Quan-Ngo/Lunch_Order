@@ -64,7 +64,15 @@
         "inactive": "Inaktiv",
         "activate": "Aktivieren",
         "deactivate": "Deaktivieren",
-        "searchHint": "Nach Gerichten suchen..."
+        "searchHint": "Nach Gerichten suchen...",
+        "deleteSuccess": "\"{{name}}\" wurde erfolgreich gelöscht!",
+        "deleteFailed": "\"{{name}}\" konnte nicht gelöscht werden.",
+        "activatedSuccess": "\"{{name}}\" wurde aktiviert.",
+        "deactivatedSuccess": "\"{{name}}\" wurde deaktiviert.",
+        "toggleFailed": "Status konnte nicht aktualisiert werden.",
+        "saveSuccessAdded": "\"{{name}}\" wurde erfolgreich hinzugefügt!",
+        "saveSuccessUpdated": "\"{{name}}\" wurde erfolgreich aktualisiert!",
+        "noSearchResults": "Keine Gerichte entsprechen deiner Suche."
     },
     "foodModal": {
         "titleCreate": "Neues Gericht hinzufügen",

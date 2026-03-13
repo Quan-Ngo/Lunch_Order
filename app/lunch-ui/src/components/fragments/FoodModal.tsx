@@ -228,11 +228,11 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                         value={currency}
                                         onChange={(e) => setCurrency(e.target.value)}
                                         aria-label={t('foodModal.fieldCurrency')}
-                                        className="flex-1 min-w-0 border border-gray-200 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm py-2 px-3 font-bold bg-white text-gray-800 cursor-pointer"
+                                        className="w-24 sm:w-28 shrink-0 border border-gray-200 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm py-2 px-3 font-bold bg-white text-gray-800 cursor-pointer"
                                     >
                                         {CURRENCY_OPTIONS.map((opt) => (
                                             <option key={opt} value={opt}>
-                                                {opt} - {t(`currencies.${opt}`)}
+                                                {opt}
                                             </option>
                                         ))}
                                     </select>
