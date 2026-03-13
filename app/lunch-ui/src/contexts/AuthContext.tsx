@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { employeeService, type StaffEntity } from '@/services/api';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { type StaffEntity } from '@/services/api';
 import api from '@/services/api';
 
 export type UserRole = 'admin' | 'staff';
@@ -21,6 +21,7 @@ interface AuthContextType {
     currentUser: AuthUser | null;
     isLoadingUser: boolean;
     setCurrentUser: (user: AuthUser | null) => void;
+    isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,6 +58,23 @@ function matchStaff(portalUser: PortalCurrentUser, staffList: StaffEntity[]): St
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        api.get<{ value: string }>('/userInfo()')
+            .then((res) => {
+                const info = JSON.parse(res.data.value);
+                setCurrentUser({ role: info.role as UserRole });
+            })
+            .catch((err) => {
+                console.warn('[AuthContext] Failed to fetch userInfo, defaulting to staff:', err);
+                setCurrentUser({ role: 'staff' });
+            })
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    return (
+        <AuthContext.Provider value={{ currentUser, setCurrentUser, isLoading }}>
     const [isLoadingUser, setIsLoadingUser] = useState<boolean>(true);
 
     useEffect(() => {
