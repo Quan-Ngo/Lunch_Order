@@ -47,7 +47,10 @@ export default function Navbar() {
         setIsDropdownOpen(false);
         setIsMobileMenuOpen(false);
         if (!import.meta.env.DEV) {
-            window.location.assign('/logout');
+            // In SAP Build Work Zone / Launchpad, an absolute '/logout' goes to the wrong root.
+            // We use the app's base path so it triggers the 'logoutEndpoint' in our local xs-app.json instead.
+            const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            window.location.assign(basePath + 'logout');
         }
     };
 
