@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
-import { dailyMenuService, staffCatalogService, type Food } from '@/services/api';
+import { dailyMenuService, staffCatalogService, normalizeImageUrl, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 
@@ -145,7 +145,7 @@ export default function ManageMenu() {
                             description: entry.catalog.description || '',
                             price: entry.catalog.price,
                             currency: entry.catalog.currency || 'VND',
-                            image: entry.catalog.file?.url || '',
+                            image: normalizeImageUrl(entry.catalog.file?.url),
                             category: entry.catalog.category || 'General',
                             isActive: entry.catalog.isActive,
                         };
@@ -162,7 +162,7 @@ export default function ManageMenu() {
                                         isLocked ? undefined : setRemovalTarget({
                                             id: entry.ID,
                                             name: entry.catalog?.name || 'Unknown',
-                                            image: entry.catalog?.file?.url || undefined,
+                                            image: normalizeImageUrl(entry.catalog?.file?.url) || undefined,
                                         })
                                     }
                                     showEdit={false}

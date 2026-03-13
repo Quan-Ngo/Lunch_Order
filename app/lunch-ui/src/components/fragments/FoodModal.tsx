@@ -174,9 +174,9 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                         </div>
 
                         {/* Form Grid */}
-                        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-12">
                             {/* Item Name */}
-                            <div className="sm:col-span-4">
+                            <div className="sm:col-span-5">
                                 <label
                                     htmlFor="food-name"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
@@ -199,7 +199,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                             </div>
 
                             {/* Price + Currency */}
-                            <div className="sm:col-span-2">
+                            <div className="sm:col-span-7">
                                 <label
                                     htmlFor="food-price"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"
@@ -221,14 +221,14 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                                                 if (errors.price) setErrors({ ...errors, price: false });
                                             }
                                         }}
-                                        className={`flex-1 min-w-0 border rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 font-medium bg-white ${errors.price ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'}`}
+                                        className={`w-24 sm:w-28 shrink-0 border rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-2 px-3 font-medium bg-white ${errors.price ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'}`}
                                     />
                                     <select
                                         id="food-currency"
                                         value={currency}
                                         onChange={(e) => setCurrency(e.target.value)}
                                         aria-label={t('foodModal.fieldCurrency')}
-                                        className="border border-gray-200 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm py-2 px-2 font-bold bg-white text-gray-800 cursor-pointer"
+                                        className="flex-1 min-w-0 border border-gray-200 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm py-2 px-3 font-bold bg-white text-gray-800 cursor-pointer"
                                     >
                                         {CURRENCY_OPTIONS.map((opt) => (
                                             <option key={opt} value={opt}>
@@ -241,7 +241,7 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                             </div>
 
                             {/* Description */}
-                            <div className="sm:col-span-6">
+                            <div className="sm:col-span-12">
                                 <label
                                     htmlFor="food-description"
                                     className="block text-sm font-bold text-gray-900 mb-1 uppercase"

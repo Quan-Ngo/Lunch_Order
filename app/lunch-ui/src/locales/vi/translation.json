@@ -9,6 +9,8 @@
         "admin": "Quản Trị",
         "staff": "Nhân Viên",
         "clearSelection": "Bỏ Chọn Đăng Nhập",
+        "loadingUser": "Đang tải người dùng...",
+        "staffProfileMissing": "Không có hồ sơ nhân viên liên kết",
         "toggleLanguage": "Đổi Ngôn Ngữ",
         "logout": "Đăng Xuất"
     },
@@ -19,7 +21,7 @@
         "subtitle": "Chọn năng lượng căng tràn cho ngày mới. Vui lòng đặt trước 10:30 sáng.",
         "noMeals": "Chưa có món ăn nào cho ngày này. Vui lòng nhắc Admin thiết lập Menu!",
         "adminHint": "Chế độ Quản trị — chỉ xem menu. Chuyển sang tài khoản Staff để đặt món.",
-        "selectUserHint": "Vui lòng chọn người dùng ở góc trên bên phải để bắt đầu đặt món.",
+        "selectUserHint": "Tài khoản Portal của bạn phải được liên kết với hồ sơ nhân viên để đặt món.",
         "currentOrder": "Món bạn đã chọn:",
         "cancel": "Huỷ",
         "confirmOrder": "Xác Nhận Đặt",

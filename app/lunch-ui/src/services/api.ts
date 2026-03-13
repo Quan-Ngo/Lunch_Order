@@ -103,6 +103,15 @@ export interface StaffEntity {
 }
 
 // ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+/** Strip leading slash from image URLs so they resolve relative to the app base path (required for Managed Approuter). */
+export function normalizeImageUrl(url: string | undefined): string {
+    if (!url) return '';
+    return url.startsWith('/') ? url.slice(1) : url;
+}
+
+// ─────────────────────────────────────────────
 // Food / Catalog Service
 // ─────────────────────────────────────────────
 export const foodService = {
@@ -114,7 +123,7 @@ export const foodService = {
             description: item.description || '',
             price: item.price,
             currency: item.currency || 'VND',
-            image: item.file?.url || '',
+            image: normalizeImageUrl(item.file?.url),
             category: item.category || 'General',
             isActive: item.isActive,
         }));
@@ -128,7 +137,7 @@ export const foodService = {
             description: item.description || '',
             price: item.price,
             currency: item.currency || 'VND',
-            image: item.file?.url || '',
+            image: normalizeImageUrl(item.file?.url),
             category: item.category || 'General',
             isActive: item.isActive,
         };
@@ -179,7 +188,7 @@ export const foodService = {
             headers: { 'Content-Type': file.type },
         });
         // Step 4: Persist the content URL into the url field so $expand=file returns it
-        const contentUrl = `/odata/v4/lunch/CatalogFile(${fileId})/content`;
+        const contentUrl = `odata/v4/lunch/CatalogFile(${fileId})/content`;
         await api.patch(`/CatalogFile(${fileId})`, { url: contentUrl });
     },
 };
@@ -420,7 +429,7 @@ export const billService = {
 
     /** Get content URL for displaying a bill */
     getContentUrl: (id: string): string => {
-        return `/odata/v4/lunch/DailyOrderBill(${id})/content`;
+        return `odata/v4/lunch/DailyOrderBill(${id})/content`;
     },
 };
 

@@ -13,10 +13,29 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
+    {
+      name: 'mock-managed-approuter-userapi',
+      configureServer(server) {
+        server.middlewares.use('/user-api/currentUser', (req, res, next) => {
+          if (req.method !== 'GET') {
+            next()
+            return
+          }
+
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({
+            firstname: 'Sarah',
+            lastname: 'Johnson',
+            name: 'sarah.johnson@example.com',
+            email: 'sarah.johnson@example.com',
+          }))
+        })
+      },
+    },
   ],
   server: {
     proxy: {
-      '/odata/v4': {
+      '/odata/v4/lunch': {
         target: 'http://localhost:4005',
         changeOrigin: true,
       },

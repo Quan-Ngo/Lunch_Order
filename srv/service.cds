@@ -17,4 +17,5 @@ service LunchService {
 
     action grantAdminRole(userEmail : String) returns String;
     function getBtpUsers() returns String;
+    function getCurrentUser() returns String;
 }

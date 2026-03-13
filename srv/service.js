@@ -97,6 +97,23 @@ module.exports = class LunchService extends cds.ApplicationService {
             });
         });
 
+        this.on('getCurrentUser', async (req) => {
+            const user = req.user;
+            if (!user) {
+                return req.error(401, 'No authenticated user found');
+            }
+
+            return JSON.stringify({
+                name: user.id,
+                email: user.id,
+                firstname: user.attr?.given_name ?? '',
+                lastname: user.attr?.family_name ?? '',
+                displayName: user.attr?.given_name && user.attr?.family_name
+                    ? `${user.attr.given_name} ${user.attr.family_name}`
+                    : user.id
+            });
+        });
+
         return super.init();
     }
 }
