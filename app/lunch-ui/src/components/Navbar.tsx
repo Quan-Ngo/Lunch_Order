@@ -6,11 +6,11 @@ import { employeeService, type StaffEntity } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 
 const navLinks = [
-    { to: '/', labelKey: 'navbar.dailyMenu' },
-    { to: '/employees', labelKey: 'navbar.employees' },
-    { to: '/catalog', labelKey: 'navbar.catalog' },
-    { to: '/manage-menu', labelKey: 'navbar.manageMenu' },
-    { to: '/daily-orders', labelKey: 'navbar.dailyOrders' },
+    { to: '/', labelKey: 'navbar.dailyMenu', allowedRoles: ['admin', 'staff'] },
+    { to: '/employees', labelKey: 'navbar.employees', allowedRoles: ['admin'] },
+    { to: '/catalog', labelKey: 'navbar.catalog', allowedRoles: ['admin'] },
+    { to: '/manage-menu', labelKey: 'navbar.manageMenu', allowedRoles: ['admin'] },
+    { to: '/daily-orders', labelKey: 'navbar.dailyOrders', allowedRoles: ['admin'] },
 ];
 
 export default function Navbar() {
@@ -70,7 +70,9 @@ export default function Navbar() {
 
                     {/* Desktop Nav Links */}
                     <div className="hidden md:flex items-center gap-6">
-                        {navLinks.map((link) => (
+                        {navLinks
+                            .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
+                            .map((link) => (
                             <Link key={link.to} to={link.to}>
                                 <NavigationPageSelect
                                     variant={isActive(link.to) ? 'primary' : 'ghost'}
@@ -185,7 +187,9 @@ export default function Navbar() {
             {isMobileMenuOpen && (
                 <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
                     <div className="px-4 py-4 space-y-3">
-                        {navLinks.map((link) => (
+                        {navLinks
+                            .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
+                            .map((link) => (
                             <Link key={link.to} to={link.to} onClick={() => setIsMobileMenuOpen(false)}>
                                 <NavigationPageSelect
                                     fullWidth

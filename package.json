@@ -35,6 +35,7 @@
           "users": {
             "alice": {
               "roles": [
+                "CMNA_ADMIN",
                 "CMNA_ADD_USER",
                 "CMNA_DELETE_USER",
                 "CMNA_READ_ASSIGNED_USER",

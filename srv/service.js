@@ -6,6 +6,12 @@ module.exports = class LunchService extends cds.ApplicationService {
     async init() {
         const { Staff } = this.entities;
 
+        this.on('userInfo', async (req) => {
+            const isAdmin = req.user.is('CMNA_ADMIN');
+            return JSON.stringify({ role: isAdmin ? 'admin' : 'staff' });
+        });
+
+
         this.on('grantAdminRole', async (req) => {
             const { userEmail } = req.data;
             if (!userEmail) return req.error(400, 'User email is required');
