@@ -175,16 +175,13 @@ module.exports = class LunchService extends cds.ApplicationService {
                 : user.id;
             const normalizedDisplayName = displayName.trim().toLowerCase();
 
-            // Match the authenticated user against the Staff table server-side
-            const staffList = await SELECT.from(Staff);
-            const matchedStaff = staffList.find((s) => {
-                const staffEmail = (s.email || '').trim().toLowerCase();
-                const staffName = (s.name || '').trim().toLowerCase();
-                return (
-                    (email && staffEmail === email) ||
-                    (normalizedDisplayName && staffName === normalizedDisplayName) ||
-                    (email && staffName === email)
-                );
+            // Match the authenticated user against the Staff table server-side (using targeted query for performance)
+            const matchedStaff = await SELECT.one.from(Staff).where({
+                or: [
+                    { email: email },
+                    { name: displayName },
+                    { name: email }
+                ]
             });
 
             return JSON.stringify({

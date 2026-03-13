@@ -9,6 +9,7 @@ entity Staff : cuid, managed {
     status       : Boolean default true;
     catalogs     : Association to many StaffCatalog on catalogs.staff = $self;
 }
+annotate Staff with @(index: [{on: [email]}]);
 
 entity Catalog : cuid, managed {
     name         : String(100);
@@ -35,6 +36,7 @@ entity DailyMenu : cuid, managed {
     catalogs     : Association to many Catalog on catalogs.dailyMenu = $self;
     note         : String(500);
 }
+annotate DailyMenu with @(index: [{on: [date]}]);
 
 entity StaffCatalog : managed {
     key Staff_ID   : UUID;
@@ -43,6 +45,7 @@ entity StaffCatalog : managed {
     staff          : Association to Staff on staff.ID = Staff_ID;
     catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
+annotate StaffCatalog with @(index: [{on: [Staff_ID]}, {on: [date]}]);
 
 entity DailyOrderBill : cuid, managed {
     date      : Date;
