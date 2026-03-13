@@ -11,8 +11,8 @@ service LunchService {
     ]
     entity Catalog      as projection on lunch.Catalog {
         *,
-        price    @restrict: [{ to: 'CMNA_READ_ALL_USER' }],
-        currency @restrict: [{ to: 'CMNA_READ_ALL_USER' }]
+        price    @(restrict: [{ to: 'CMNA_READ_ALL_USER' }]),
+        currency @(restrict: [{ to: 'CMNA_READ_ALL_USER' }])
     };
 
     @restrict: [
