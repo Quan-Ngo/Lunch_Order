@@ -11,7 +11,20 @@ module.exports = class LunchService extends cds.ApplicationService {
                 return req.error(401, 'Not authenticated');
             }
 
-            const isAdmin = req.user.is('CMNA_ADMIN');
+            // CMNA_ADMIN is a template name, but req.user.is() checks for scopes.
+            // CMNA_READ_ALL_USER is a scope granted only to Admins in xs-security.json.
+            const isAdmin = req.user.is('CMNA_READ_ALL_USER');
+
+            // Debug: log user identity and scopes for BTP role diagnosis (visible via `cf logs`)
+            console.log('🏁[userInfo] user.id:', req.user.id);
+            console.log('🏁[userInfo] user._roles:', JSON.stringify(req.user._roles));
+            console.log('🏁[userInfo] is(CMNA_ADMIN):', isAdmin);
+            console.log('🏁[userInfo] is(CMNA_ADD_USER):', req.user.is('CMNA_ADD_USER'));
+            console.log('🏁[userInfo] is(CMNA_READ_ASSIGNED_USER):', req.user.is('CMNA_READ_ASSIGNED_USER'));
+            console.log('🏁[userInfo] is(CMNA_READ_ALL_USER):', req.user.is('CMNA_READ_ALL_USER'));
+            console.log('🏁[userInfo] is(CMNA_DELETE_USER):', req.user.is('CMNA_DELETE_USER'));
+            console.log('🏁[userInfo] is(CMNA_UPDATE_USER):', req.user.is('CMNA_UPDATE_USER'));
+
             return JSON.stringify({ role: isAdmin ? 'admin' : 'staff' });
         });
 
