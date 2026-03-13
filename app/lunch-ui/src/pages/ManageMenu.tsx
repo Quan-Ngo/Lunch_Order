@@ -215,36 +215,28 @@ export default function ManageMenu() {
                 variant="food"
             />
 
-            {/* Sticky footer confirm button */}
+            {/* Floating Confirm Menu button - Always visible */}
             {!isLocked && menuEntries.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-inner py-4">
-                    <div className="max-w-6xl mx-auto px-4">
-                        <button
-                            id="btn-complete-menu"
-                            onClick={handleCompleteMenu}
-                            disabled={completeMenuMutation.isPending}
-                            className={`
-                                w-full flex items-center justify-center gap-2 px-6 py-3
-                                rounded-full border-[3px] border-black
-                                bg-primary text-black font-black text-sm uppercase tracking-widest
-                                shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]
-                                transition-all duration-150
-                                hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                                disabled:opacity-60 disabled:cursor-wait
-                            `}
-                        >
-                            <span>
-                                {completeMenuMutation.isPending
-                                    ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
-                                    : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
-                            </span>
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-primary transition-transform group-hover:scale-110">
-                                <span className="material-icons text-sm">
-                                    {completeMenuMutation.isPending ? 'hourglass_empty' : 'done'}
-                                </span>
-                            </span>
-                        </button>
-                    </div>
+                <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
+                    <button
+                        id="btn-complete-menu"
+                        onClick={handleCompleteMenu}
+                        disabled={completeMenuMutation.isPending}
+                        className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] sm:scale-100 font-bold text-2xl border-4 border-black uppercase tracking-tighter 
+                            ${(completeMenuMutation.isPending)
+                                ? 'bg-primary text-black opacity-85 cursor-wait'
+                                : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60 disabled:cursor-not-allowed'
+                            }`}
+                    >
+                        <span>
+                            {completeMenuMutation.isPending
+                                ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
+                                : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
+                        </span>
+                        <span className={`material-icons text-3xl transition-transform ${(completeMenuMutation.isPending) ? '' : 'group-hover:translate-x-1'}`}>
+                            {completeMenuMutation.isPending ? 'hourglass_empty' : 'arrow_forward'}
+                        </span>
+                    </button>
                 </div>
             )}
         </RootLayout>
