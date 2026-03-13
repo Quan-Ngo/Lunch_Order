@@ -207,24 +207,7 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
 
                     {/* Footer – Manual registration */}
                     <div className="px-6 py-5 bg-gray-50 border-t border-gray-100">
-                        <p className="text-xs text-gray-400 font-semibold font-display uppercase tracking-wider mb-3">
-                            {t('employees.registerModal.manualTitle') || "Or register manually"}
-                        </p>
                         <div className="flex flex-col sm:flex-row gap-2">
-                            <input
-                                type="text"
-                                value={manualName}
-                                onChange={e => setManualName(e.target.value)}
-                                placeholder={t('employees.registerModal.namePlaceholder') || 'Full name'}
-                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white"
-                            />
-                            <input
-                                type="email"
-                                value={manualEmail}
-                                onChange={e => setManualEmail(e.target.value)}
-                                placeholder={t('employees.registerModal.emailPlaceholder') || 'Email address'}
-                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white"
-                            />
                             <Button
                                 variant="primary"
                                 size="sm"

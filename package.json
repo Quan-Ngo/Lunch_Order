@@ -9,7 +9,7 @@
     "@sap/xssec": "^4",
     "express": "^4",
     "mailtrap": "^4.4.0",
-    "nodemailer": "^8.0.1"
+    "nodemailer": "^7.0.13"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
@@ -36,6 +36,7 @@
           "users": {
             "alice": {
               "roles": [
+                "CMNA_ADMIN",
                 "CMNA_ADD_USER",
                 "CMNA_DELETE_USER",
                 "CMNA_READ_ASSIGNED_USER",

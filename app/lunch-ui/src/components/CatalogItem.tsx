@@ -1,7 +1,7 @@
 import { type Food } from '@/services/api';
 import { Card } from '@/components/elements/Card';
 import { Button } from '@/components/elements/Button';
-import { formatCurrency } from '@/config/currency';
+import { useFormatters } from '@/hooks/useFormatters';
 import { ToggleActiveButton } from '@/components/elements/ToggleActiveButton';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +15,7 @@ interface CatalogItemProps {
 
 export default function CatalogItem({ food, onEdit, onDelete, onToggleActive, showEdit = true }: CatalogItemProps) {
     const { t } = useTranslation();
+    const { formatPriceLabel } = useFormatters();
 
     return (
         <Card className={`flex flex-col md:flex-row gap-6 items-start md:items-center transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[var(--shadow-neobrutalism-lg)] ${!food.isActive ? 'bg-gray-50 border-gray-300' : ''}`}>
@@ -65,7 +66,7 @@ export default function CatalogItem({ food, onEdit, onDelete, onToggleActive, sh
                     </div>
                     <div className={`text-right ${!food.isActive ? 'opacity-60' : ''}`}>
                         <span className="block text-2xl font-black text-black font-display">
-                            {formatCurrency(food.price)}
+                            {formatPriceLabel(food.price, food.currency)}
                         </span>
                     </div>
                 </div>

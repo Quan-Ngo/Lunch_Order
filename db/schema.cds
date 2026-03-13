@@ -9,11 +9,13 @@ entity Staff : cuid, managed {
     status       : Boolean default true;
     catalogs     : Association to many StaffCatalog on catalogs.staff = $self;
 }
+annotate Staff with @(index: [{on: [email]}]);
 
 entity Catalog : cuid, managed {
     name         : String(100);
     isActive     : Boolean;
     price        : Decimal(15,2);
+    currency     : String(10) default 'VND'; // ISO 4217 e.g. 'VND', 'USD', 'EUR'
     description  : String(500); // Added to support existing UI
     category     : String(50);  // Added to support existing UI
     dailyMenu    : Association to DailyMenu;
@@ -34,6 +36,7 @@ entity DailyMenu : cuid, managed {
     catalogs     : Association to many Catalog on catalogs.dailyMenu = $self;
     note         : String(500);
 }
+annotate DailyMenu with @(index: [{on: [date]}]);
 
 entity StaffCatalog : managed {
     key Staff_ID   : UUID;
@@ -42,6 +45,7 @@ entity StaffCatalog : managed {
     staff          : Association to Staff on staff.ID = Staff_ID;
     catalog        : Association to Catalog on catalog.ID = Catalog_ID;
 }
+annotate StaffCatalog with @(index: [{on: [Staff_ID]}, {on: [date]}]);
 
 entity DailyOrderBill : cuid, managed {
     date      : Date;
@@ -58,6 +62,7 @@ view DailyCatalogStatistics as
     key C.ID               as CatalogID,
     C.name                 as CatalogName,
     C.price                as CatalogPrice,
+    C.currency             as CatalogCurrency,
     C.description          as CatalogDescription,
     cast(count(*) as Integer)                          as OrderCount,
     cast(cast(count(*) as Decimal(15,2)) * C.price as Decimal(15,2)) as SubTotal
@@ -67,6 +72,7 @@ view DailyCatalogStatistics as
     C.ID,
     C.name,
     C.price,
+    C.currency,
     C.description;
 
 view DailyOrderSummary as

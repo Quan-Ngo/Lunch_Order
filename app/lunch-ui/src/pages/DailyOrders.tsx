@@ -7,7 +7,8 @@ import { SoftCard } from '@/components/elements/SoftCard';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
-import { formatCurrency } from '@/config/currency';
+import { formatPriceLabel } from '@/config/currency';
+import { useFormatters } from '@/hooks/useFormatters';
 import { statisticsService, foodService, summaryService, dailyMenuService, billService } from '@/services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -23,6 +24,7 @@ function toISODate(d: Date): string {
 
 export default function DailyOrders() {
     const { t, i18n } = useTranslation();
+    const { formatPriceLabel: fmtPriceLabel, formatDate } = useFormatters();
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [orderNote, setOrderNote] = useState<string>('');
     const [showSavedText, setShowSavedText] = useState<boolean>(false);
@@ -136,6 +138,7 @@ export default function DailyOrders() {
             name: stat.CatalogName,
             description: stat.CatalogDescription,
             unitPrice: stat.CatalogPrice,
+            currency: stat.CatalogCurrency || catalogItem?.currency || 'VND',
             qty: stat.OrderCount,
             image: catalogItem?.image || 'https://via.placeholder.com/150',
             subtotal: stat.SubTotal
@@ -151,12 +154,7 @@ export default function DailyOrders() {
             totalQtyDigits === 3 ? 'text-[0.8rem]' :
                 totalQtyDigits === 2 ? 'text-[0.9rem]' :
                     'text-[1rem]';
-    const dateObj = new Date(`${selectedDate}T00:00:00`);
-    const dateString = dateObj.toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
+    const dateString = formatDate(selectedDate);
 
     const openDatePicker = () => {
         const input = dateInputRef.current;
@@ -213,9 +211,9 @@ export default function DailyOrders() {
         if (orders.length > 0) {
             const tableData = orders.map((order) => [
                 order.name,
-                formatCurrency(order.unitPrice),
+                formatPriceLabel(order.unitPrice, order.currency || 'VND', i18n.language),
                 order.qty.toString(),
-                formatCurrency(order.subtotal),
+                formatPriceLabel(order.subtotal, order.currency || 'VND', i18n.language),
             ]);
 
             autoTable(doc, {
@@ -231,7 +229,7 @@ export default function DailyOrders() {
                     t('dailyOrders.total'),
                     '',
                     totalQty.toString(),
-                    formatCurrency(total),
+                    formatPriceLabel(total, orders[0]?.currency || 'VND', i18n.language),
                 ]],
                 theme: 'grid',
                 headStyles: { fillColor: [255, 214, 0], textColor: [0, 0, 0], fontStyle: 'bold', font: 'Roboto' },
@@ -322,7 +320,7 @@ export default function DailyOrders() {
                     <SoftCard className="flex items-center justify-between border-gray-900">
                         <div>
                             <p className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-1">{t('dailyOrders.totalOrderValue')}</p>
-                            <p className="text-4xl font-extrabold text-black font-display">{formatCurrency(total)}</p>
+                            <p className="text-4xl font-extrabold text-black font-display">{fmtPriceLabel(total, orders[0]?.currency || 'VND')}</p>
                         </div>
                         <Badge className={`${totalQtyTextClass} w-12 h-12 p-0 rounded-full flex items-center justify-center`}>{totalQty}</Badge>
                     </SoftCard>
@@ -362,7 +360,7 @@ export default function DailyOrders() {
                                 {
                                     header: t('dailyOrders.table.unitPrice'),
                                     className: 'col-span-3 text-center text-xs sm:text-sm font-medium text-gray-600',
-                                    render: (order) => formatCurrency(order.unitPrice),
+                                    render: (order) => fmtPriceLabel(order.unitPrice, order.currency),
                                 },
                                 {
                                     header: t('dailyOrders.table.qty'),
@@ -372,7 +370,7 @@ export default function DailyOrders() {
                                 {
                                     header: t('dailyOrders.table.tableSubtotal'),
                                     className: 'col-span-3 sm:col-span-2 text-right text-xs sm:text-sm font-bold text-gray-900',
-                                    render: (order) => formatCurrency(order.subtotal),
+                                    render: (order) => fmtPriceLabel(order.subtotal, order.currency),
                                 }
                             ]}
                         />

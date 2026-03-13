@@ -42,9 +42,18 @@ api.interceptors.request.use(async (config) => {
 });
 
 // If a request fails with 403, the token may have expired — refetch and retry once
+// If a request fails with 401, the user session is missing or expired — reload to trigger BTP login
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        if (error.response?.status === 401) {
+            if (!import.meta.env.DEV) {
+                // Reloading the page forces the BTP AppRouter to redirect the user to the XSUAA login page
+                window.location.reload();
+                return Promise.reject(error);
+            }
+        }
+
         const originalRequest = error.config;
         if (
             error.response?.status === 403 &&
@@ -73,6 +82,7 @@ export interface Food {
     name: string;
     description: string;
     price: number;
+    currency: string;
     image: string;
     category: string;
     isActive: boolean;
@@ -84,6 +94,7 @@ interface CatalogEntity {
     name: string;
     description: string;
     price: number;
+    currency: string;
     category: string;
     isActive: boolean;
     file?: {
@@ -101,6 +112,15 @@ export interface StaffEntity {
 }
 
 // ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+/** Strip leading slash from image URLs so they resolve relative to the app base path (required for Managed Approuter). */
+export function normalizeImageUrl(url: string | undefined): string {
+    if (!url) return '';
+    return url.startsWith('/') ? url.slice(1) : url;
+}
+
+// ─────────────────────────────────────────────
 // Food / Catalog Service
 // ─────────────────────────────────────────────
 export const foodService = {
@@ -111,7 +131,8 @@ export const foodService = {
             name: item.name,
             description: item.description || '',
             price: item.price,
-            image: item.file?.url || '',
+            currency: item.currency || 'VND',
+            image: normalizeImageUrl(item.file?.url),
             category: item.category || 'General',
             isActive: item.isActive,
         }));
@@ -124,7 +145,8 @@ export const foodService = {
             name: item.name,
             description: item.description || '',
             price: item.price,
-            image: item.file?.url || '',
+            currency: item.currency || 'VND',
+            image: normalizeImageUrl(item.file?.url),
             category: item.category || 'General',
             isActive: item.isActive,
         };
@@ -132,19 +154,21 @@ export const foodService = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/Catalog(${id})`);
     },
-    create: async (data: { name: string; price: number; description: string }): Promise<void> => {
+    create: async (data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.post('/Catalog', {
             name: data.name,
             price: data.price,
+            currency: data.currency,
             description: data.description,
             category: 'General',
             isActive: true,
         });
     },
-    update: async (id: string, data: { name: string; price: number; description: string }): Promise<void> => {
+    update: async (id: string, data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.put(`/Catalog(${id})`, {
             name: data.name,
             price: data.price,
+            currency: data.currency,
             description: data.description,
         });
     },
@@ -173,7 +197,7 @@ export const foodService = {
             headers: { 'Content-Type': file.type },
         });
         // Step 4: Persist the content URL into the url field so $expand=file returns it
-        const contentUrl = `/odata/v4/lunch/CatalogFile(${fileId})/content`;
+        const contentUrl = `odata/v4/lunch/CatalogFile(${fileId})/content`;
         await api.patch(`/CatalogFile(${fileId})`, { url: contentUrl });
     },
 };
@@ -272,6 +296,7 @@ export interface DailyCatalogStatistics {
     CatalogID: string;
     CatalogName: string;
     CatalogPrice: number;
+    CatalogCurrency: string;
     CatalogDescription: string;
     OrderCount: number;
     SubTotal: number;
@@ -314,6 +339,7 @@ export interface StaffCatalogEntity {
         name: string;
         description: string;
         price: number;
+        currency: string;
         category: string;
         isActive: boolean;
         file?: { url: string };
@@ -411,7 +437,7 @@ export const billService = {
 
     /** Get content URL for displaying a bill */
     getContentUrl: (id: string): string => {
-        return `/odata/v4/lunch/DailyOrderBill(${id})/content`;
+        return `odata/v4/lunch/DailyOrderBill(${id})/content`;
     },
 };
 

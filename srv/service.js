@@ -6,6 +6,29 @@ module.exports = class LunchService extends cds.ApplicationService {
     async init() {
         const { Staff } = this.entities;
 
+        this.on('userInfo', async (req) => {
+            if (req.user.is('anonymous')) {
+                return req.error(401, 'Not authenticated');
+            }
+
+            // CMNA_ADMIN is a template name, but req.user.is() checks for scopes.
+            // CMNA_READ_ALL_USER is a scope granted only to Admins in xs-security.json.
+            const isAdmin = req.user.is('CMNA_READ_ALL_USER');
+
+            // Debug: log user identity and scopes for BTP role diagnosis (visible via `cf logs`)
+            console.log('🏁[userInfo] user.id:', req.user.id);
+            console.log('🏁[userInfo] user._roles:', JSON.stringify(req.user._roles));
+            console.log('🏁[userInfo] is(CMNA_ADMIN):', isAdmin);
+            console.log('🏁[userInfo] is(CMNA_ADD_USER):', req.user.is('CMNA_ADD_USER'));
+            console.log('🏁[userInfo] is(CMNA_READ_ASSIGNED_USER):', req.user.is('CMNA_READ_ASSIGNED_USER'));
+            console.log('🏁[userInfo] is(CMNA_READ_ALL_USER):', req.user.is('CMNA_READ_ALL_USER'));
+            console.log('🏁[userInfo] is(CMNA_DELETE_USER):', req.user.is('CMNA_DELETE_USER'));
+            console.log('🏁[userInfo] is(CMNA_UPDATE_USER):', req.user.is('CMNA_UPDATE_USER'));
+
+            return JSON.stringify({ role: isAdmin ? 'admin' : 'staff' });
+        });
+
+
         this.on('grantAdminRole', async (req) => {
             const { userEmail } = req.data;
             if (!userEmail) return req.error(400, 'User email is required');
@@ -135,6 +158,38 @@ module.exports = class LunchService extends cds.ApplicationService {
             });
 
             return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
+        });
+        this.on('getCurrentUser', async (req) => {
+            const user = req.user;
+            if (!user || user.is('anonymous')) {
+                return req.error(401, 'No authenticated user found');
+            }
+
+            const email = (user.id || '').trim().toLowerCase();
+            const firstname = user.attr?.given_name ?? '';
+            const lastname = user.attr?.family_name ?? '';
+            const displayName = (firstname && lastname)
+                ? `${firstname} ${lastname}`
+                : user.id;
+            const normalizedDisplayName = displayName.trim().toLowerCase();
+
+            // Match the authenticated user against the Staff table server-side (using targeted query for performance)
+            const matchedStaff = await SELECT.one.from(Staff).where({
+                or: [
+                    { email: email },
+                    { name: displayName },
+                    { name: email }
+                ]
+            });
+
+            return JSON.stringify({
+                name: user.id,
+                email: user.id,
+                firstname,
+                lastname,
+                displayName,
+                staff: matchedStaff || null
+            });
         });
 
         return super.init();
