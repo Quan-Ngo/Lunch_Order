@@ -19,6 +19,7 @@ export default function ManageMenu() {
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
+    const [pendingAdditions, setPendingAdditions] = useState<Food[]>([]);
 
     const { data: isLocked = false } = useQuery({
         queryKey: ['isComplete', selectedDate],
@@ -35,12 +36,32 @@ export default function ManageMenu() {
 
     // Deduplicate and filter active items
     const seen = new Set<string>();
-    const menuEntries = rawCatalogs.filter((catalog) => {
-        if (catalog && catalog.isActive && !seen.has(catalog.ID)) {
-            seen.add(catalog.ID);
-            return true;
+    const menuEntries: Food[] = rawCatalogs
+        .filter((catalog) => {
+            if (catalog && catalog.isActive && !seen.has(catalog.ID)) {
+                seen.add(catalog.ID);
+                return true;
+            }
+            return false;
+        })
+        .map((catalog) => ({
+            ID: catalog.ID,
+            name: catalog.name,
+            description: catalog.description || '',
+            price: catalog.price,
+            image: catalog.file?.url || '',
+            category: catalog.category || 'General',
+            isActive: catalog.isActive,
+        }));
+
+    // Merge existing entries with pending additions (avoid duplicates)
+    const allMenuEntries: Food[] = [];
+    const seenIds = new Set<string>();
+    [...menuEntries, ...pendingAdditions].forEach((item) => {
+        if (!seenIds.has(item.ID)) {
+            seenIds.add(item.ID);
+            allMenuEntries.push(item);
         }
-        return false;
     });
 
     const isLoading = menuLoading;
@@ -53,6 +74,7 @@ export default function ManageMenu() {
         onSuccess: (foods) => {
             toast.success(t('manageMenu.addedCount', { count: foods.length }));
             queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
+            setPendingAdditions([]);
         },
         onError: (err) => {
             console.error('Failed to add foods:', err);
@@ -78,7 +100,7 @@ export default function ManageMenu() {
     const completeMenuMutation = useMutation({
         mutationFn: () => dailyMenuService.markCompleteByDate(selectedDate),
         onSuccess: () => {
-            toast.success(t('manageMenu.menuCompleted', { defaultValue: 'Menu marked as complete!' }));
+            toast.success(t('manageMenu.menuCompleted'));
             queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
             queryClient.invalidateQueries({ queryKey: ['isComplete', selectedDate] });
         },
@@ -90,7 +112,7 @@ export default function ManageMenu() {
 
     const handleAddFoods = async (foods: Food[]) => {
         setIsCatalogModalOpen(false);
-        await addFoodsMutation.mutateAsync(foods);
+        setPendingAdditions((prev) => [...prev, ...foods]);
     };
 
     const handleRemoveFood = async (catalogId: string) => {
@@ -98,11 +120,16 @@ export default function ManageMenu() {
     };
 
     const handleCompleteMenu = async () => {
-        if (isLocked || menuEntries.length === 0) return;
+        if (isLocked || allMenuEntries.length === 0) return;
+        // Persist new selections to the DB before notifying staff
+        if (pendingAdditions.length > 0) {
+            await addFoodsMutation.mutateAsync(pendingAdditions);
+        }
         await completeMenuMutation.mutateAsync();
     };
 
     const existingCatalogIds = menuEntries.map((c) => c.ID);
+    // ...existing code...
 
     return (
         <RootLayout>
@@ -129,14 +156,14 @@ export default function ManageMenu() {
                 </div>
             )}
 
-            <div className="mb-6">
+        <div className="mb-6 pb-28">
                 <DateWheel selected={selectedDate} onChange={setSelectedDate} />
             </div>
 
             {!isLoading && menuEntries.length > 0 && (
                 <p className="text-sm text-gray-500 mb-4 font-medium">
                     <span className="material-icons text-sm align-middle mr-1 text-primary-hover">restaurant_menu</span>
-                    {t('manageMenu.itemCount', { count: menuEntries.length })}
+                    {t('manageMenu.itemCount', { count: allMenuEntries.length })}
                 </p>
             )}
 
@@ -150,69 +177,23 @@ export default function ManageMenu() {
             ) : (
                 <>
                     <div className="flex flex-col gap-3">
-                        {menuEntries.map((catalog) => {
-                            const catalogFood: Food = {
-                                ID: catalog.ID,
-                                name: catalog.name,
-                                description: catalog.description || '',
-                                price: catalog.price,
-                                image: catalog.file?.url || '',
-                                category: catalog.category || 'General',
-                                isActive: catalog.isActive,
-                            };
-
-                            return (
-                                <div
-                                    key={catalog.ID}
-                                    className="group"
-                                >
-                                    <CatalogItem
-                                        food={catalogFood}
-                                        onEdit={() => { }}
-                                        onDelete={() =>
-                                            isLocked ? undefined : setRemovalTarget({
-                                                id: catalog.ID,
-                                                name: catalog.name,
-                                                image: catalog.file?.url || undefined,
-                                            })
-                                        }
-                                        showEdit={false}
-                                    />
-                                </div>
-                            );
-                        })}
+                        {allMenuEntries.map((catalog) => (
+                            <div key={catalog.ID} className="group">
+                                <CatalogItem
+                                    food={catalog}
+                                    onEdit={() => { }}
+                                    onDelete={() =>
+                                        isLocked ? undefined : setRemovalTarget({
+                                            id: catalog.ID,
+                                            name: catalog.name,
+                                            image: catalog.image || undefined,
+                                        })
+                                    }
+                                    showEdit={false}
+                                />
+                            </div>
+                        ))}
                     </div>
-
-                    {/* Confirm Menu button - inline below items */}
-                    {!isLocked && (
-                        <div className="flex justify-end mt-6">
-                            <button
-                                id="btn-complete-menu"
-                                onClick={handleCompleteMenu}
-                                disabled={completeMenuMutation.isPending}
-                                className={`
-                                    group flex items-center gap-2 px-6 py-3
-                                    rounded-full border-[3px] border-black
-                                    bg-primary text-black font-black text-sm uppercase tracking-widest
-                                    shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]
-                                    transition-all duration-150
-                                    hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                                    disabled:opacity-60 disabled:cursor-wait
-                                `}
-                            >
-                                <span>
-                                    {completeMenuMutation.isPending
-                                        ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
-                                        : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
-                                </span>
-                                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-primary transition-transform group-hover:scale-110">
-                                    <span className="material-icons text-sm">
-                                        {completeMenuMutation.isPending ? 'hourglass_empty' : 'done'}
-                                    </span>
-                                </span>
-                            </button>
-                        </div>
-                    )}
                 </>
             )}
 
@@ -232,6 +213,39 @@ export default function ManageMenu() {
                 contextText={t('manageMenu.fromTodaysMenu')}
                 variant="food"
             />
+
+            {/* Sticky footer confirm button */}
+            {!isLocked && menuEntries.length > 0 && (
+                <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-inner py-4">
+                    <div className="max-w-6xl mx-auto px-4">
+                        <button
+                            id="btn-complete-menu"
+                            onClick={handleCompleteMenu}
+                            disabled={completeMenuMutation.isPending}
+                            className={`
+                                w-full flex items-center justify-center gap-2 px-6 py-3
+                                rounded-full border-[3px] border-black
+                                bg-primary text-black font-black text-sm uppercase tracking-widest
+                                shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]
+                                transition-all duration-150
+                                hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                disabled:opacity-60 disabled:cursor-wait
+                            `}
+                        >
+                            <span>
+                                {completeMenuMutation.isPending
+                                    ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
+                                    : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
+                            </span>
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-primary transition-transform group-hover:scale-110">
+                                <span className="material-icons text-sm">
+                                    {completeMenuMutation.isPending ? 'hourglass_empty' : 'done'}
+                                </span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            )}
         </RootLayout>
     );
 }

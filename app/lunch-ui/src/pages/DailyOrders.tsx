@@ -551,27 +551,15 @@ export default function DailyOrders() {
                         >
                             {t('dailyOrders.exportPdf')}
                         </Button>
-                        {isLocked ? (
-                            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-50 border-2 border-green-300 text-green-700 font-semibold text-sm">
-                                <span className="material-icons text-sm">lock</span>
-                                {t('dailyOrders.isLocked')}
-                            </div>
-                        ) : bills.length === 0 ? (
-                            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm font-medium">
-                                <span className="material-icons-outlined text-base">receipt_long</span>
-                                <span>{t('dailyOrders.uploadBillFirst', 'Upload a bill before marking complete')}</span>
-                            </div>
-                        ) : (
-                            <Button
-                                variant="primary"
-                                fullWidth
-                                disabled={markCompleteMutation.isPending}
-                                icon={<span className="material-icons-outlined">check_circle</span>}
-                                onClick={() => setIsCompleteModalOpen(true)}
-                            >
-                                {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
-                            </Button>
-                        )}
+                        <Button
+                            variant="primary"
+                            fullWidth
+                            disabled={markCompleteMutation.isPending || isLocked || bills.length === 0}
+                            icon={<span className="material-icons-outlined">check_circle</span>}
+                            onClick={() => setIsCompleteModalOpen(true)}
+                        >
+                            {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.completeOrder')}
+                        </Button>
                     </div>
 
                 </div>
