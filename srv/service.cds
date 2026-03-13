@@ -9,9 +9,14 @@ service LunchService {
         { grant: 'UPDATE', to: 'CMNA_UPDATE_USER' },
         { grant: 'DELETE', to: 'CMNA_DELETE_USER' }
     ]
-    entity Catalog      as projection on lunch.Catalog;
+    entity Catalog      as projection on lunch.Catalog {
+        *,
+        price    @restrict: [{ to: 'CMNA_READ_ALL_USER' }],
+        currency @restrict: [{ to: 'CMNA_READ_ALL_USER' }]
+    };
 
     @restrict: [
+        { grant: 'READ',   to: 'CMNA_READ_ASSIGNED_USER' },
         { grant: 'READ',   to: 'CMNA_READ_ALL_USER' },
         { grant: 'CREATE', to: 'CMNA_ADD_USER' },
         { grant: 'UPDATE', to: 'CMNA_UPDATE_USER' },
@@ -33,6 +38,7 @@ service LunchService {
     entity StaffCatalog as projection on lunch.StaffCatalog;
 
     @restrict: [
+        { grant: 'READ',   to: 'CMNA_READ_ASSIGNED_USER' },
         { grant: 'READ',   to: 'CMNA_READ_ALL_USER' },
         { grant: 'CREATE', to: 'CMNA_ADD_USER' },
         { grant: 'UPDATE', to: 'CMNA_UPDATE_USER' },

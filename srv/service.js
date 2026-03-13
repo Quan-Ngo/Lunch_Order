@@ -175,13 +175,13 @@ module.exports = class LunchService extends cds.ApplicationService {
                 : user.id;
             const normalizedDisplayName = displayName.trim().toLowerCase();
 
-            // Match the authenticated user against the Staff table server-side (using targeted query for performance)
+            // Match the authenticated user against the Staff table server-side
             const matchedStaff = await SELECT.one.from(Staff).where({
-                or: [
-                    { email: email },
-                    { name: displayName },
-                    { name: email }
-                ]
+                email: email
+            }).or({
+                name: displayName
+            }).or({
+                name: email
             });
 
             return JSON.stringify({
