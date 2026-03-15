@@ -244,8 +244,10 @@ export const dailyMenuService = {
         return response.data.value;
     },
 
-    /** Add a food item to a day's menu */
-    addFoodToDate: async (dateString: string, catalogId: string): Promise<void> => {
+    /** Add multiple food items to a day's menu */
+    addFoodsToDate: async (dateString: string, catalogIds: string[]): Promise<void> => {
+        if (catalogIds.length === 0) return;
+
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'`
         );
@@ -256,7 +258,9 @@ export const dailyMenuService = {
             menuId = createRes.data.ID;
         }
 
-        await api.patch(`/Catalog(${catalogId})`, { dailyMenu_ID: menuId });
+        await Promise.all(
+            catalogIds.map((id) => api.patch(`/Catalog(${id})`, { dailyMenu_ID: menuId }))
+        );
     },
 
     /** Remove a food item from a day's menu */
