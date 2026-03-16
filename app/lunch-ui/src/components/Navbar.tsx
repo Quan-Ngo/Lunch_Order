@@ -51,7 +51,6 @@ export default function Navbar() {
             // We use the app's base path so it triggers the 'logoutEndpoint' in our local xs-app.json instead.
             const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             window.location.assign(basePath + 'logout');
-            window.location.reload();
         } else {
             // Local dev: force reload to clean cache
             window.location.reload();
@@ -109,8 +108,8 @@ export default function Navbar() {
                                     key={lang}
                                     onClick={() => handleLanguageChange(lang)}
                                     className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${i18n.language === lang
-                                            ? 'bg-primary border-black text-black'
-                                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
+                                        ? 'bg-primary border-black text-black'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
                                         }`}
                                 >
                                     {LANGUAGE_LABELS[lang] ?? lang.toUpperCase()}
@@ -231,8 +230,8 @@ export default function Navbar() {
                                             key={lang}
                                             onClick={() => handleLanguageChange(lang)}
                                             className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${i18n.language === lang
-                                                    ? 'bg-primary border-black text-black'
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'
+                                                ? 'bg-primary border-black text-black'
+                                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'
                                                 }`}
                                         >
                                             {LANGUAGE_LABELS[lang] ?? lang.toUpperCase()}
