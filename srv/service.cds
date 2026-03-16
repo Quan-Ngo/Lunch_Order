@@ -69,5 +69,6 @@ service LunchService {
 
     function userInfo() returns String;
     action confirmMenu(date : String) returns String;
+    action confirmOrder(date : String, supplierEmail : String) returns String;
     function getCurrentUser() returns String;
 }

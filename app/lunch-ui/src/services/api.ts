@@ -290,6 +290,15 @@ export const dailyMenuService = {
         );
         return response.data.value.some((e) => e.isComplete === true);
     },
+
+    /** Send the day's order to supplier via email */
+    sendOrderToSupplier: async (dateString: string, supplierEmail: string): Promise<string> => {
+        const response = await api.post<{ value: string }>('/confirmOrder', {
+            date: dateString,
+            supplierEmail,
+        });
+        return response.data.value;
+    },
 };
 
 // ─────────────────────────────────────────────
