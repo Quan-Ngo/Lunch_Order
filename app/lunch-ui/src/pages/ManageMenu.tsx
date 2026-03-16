@@ -224,15 +224,15 @@ export default function ManageMenu() {
                 contextText={t('manageMenu.fromTodaysMenu')}
                 variant="food"
             />
-            <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
+            <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3">
                     <button
                         id="btn-complete-menu"
                         onClick={handleCompleteMenu}
                         disabled={completeMenuMutation.isPending}
-                        className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] sm:scale-100 font-bold text-2xl border-4 border-black uppercase tracking-tighter 
+                        className={`group flex items-center gap-2.5 px-6 py-3 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all font-bold text-base border-2 border-black uppercase tracking-tight
                             ${(completeMenuMutation.isPending)
                                 ? 'bg-primary text-black opacity-85 cursor-wait'
-                                : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60 disabled:cursor-not-allowed'
+                                : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60 disabled:cursor-not-allowed'
                             }`}
                     >
                         <span>
@@ -240,7 +240,7 @@ export default function ManageMenu() {
                                 ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
                                 : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
                         </span>
-                        <span className={`material-icons text-3xl transition-transform ${(completeMenuMutation.isPending) ? '' : 'group-hover:translate-x-1'}`}>
+                        <span className={`material-icons text-xl transition-transform ${(completeMenuMutation.isPending) ? '' : 'group-hover:translate-x-0.5'}`}>
                             {completeMenuMutation.isPending ? 'hourglass_empty' : 'arrow_forward'}
                         </span>
                     </button>
