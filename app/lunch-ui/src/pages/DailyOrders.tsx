@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RootLayout } from '@/layouts/RootLayout';
@@ -32,6 +33,11 @@ export default function DailyOrders() {
     const [billCarouselIndex, setBillCarouselIndex] = useState<number>(0);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [deleteBillTarget, setDeleteBillTarget] = useState<string | null>(null);
+    const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState<boolean>(false);
+    const [supplierEmail, setSupplierEmail] = useState<string>('');
+
+    const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const isEmailValid = isValidEmail(supplierEmail);
     const dateInputRef = useRef<HTMLInputElement>(null);
     const billInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -127,6 +133,20 @@ export default function DailyOrders() {
             console.error('Failed to save note:', error);
             setShowSavedText(false);
         }
+    });
+
+    const sendOrderMutation = useMutation({
+        mutationFn: ({ date, email }: { date: string; email: string }) =>
+            dailyMenuService.sendOrderToSupplier(date, email),
+        onSuccess: () => {
+            setIsSendEmailModalOpen(false);
+            setSupplierEmail('');
+            toast.success('Email sent to supplier successfully.');
+        },
+        onError: (error) => {
+            console.error('Failed to send order to supplier:', error);
+            toast.error('Failed to send email to supplier');
+        },
     });
 
     const isLoading = statsLoading || catalogLoading || summaryLoading || dailyMenuLoading || billsLoading;
@@ -542,6 +562,14 @@ export default function DailyOrders() {
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-3">
                         <Button
+                            variant="primary"
+                            fullWidth
+                            icon={<span className="material-icons-outlined">email</span>}
+                            onClick={() => setIsSendEmailModalOpen(true)}
+                        >
+                            {t('dailyOrders.sendEmailToSupplier', 'Send email to supplier')}
+                        </Button>
+                        <Button
                             variant="secondary"
                             fullWidth
                             icon={<span className="material-icons-outlined">download</span>}
@@ -735,6 +763,98 @@ export default function DailyOrders() {
                             >
                                 {t('catalog.delete', 'Delete')}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Send Email to Supplier Modal ──────────────────────────────── */}
+            {isSendEmailModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                    onClick={() => setIsSendEmailModalOpen(false)}
+                >
+                    {/* Outer wrapper — positions the floating header relative to the card */}
+                    <div
+                        className="relative w-full max-w-[453px] mx-4 mt-8"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Floating yellow title badge — sits above the card, overflow-hidden prevents text spill */}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-[80%] z-10 overflow-hidden">
+                            <div className="bg-primary border-4 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 text-center">
+                                <h3 className="text-base font-black uppercase tracking-tight font-display">
+                                    {t('dailyOrders.sendEmailModal.title', 'Send Order to Supplier')}
+                                </h3>
+                            </div>
+                        </div>
+
+                        {/* X close button — direct child of outer wrapper, z-30 always above badge z-10 */}
+                        <button
+                            onClick={() => setIsSendEmailModalOpen(false)}
+                            className="absolute top-2 right-3 z-30 text-black hover:opacity-60 transition-opacity"
+                        >
+                            <span className="material-icons text-xl">close</span>
+                        </button>
+
+                        {/* White modal card */}
+                        <div className="bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] pt-10">
+
+                            {/* Modal Body */}
+                            <div className="px-6 pb-6 pt-2 flex flex-col gap-4">
+                                {/* Email Input */}
+                                <div>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-gray-800 mb-2">
+                                        {t('dailyOrders.sendEmailModal.supplierEmailLabel', 'Supplier Email')}
+                                    </label>
+                                    <div className={`flex items-center gap-2 border-2 rounded-xl px-3 py-3 transition-colors ${supplierEmail === ''
+                                        ? 'border-gray-300 bg-white'
+                                        : isEmailValid
+                                            ? 'border-green-400 bg-green-50'
+                                            : 'border-red-400 bg-red-50'
+                                        }`}>
+                                        <span className={`material-icons-outlined text-base ${supplierEmail === ''
+                                            ? 'text-gray-400'
+                                            : isEmailValid
+                                                ? 'text-green-500'
+                                                : 'text-red-400'
+                                            }`}>email</span>
+                                        <input
+                                            type="email"
+                                            value={supplierEmail}
+                                            onChange={(e) => setSupplierEmail(e.target.value)}
+                                            placeholder={t('dailyOrders.sendEmailModal.emailPlaceholder', 'Enter supplier email...')}
+                                            className="flex-1 text-sm bg-transparent outline-none placeholder-gray-400"
+                                            autoFocus
+                                        />
+                                        {supplierEmail !== '' && (
+                                            <span className={`material-icons text-base ${isEmailValid ? 'text-green-500' : 'text-red-400'
+                                                }`}>
+                                                {isEmailValid ? 'check_circle' : 'cancel'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                                        {t('dailyOrders.sendEmailModal.hint', 'Requires a valid email address to send')}
+                                    </p>
+                                </div>
+
+                                {/* Send Button */}
+                                <button
+                                    disabled={!isEmailValid || sendOrderMutation.isPending}
+                                    onClick={() => {
+                                        sendOrderMutation.mutate({ date: formattedDate, email: supplierEmail });
+                                    }}
+                                    className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest border-2 transition-all ${isEmailValid && !sendOrderMutation.isPending
+                                        ? 'bg-primary border-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none cursor-pointer'
+                                        : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                                        }`}
+                                >
+                                    {sendOrderMutation.isPending
+                                        ? t('dailyOrders.sendEmailModal.sending', 'Sending...')
+                                        : t('dailyOrders.sendEmailModal.sendButton', 'Send Order')
+                                    }
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

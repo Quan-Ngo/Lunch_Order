@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootLayout } from '@/layouts/RootLayout';
 import { PageHeader } from '@/components/elements/PageHeader';
@@ -20,6 +20,10 @@ export default function ManageMenu() {
     const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
     const [pendingAdditions, setPendingAdditions] = useState<Food[]>([]);
+    
+    useEffect(() => {
+        setPendingAdditions([]);
+    }, [selectedDate]);
 
     const { data: isLocked = false } = useQuery({
         queryKey: ['isComplete', selectedDate],
@@ -69,7 +73,7 @@ export default function ManageMenu() {
 
     const addFoodsMutation = useMutation({
         mutationFn: async (foods: Food[]) => {
-            await Promise.all(foods.map((f) => dailyMenuService.addFoodToDate(selectedDate, f.ID)));
+            await dailyMenuService.addFoodsToDate(selectedDate, foods.map(f => f.ID));
             return foods;
         },
         onSuccess: (foods) => {
@@ -117,6 +121,12 @@ export default function ManageMenu() {
     };
 
     const handleRemoveFood = async (catalogId: string) => {
+        const isPending = pendingAdditions.some((f) => f.ID === catalogId);
+        if (isPending) {
+            setPendingAdditions((prev) => prev.filter((f) => f.ID !== catalogId));
+            toast.success(t('manageMenu.itemRemoved'));
+            return;
+        }
         await removeFoodMutation.mutateAsync(catalogId);
     };
 
@@ -129,7 +139,7 @@ export default function ManageMenu() {
         await completeMenuMutation.mutateAsync();
     };
 
-    const existingCatalogIds = menuEntries.map((c) => c.ID);
+    const existingCatalogIds = allMenuEntries.map((c) => c.ID);
     // ...existing code...
 
     return (
@@ -161,7 +171,7 @@ export default function ManageMenu() {
                 <DateWheel selected={selectedDate} onChange={setSelectedDate} />
             </div>
 
-            {!isLoading && menuEntries.length > 0 && (
+            {!isLoading && allMenuEntries.length > 0 && (
                 <p className="text-sm text-gray-500 mb-4 font-medium">
                     <span className="material-icons text-sm align-middle mr-1 text-primary-hover">restaurant_menu</span>
                     {t('manageMenu.itemCount', { count: allMenuEntries.length })}
@@ -170,7 +180,7 @@ export default function ManageMenu() {
 
             {isLoading ? (
                 <LoadingState />
-            ) : menuEntries.length === 0 ? (
+            ) : allMenuEntries.length === 0 ? (
                 <EmptyState
                     icon="restaurant_menu"
                     message={t('manageMenu.emptyMenu')}
@@ -214,10 +224,7 @@ export default function ManageMenu() {
                 contextText={t('manageMenu.fromTodaysMenu')}
                 variant="food"
             />
-
-            {/* Floating Confirm Menu button - Always visible */}
-            {!isLocked && menuEntries.length > 0 && (
-                <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
+            <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
                     <button
                         id="btn-complete-menu"
                         onClick={handleCompleteMenu}
@@ -238,7 +245,6 @@ export default function ManageMenu() {
                         </span>
                     </button>
                 </div>
-            )}
         </RootLayout>
     );
 }
