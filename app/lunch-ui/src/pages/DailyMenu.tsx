@@ -312,14 +312,15 @@ export default function DailyMenu() {
                     <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
                         <button
                             onClick={handleConfirmOrder}
+                            disabled={isLocked || isActioning}
                             className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] font-bold text-2xl border-4 border-black uppercase tracking-tighter 
-                                ${(isActioning)
-                                    ? 'bg-primary text-black opacity-85 cursor-wait'
+                                ${(isLocked || isActioning)
+                                    ? 'bg-primary text-black opacity-60 cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
                                     : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
                                 }`}
                         >
                             <span>{isActioning ? t('dailyMenu.saving') : t('dailyMenu.confirmOrder')}</span>
-                            <span className={`material-icons text-3xl transition-transform ${(isActioning) ? '' : 'group-hover:translate-x-1'}`}>
+                            <span className={`material-icons text-3xl transition-transform ${(isLocked || isActioning) ? '' : 'group-hover:translate-x-1'}`}>
                                 arrow_forward
                             </span>
                         </button>
@@ -329,5 +330,3 @@ export default function DailyMenu() {
         </RootLayout>
     );
 }
-
-

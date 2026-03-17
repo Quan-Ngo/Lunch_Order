@@ -1,13 +1,16 @@
-const { MailtrapClient } = require('mailtrap');
 
-const TOKEN = 'b2afc7af46c8f9bce4b185654f0f8750';
+const nodemailer = require('nodemailer');
 
-const client = new MailtrapClient({ token: TOKEN });
+const transport = nodemailer.createTransport({
+    host: 'sandbox.smtp.mailtrap.io',
+    port: 2525,
+    auth: {
+        user: '7f3250454a1ea1',
+        pass: '5ae106e81e84ac'
+    }
+});
 
-const sender = {
-    email: 'hello@demomailtrap.co',
-    name: 'Lunch Order',
-};
+const sender = 'Lunch Order <dien.tang@conarum.com>';
 
 /**
  * Send an email via the Mailtrap API client.
@@ -18,23 +21,18 @@ const sender = {
  * @param {string}  [options.html]  - HTML body.
  * @returns {Promise<any>}
  */
-async function sendEmail({ to, subject, text, html }) {
-    const recipients = typeof to === 'string'
-        ? to.split(',').map(email => ({ email: email.trim() }))
-        : to;
 
+async function sendEmail({ to, subject, text, html }) {
     try {
-        const response = await client.send({
+        const info = await transport.sendMail({
             from: sender,
-            to: recipients,
+            to,
             subject,
             text: text || '',
-            html: html || undefined,
-            category: 'Lunch Notification',
+            html: html || undefined
         });
-
-        console.log(`[EmailService] Message sent to ${to}:`, response);
-        return response;
+        console.log(`[EmailService] Message sent to ${to}:`, info.messageId);
+        return info;
     } catch (err) {
         console.error(`[EmailService] Failed to send email to ${to}:`, err?.message || err);
         throw err;

@@ -299,6 +299,16 @@ export const dailyMenuService = {
         });
         return response.data.value;
     },
+
+    /** Set isComplete=true for menu by date */
+    completeOrder: async (dateString: string): Promise<void> => {
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=date eq '${dateString}'`
+        );
+        const menu = response.data.value[0];
+        if (!menu) throw new Error('Menu not found');
+        await api.patch(`/DailyMenu(${menu.ID})`, { isComplete: true });
+    },
 };
 
 // ─────────────────────────────────────────────

@@ -95,7 +95,7 @@ export default function DailyOrders() {
     });
 
     const markCompleteMutation = useMutation({
-        mutationFn: () => dailyMenuService.markCompleteByDate(formattedDate),
+        mutationFn: () => dailyMenuService.completeOrder(formattedDate),
         onSuccess: () => {
             setIsCompleteModalOpen(false);
             queryClient.invalidateQueries({ queryKey: ['isComplete', formattedDate] });
