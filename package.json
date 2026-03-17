@@ -68,7 +68,8 @@
         "db": "hana",
         "destinations": true,
         "html5-repo": true,
-        "application-logging": true
+        "application-logging": true,
+        "notifications": true
       }
     }
   }

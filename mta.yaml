@@ -50,6 +50,7 @@ modules:
       - name: cnma_internallunchorder_xsuaa
       - name: cnma_internallunchorder_destination
       - name: cnma_internallunchorder_connectivity
+      - name: cnma_internallunchorder_alert_notification
 
   # ------------------------------------------------------------
   # (3) UI MODULE
@@ -205,3 +206,12 @@ resources:
     parameters:
       service: html5-apps-repo
       service-plan: app-runtime
+
+  # ------------------------------------------------------------
+  # (7) ALERT NOTIFICATION SERVICE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_alert_notification
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: alert-notification
+      service-plan: standard

@@ -5,6 +5,14 @@ const { sendEmail } = require('./lib/email-service');
 module.exports = class LunchService extends cds.ApplicationService {
     async init() {
         const { Staff } = this.entities;
+        
+        // Connect to Notification Service
+        let notifications;
+        try {
+            notifications = await cds.connect.to('notifications');
+        } catch (e) {
+            console.warn('[LunchService] Notifications service not bound or unavailable in environment.');
+        }
 
         this.on('userInfo', async (req) => {
             if (req.user.is('anonymous')) {
@@ -130,6 +138,22 @@ module.exports = class LunchService extends cds.ApplicationService {
                     console.error(`[LunchService] Failed to send email to ${staff.email}:`, err);
                 });
             });
+
+            // 5. Send Workzone Built-in Notification
+            if (notifications) {
+                try {
+                    await notifications.notify({
+                        recipients: recipients.map(s => s.email),
+                        type: 'MenuConfirmed',
+                        data: {
+                            date: formattedDate
+                        }
+                    });
+                    console.log(`[LunchService] Workzone Notifications sent for MenuConfirmed.`);
+                } catch(err) {
+                    console.error('[LunchService] Failed to send Workzone Notification:', err);
+                }
+            }
 
             return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
         });
@@ -260,6 +284,36 @@ module.exports = class LunchService extends cds.ApplicationService {
                 displayName,
                 staff: matchedStaff || null
             });
+        });
+
+        // Detect when a food item is removed from the daily menu
+        this.after('UPDATE', 'Catalog', async (data, req) => {
+            // Re-fetch data if data.name is missing, though usually it's returned
+            const updatedItem = data;
+
+            // Using strict check to see if dailyMenu_ID is explicitly being set to null
+            if (req.data && req.data.hasOwnProperty('dailyMenu_ID') && req.data.dailyMenu_ID === null) {
+                if (notifications && updatedItem && updatedItem.name) {
+                    try {
+                        const staffList = await SELECT.from(Staff).where({ status: true, notification: true });
+                        const recipients = staffList.filter(s => s.email && s.email.trim() !== '').map(s => s.email);
+
+                        if (recipients.length > 0) {
+                            await notifications.notify({
+                                recipients: recipients,
+                                type: 'FoodRemoved',
+                                data: {
+                                    foodName: updatedItem.name,
+                                    date: 'the daily menu' 
+                                }
+                            });
+                            console.log(`[LunchService] Notification sent for FoodRemoved: ${updatedItem.name}`);
+                        }
+                    } catch(err) {
+                        console.error('[LunchService] Failed to send FoodRemoved notification:', err);
+                    }
+                }
+            }
         });
 
         return super.init();
