@@ -20,7 +20,7 @@ export default function ManageMenu() {
     const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
     const [pendingAdditions, setPendingAdditions] = useState<Food[]>([]);
-    
+
     useEffect(() => {
         setPendingAdditions([]);
     }, [selectedDate]);
@@ -38,7 +38,6 @@ export default function ManageMenu() {
     const dailyMenu = rawMenuEntries[0];
     const rawCatalogs = dailyMenu?.catalogs || [];
 
-    // Deduplicate and filter active items
     const seen = new Set<string>();
     const menuEntries: Food[] = rawCatalogs
         .filter((catalog) => {
@@ -167,7 +166,7 @@ export default function ManageMenu() {
                 </div>
             )}
 
-        <div className="mb-6 pb-28">
+            <div className="mb-6 pb-28">
                 <DateWheel selected={selectedDate} onChange={setSelectedDate} />
             </div>
 
@@ -225,26 +224,26 @@ export default function ManageMenu() {
                 variant="food"
             />
             <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
-                    <button
-                        id="btn-complete-menu"
-                        onClick={handleCompleteMenu}
-                        disabled={completeMenuMutation.isPending}
-                        className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] sm:scale-100 font-bold text-2xl border-4 border-black uppercase tracking-tighter 
-                            ${(completeMenuMutation.isPending)
-                                ? 'bg-primary text-black opacity-85 cursor-wait'
-                                : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60 disabled:cursor-not-allowed'
-                            }`}
-                    >
-                        <span>
-                            {completeMenuMutation.isPending
-                                ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
-                                : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
-                        </span>
-                        <span className={`material-icons text-3xl transition-transform ${(completeMenuMutation.isPending) ? '' : 'group-hover:translate-x-1'}`}>
-                            {completeMenuMutation.isPending ? 'hourglass_empty' : 'arrow_forward'}
-                        </span>
-                    </button>
-                </div>
+                <button
+                    id="btn-complete-menu"
+                    onClick={handleCompleteMenu}
+                    disabled={isLocked || completeMenuMutation.isPending}
+                    className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] sm:scale-100 font-bold text-2xl border-4 border-black uppercase tracking-tighter 
+                        ${(isLocked || completeMenuMutation.isPending)
+                            ? 'bg-primary text-black opacity-60 cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                            : 'bg-primary hover:bg-primary-hover text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                        }`}
+                >
+                    <span>
+                        {completeMenuMutation.isPending
+                            ? t('manageMenu.completing', { defaultValue: 'Confirming...' })
+                            : t('manageMenu.completeMenu', { defaultValue: 'Confirm Menu' })}
+                    </span>
+                    <span className={`material-icons text-3xl transition-transform ${(isLocked || completeMenuMutation.isPending) ? '' : 'group-hover:translate-x-1'}`}>
+                        {completeMenuMutation.isPending ? 'hourglass_empty' : 'arrow_forward'}
+                    </span>
+                </button>
+            </div>
         </RootLayout>
     );
 }
