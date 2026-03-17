@@ -5,8 +5,10 @@
   "dependencies": {
     "@cap-js/hana": "^2",
     "@cap-js/notifications": "*",
+    "@google/genai": "^1.45.0",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
+    "dotenv": "^17.3.1",
     "express": "^4",
     "mailtrap": "^4.4.0",
     "nodemailer": "^7.0.13"
@@ -27,7 +29,11 @@
   "private": true,
   "cds": {
     "server": {
-      "port": 4005
+      "port": 4005,
+      "parsers": {
+        "json": { "limit": "50mb" },
+        "urlencoded": { "limit": "50mb", "extended": true }
+      }
     },
     "requires": {
       "[development]": {

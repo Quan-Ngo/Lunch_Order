@@ -154,8 +154,8 @@ export const foodService = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/Catalog(${id})`);
     },
-    create: async (data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
-        await api.post('/Catalog', {
+    create: async (data: { name: string; price: number; currency: string; description: string }): Promise<string> => {
+        const response = await api.post('/Catalog', {
             name: data.name,
             price: data.price,
             currency: data.currency,
@@ -163,6 +163,7 @@ export const foodService = {
             category: 'General',
             isActive: true,
         });
+        return response.data.ID;
     },
     update: async (id: string, data: { name: string; price: number; currency: string; description: string }): Promise<void> => {
         await api.put(`/Catalog(${id})`, {
@@ -199,6 +200,26 @@ export const foodService = {
         // Step 4: Persist the content URL into the url field so $expand=file returns it
         const contentUrl = `odata/v4/lunch/CatalogFile(${fileId})/content`;
         await api.patch(`/CatalogFile(${fileId})`, { url: contentUrl });
+    },
+    extractMenuFromImage: async (image: File): Promise<{ name: string; price: number; description?: string }[]> => {
+        const fileToBase64 = (file: File): Promise<string> =>
+            new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = error => reject(error);
+            });
+
+        const base64 = await fileToBase64(image);
+
+        const response = await api.post('/extractMenuFromImage', {
+            image: base64,
+            mimeType: image.type,
+        });
+
+        const jsonString = response.data.value;
+        if (!jsonString) return [];
+        return JSON.parse(jsonString);
     },
 };
 

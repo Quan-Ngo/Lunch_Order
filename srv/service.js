@@ -1,6 +1,7 @@
 const cds = require('@sap/cds');
 const axios = require('axios');
 const { sendEmail } = require('./lib/email-service');
+require('dotenv').config();
 
 module.exports = class LunchService extends cds.ApplicationService {
     async init() {
@@ -92,7 +93,62 @@ module.exports = class LunchService extends cds.ApplicationService {
             }
         });
 
+        this.on('extractMenuFromImage', async (req) => {
+            const { image, mimeType } = req.data;
+            if (!image) return req.error(400, "Image data is required");
 
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                return req.error(500, "Sever is missing GEMINI_API_KEY environment variable. Cannot process image.");
+            }
+
+            try {
+                const { GoogleGenAI } = require('@google/genai');
+                const ai = new GoogleGenAI({ apiKey: apiKey });
+
+                const base64Data = image.includes(',') ? image.split(',')[1] : image;
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: [
+                        {
+                            role: 'user',
+                            parts: [
+                                {
+                                    inlineData: {
+                                        data: base64Data,
+                                        mimeType: mimeType || 'image/jpeg'
+                                    }
+                                },
+                                {
+                                    text: "Hãy phân tích hình ảnh quyển menu này. Trích xuất tất cả các món ăn gồm tên món và giá tiền. Nếu một món có khoảng giá (ví dụ: 15k - 20k) thì chỉ lấy giá cao nhất trong khoảng đó (ví dụ: 20k). Chỉ trả về kết quả ở định dạng một chuỗi JSON chuẩn chứa mảng các object [{name, price}]. Nếu giá tiền có đơn vị VND thì bỏ qua chữ VND. Loại bỏ định danh json và trong response. Trả về đúng 1 mảng JSON. Không giải thích gì thêm."
+                                }
+                            ]
+                        }
+                    ],
+                    config: {
+                        temperature: 0.1
+                    }
+                });
+
+                let text = response.text || "[]";
+                // clean markdown if any
+                text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+
+                // validate JSON parsability
+                try {
+                    JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse Gemini output as JSON:", text);
+                    return req.error(500, "Gemini output was not valid JSON");
+                }
+
+                return text;
+            } catch (err) {
+                console.error("Gemini Extraction Error:", err);
+                return req.error(500, "Failed to extract menu using Gemini API: " + err.message);
+            }
+        });
 
         this.on('confirmMenu', async (req) => {
             const { date } = req.data;
