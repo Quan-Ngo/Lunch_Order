@@ -72,6 +72,7 @@
       },
       "notifications": {
         "kind": "notifications",
+        "impl": "@cap-js/notifications",
         "vcap": {
           "name": "cnma_internallunchorder_alert_notification"
         },
