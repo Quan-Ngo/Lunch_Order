@@ -45,6 +45,8 @@ modules:
       - name: srv-api
         properties:
           srv-url: "${default-url}"
+    properties:
+      NODE_ENV: production
     requires:
       - name: cnma_hdi_container
       - name: cnma_internallunchorder_xsuaa
