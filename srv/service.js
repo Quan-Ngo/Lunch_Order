@@ -107,8 +107,7 @@ module.exports = class LunchService extends cds.ApplicationService {
             if (!date) return req.error(400, 'date is required');
 
             const { DailyMenu, Staff } = this.entities;
-
-            console.log(`[LunchService] confirmMenu: Skipping mark as complete for ${date}.`);
+            console.log(`🔔 [LunchService] confirmMenu triggered for date: ${date}`);
 
             // 2. Format date DD/MM/YYYY for the email body
             const parts = date.split('-');
@@ -121,11 +120,11 @@ module.exports = class LunchService extends cds.ApplicationService {
             const recipients = staffList.filter(s => s.email && s.email.trim() !== '');
 
             if (recipients.length === 0) {
-                console.log('[LunchService] confirmMenu: No eligible staff to notify.');
+                console.log('🔔 [LunchService] confirmMenu: No eligible staff found (status=true, notification=true).');
                 return `Menu confirmed for ${formattedDate}. No staff eligible for notification.`;
             }
 
-            console.log(`[LunchService] confirmMenu: Sending notification to ${recipients.length} staff member(s).`);
+            console.log(`🔔 [LunchService] confirmMenu: Found ${recipients.length} eligible recipients: ${recipients.map(r => r.email).join(', ')}`);
 
             // 4. Send email to each eligible staff member (fire-and-forget)
             recipients.forEach((staff) => {
@@ -141,6 +140,7 @@ module.exports = class LunchService extends cds.ApplicationService {
 
             // 5. Send Workzone Built-in Notification
             if (notifications) {
+                console.log(`🔔 [LunchService] Attempting to send Workzone Notification: MenuConfirmed for ${formattedDate}`);
                 try {
                     await notifications.notify({
                         recipients: recipients.map(s => s.email),
@@ -149,10 +149,12 @@ module.exports = class LunchService extends cds.ApplicationService {
                             date: formattedDate
                         }
                     });
-                    console.log(`[LunchService] Workzone Notifications sent for MenuConfirmed.`);
+                    console.log(`🔔 [LunchService] Workzone Notification sent successfully.`);
                 } catch(err) {
-                    console.error('[LunchService] Failed to send Workzone Notification:', err);
+                    console.error('🔔 [LunchService] ERROR sending Workzone Notification:', err.message || err);
                 }
+            } else {
+                console.warn('🔔 [LunchService] Notifications service NOT connected. Check service bindings and package.json.');
             }
 
             return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
@@ -288,17 +290,22 @@ module.exports = class LunchService extends cds.ApplicationService {
 
         // Detect when a food item is removed from the daily menu
         this.after('UPDATE', 'Catalog', async (data, req) => {
+            console.log('🔔 [LunchService] Catalog AFTER UPDATE hook triggered');
+            console.log('🔔 [LunchService] req.data:', JSON.stringify(req.data));
+            
             // Re-fetch data if data.name is missing, though usually it's returned
             const updatedItem = data;
 
             // Using strict check to see if dailyMenu_ID is explicitly being set to null
             if (req.data && req.data.hasOwnProperty('dailyMenu_ID') && req.data.dailyMenu_ID === null) {
+                console.log(`🔔 [LunchService] Detection confirmed: Food item ${updatedItem?.name || updatedItem?.ID} removed from menu.`);
                 if (notifications && updatedItem && updatedItem.name) {
                     try {
                         const staffList = await SELECT.from(Staff).where({ status: true, notification: true });
                         const recipients = staffList.filter(s => s.email && s.email.trim() !== '').map(s => s.email);
 
                         if (recipients.length > 0) {
+                            console.log(`🔔 [LunchService] Sending FoodRemoved notification to ${recipients.length} users.`);
                             await notifications.notify({
                                 recipients: recipients,
                                 type: 'FoodRemoved',
@@ -307,11 +314,15 @@ module.exports = class LunchService extends cds.ApplicationService {
                                     date: 'the daily menu' 
                                 }
                             });
-                            console.log(`[LunchService] Notification sent for FoodRemoved: ${updatedItem.name}`);
+                            console.log(`🔔 [LunchService] FoodRemoved Notification sent.`);
+                        } else {
+                            console.log('🔔 [LunchService] No eligible recipients for FoodRemoved notification.');
                         }
                     } catch(err) {
-                        console.error('[LunchService] Failed to send FoodRemoved notification:', err);
+                        console.error('🔔 [LunchService] ERROR sending FoodRemoved notification:', err.message || err);
                     }
+                } else if (!notifications) {
+                    console.warn('🔔 [LunchService] Notifications service NOT connected at the time of food removal.');
                 }
             }
         });
