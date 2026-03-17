@@ -1,2 +1,3 @@
 investigate user selecting multiple food per day
 make daily menu load and display the food user selected
+when food is removed from daily menu, notify staffs about its removal

@@ -1,5 +1,5 @@
 {
-  "welcomeFile": "/lunchorder/index.html",
+  "welcomeFile": "/cnmalunchorder/index.html",
   "authenticationMethod": "route",
   "logout": {
     "logoutEndpoint": "/logout",
@@ -14,7 +14,7 @@
       "csrfProtection": true
     },
     {
-      "source": "^/lunchorder/(.*)$",
+      "source": "^/cnmalunchorder/(.*)$",
       "target": "$1",
       "service": "html5-apps-repo-rt",
       "authenticationType": "xsuaa"

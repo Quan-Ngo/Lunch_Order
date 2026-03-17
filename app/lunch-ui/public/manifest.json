@@ -4,7 +4,7 @@
         "service": "lunchorder"
     },
     "sap.app": {
-        "id": "lunchorder",
+        "id": "cnma.lunchorder",
         "type": "application",
         "applicationVersion": {
             "version": "1.0.0"
@@ -15,12 +15,22 @@
                 "manage": {
                     "semanticObject": "internal_lunch",
                     "action": "manage",
-                    "title": "Manage",
+                    "title": "Lunch Order Manager",
                     "signature": {
                         "parameters": {},
                         "additionalParameters": "allowed"
                     }
                 }
+            }
+        }
+    },
+    "sap.ui5": {
+        "flexEnabled": false,
+        "dependencies": {
+            "minUI5Version": "1.120.0",
+            "libs": {
+                "sap.m": {},
+                "sap.ui.core": {}
             }
         }
     }
