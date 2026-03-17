@@ -7,11 +7,16 @@ module.exports = class LunchService extends cds.ApplicationService {
         const { Staff } = this.entities;
         
         // Connect to Notification Service
-        let notifications;
+        console.log('🔔 [LunchService] Attempting to connect to notifications service...');
         try {
-            notifications = await cds.connect.to('notifications');
+            this.notifications = await cds.connect.to('notifications');
+            if (this.notifications) {
+                console.log('🔔 [LunchService] Connected to notifications service successfully.');
+            } else {
+                console.warn('🔔 [LunchService] cds.connect.to("notifications") returned falsy result.');
+            }
         } catch (e) {
-            console.warn('[LunchService] Notifications service not bound or unavailable in environment.');
+            console.error('🔔 [LunchService] Error connecting to notifications:', e.message || e);
         }
 
         this.on('userInfo', async (req) => {
@@ -139,10 +144,10 @@ module.exports = class LunchService extends cds.ApplicationService {
             });
 
             // 5. Send Workzone Built-in Notification
-            if (notifications) {
+            if (this.notifications) {
                 console.log(`🔔 [LunchService] Attempting to send Workzone Notification: MenuConfirmed for ${formattedDate}`);
                 try {
-                    await notifications.notify({
+                    await this.notifications.notify({
                         recipients: recipients.map(s => s.email),
                         type: 'MenuConfirmed',
                         data: {
@@ -154,7 +159,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                     console.error('🔔 [LunchService] ERROR sending Workzone Notification:', err.message || err);
                 }
             } else {
-                console.warn('🔔 [LunchService] Notifications service NOT connected. Check service bindings and package.json.');
+                console.warn('🔔 [LunchService] Notifications service NOT connected at send time.');
             }
 
             return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
@@ -299,14 +304,14 @@ module.exports = class LunchService extends cds.ApplicationService {
             // Using strict check to see if dailyMenu_ID is explicitly being set to null
             if (req.data && req.data.hasOwnProperty('dailyMenu_ID') && req.data.dailyMenu_ID === null) {
                 console.log(`🔔 [LunchService] Detection confirmed: Food item ${updatedItem?.name || updatedItem?.ID} removed from menu.`);
-                if (notifications && updatedItem && updatedItem.name) {
+                if (this.notifications && updatedItem && updatedItem.name) {
                     try {
                         const staffList = await SELECT.from(Staff).where({ status: true, notification: true });
                         const recipients = staffList.filter(s => s.email && s.email.trim() !== '').map(s => s.email);
 
                         if (recipients.length > 0) {
                             console.log(`🔔 [LunchService] Sending FoodRemoved notification to ${recipients.length} users.`);
-                            await notifications.notify({
+                            await this.notifications.notify({
                                 recipients: recipients,
                                 type: 'FoodRemoved',
                                 data: {
@@ -321,7 +326,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                     } catch(err) {
                         console.error('🔔 [LunchService] ERROR sending FoodRemoved notification:', err.message || err);
                     }
-                } else if (!notifications) {
+                } else if (!this.notifications) {
                     console.warn('🔔 [LunchService] Notifications service NOT connected at the time of food removal.');
                 }
             }

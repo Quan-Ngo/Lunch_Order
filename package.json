@@ -71,7 +71,7 @@
         "application-logging": true
       },
       "notifications": {
-        "kind": "alert-notification",
+        "kind": "notifications",
         "vcap": {
           "name": "cnma_internallunchorder_alert_notification"
         },
