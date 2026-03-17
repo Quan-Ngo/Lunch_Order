@@ -68,8 +68,17 @@
         "db": "hana",
         "destinations": true,
         "html5-repo": true,
-        "application-logging": true,
-        "notifications": true
+        "application-logging": true
+      },
+      "notifications": {
+        "kind": "alert-notification",
+        "vcap": {
+          "name": "cnma_internallunchorder_alert_notification"
+        },
+        "outbound": {
+          "auth": "OAuth2ClientCredentials",
+          "destination": "SAP_Notifications"
+        }
       }
     }
   }
