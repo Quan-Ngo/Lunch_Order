@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/elements/Button';
+import { Card } from '@/components/elements/Card';
 
 export interface ExtractedItem {
     id: string;
@@ -62,21 +64,9 @@ export function ExtractedMenuModal({ isOpen, onClose, items: initialItems, onSav
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <style>
-                {`
-                .neo-border { border: 2px solid #000000; }
-                .neo-input { border: 2px solid #000000; box-shadow: 2px 2px 0px 0px #000000; transition: all 0.1s ease; outline: none; }
-                .neo-input:focus { box-shadow: 4px 4px 0px 0px #000000; transform: translate(-1px, -1px); }
-                .neo-button-primary { background-color: #FACC15; border: 2px solid #000000; box-shadow: 4px 4px 0px 0px #000000; font-weight: 800; text-transform: uppercase; transition: all 0.1s ease; }
-                .neo-button-primary:active { box-shadow: 0px 0px 0px 0px #000000; transform: translate(4px, 4px); }
-                .neo-button-secondary { background-color: #FFFFFF; border: 2px solid #000000; box-shadow: 4px 4px 0px 0px #000000; font-weight: 800; text-transform: uppercase; transition: all 0.1s ease; }
-                .neo-button-secondary:active { box-shadow: 0px 0px 0px 0px #000000; transform: translate(4px, 4px); }
-                .bg-brand-yellow { background-color: #FACC15; }
-                `}
-            </style>
-            <div className="bg-white neo-border w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] rounded-2xl" data-purpose="extracted-catalog-modal">
-                <header className="bg-brand-yellow p-6 border-b-4 border-black">
-                    <h2 className="text-3xl font-black uppercase tracking-tight m-0 text-black">Extracted Food Catalog</h2>
+            <Card className="w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] rounded-2xl" noPadding={true}>
+                <header className="bg-brand-primary p-6 border-b-4 border-black text-black">
+                    <h2 className="text-3xl font-black uppercase tracking-tight m-0">Extracted Food Catalog</h2>
                 </header>
                 <main className="flex-1 overflow-y-auto p-8 bg-gray-50">
                     <table className="w-full border-separate border-spacing-y-4">
@@ -137,32 +127,34 @@ export function ExtractedMenuModal({ isOpen, onClose, items: initialItems, onSav
                                         />
                                     </td>
                                     <td className="p-4 border-y-2 border-r-2 border-black rounded-r-xl text-center">
-                                        <button
-                                            type="button"
-                                            className="mx-auto w-10 h-10 neo-button-secondary flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors text-black"
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="mx-auto h-10 w-10 p-0 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
                                             onClick={() => handleDelete(item.id)}
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        </button>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                    <button
-                        type="button"
-                        className="mt-4 flex items-center gap-2 font-black text-sm uppercase hover:underline text-gray-900 bg-transparent border-0"
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-4 flex items-center gap-2 font-black text-sm uppercase hover:underline text-gray-900 shadow-none border-0"
                         onClick={handleAddRow}
+                        icon={<span className="w-8 h-8 flex items-center justify-center bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-full text-black">+</span>}
                     >
-                        <span className="w-8 h-8 flex items-center justify-center neo-button-secondary rounded-full text-black">+</span>
                         Add New Row Manually
-                    </button>
+                    </Button>
                 </main>
                 <footer className="p-6 bg-white border-t-4 border-black flex justify-end gap-4">
-                    <button type="button" className="neo-button-secondary px-8 py-3 text-lg rounded-xl text-black" onClick={onClose}>Cancel</button>
-                    <button type="button" className="neo-button-primary px-12 py-3 text-lg rounded-xl text-black" onClick={() => onSave(items)}>Save Changes</button>
+                    <Button variant="secondary" size="lg" className="rounded-xl px-8" onClick={onClose}>Cancel</Button>
+                    <Button variant="primary" size="lg" className="rounded-xl px-12" onClick={() => onSave(items)}>Save Changes</Button>
                 </footer>
-            </div>
+            </Card>
         </div>
     );
 }

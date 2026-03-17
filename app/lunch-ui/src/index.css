@@ -78,3 +78,22 @@ body {
 .bg-food-pattern {
     background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill-opacity='0.08'%3E%3Cpath d='M30 10l5 5-5 5-5-5 5-5z' fill='%23E11D48'/%3E%3Cpath d='M90 40l8 8-8 8-8-8 8-8z' fill='%2310B981'/%3E%3Ccircle cx='20' cy='80' r='6' fill='%23E11D48'/%3E%3Cpath d='M70 90h12v2H70z' fill='%2310B981'/%3E%3Cpath d='M75 85v12h2V85z' fill='%2310B981'/%3E%3Cpath d='M100 15c2 0 4 2 4 4s-2 4-4 4-4-2-4-4 2-4 4-4z' fill='%23E11D48'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
+
+/* === Custom Neobrutalist Utilities === */
+.bg-brand-primary {
+    background-color: var(--color-primary);
+}
+
+.neo-input {
+    border: 2px solid #000000;
+    box-shadow: var(--shadow-neobrutalism);
+    border-radius: 8px;
+    background-color: #FFFFFF;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.neo-input:focus {
+    box-shadow: var(--shadow-neobrutalism-lg);
+    transform: translate(-2px, -2px);
+}

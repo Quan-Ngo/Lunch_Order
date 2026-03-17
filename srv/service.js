@@ -121,7 +121,26 @@ module.exports = class LunchService extends cds.ApplicationService {
                                     }
                                 },
                                 {
-                                    text: "Hãy phân tích hình ảnh quyển menu này. Trích xuất tất cả các món ăn gồm tên món và giá tiền. Nếu một món có khoảng giá (ví dụ: 15k - 20k) thì chỉ lấy giá cao nhất trong khoảng đó (ví dụ: 20k). Chỉ trả về kết quả ở định dạng một chuỗi JSON chuẩn chứa mảng các object [{name, price}]. Nếu giá tiền có đơn vị VND thì bỏ qua chữ VND. Loại bỏ định danh json và trong response. Trả về đúng 1 mảng JSON. Không giải thích gì thêm."
+                                    text: `
+                                        Hãy phân tích hình ảnh quyển menu này và trích xuất tất cả các món ăn gồm tên món và giá tiền.
+
+                                        Quy tắc xử lý giá tiền:
+                                        - Giá có thể có các định dạng như: 195k, 195 K, 195.000, 195,000, 195000, hoặc 195k - 220k.
+                                        - Nếu giá có chữ "k" hoặc "K" thì hiểu đó là đơn vị nghìn (ví dụ: 195k = 195000).
+                                        - Nếu một món có khoảng giá (ví dụ: 15k - 20k hoặc 15000 - 20000) thì chỉ lấy giá cao nhất trong khoảng đó.
+                                        - Nếu giá có đơn vị VND hoặc VNĐ thì bỏ phần chữ đó.
+                                        - Chuẩn hóa giá tiền thành số nguyên.
+
+                                        Kết quả trả về:
+                                        - Chỉ trả về một JSON hợp lệ là mảng các object theo định dạng:
+                                        [{name, price}]
+
+                                        Quy tắc output:
+                                        - Không thêm giải thích.
+                                        - Không thêm markdown.
+                                        - Không thêm \`\`\`json hoặc \`\`\`.
+                                        - Chỉ trả về đúng một mảng JSON.
+                                    `
                                 }
                             ]
                         }
