@@ -137,7 +137,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                 await sendTypedNotification({
                     recipients: recipients.map(s => s.email),
                     notificationTypeKey: 'MenuConfirmed',
-                    notificationTypeVersion: '1.0',
+                    notificationTypeVersion: '1',
                     priority: 'NEUTRAL',
                     data: {
                         date: formattedDate
@@ -300,7 +300,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                             await sendTypedNotification({
                                 recipients: recipients,
                                 notificationTypeKey: 'FoodRemoved',
-                                notificationTypeVersion: '1.0',
+                                notificationTypeVersion: '1',
                                 priority: 'HIGH',
                                 data: {
                                     foodName: updatedItem.name,
