@@ -41,6 +41,9 @@ modules:
     parameters:
       memory: 512M
       disk-quota: 512M
+      tasks:
+        - name: deploy-notification-types
+          command: npm run deploy:notification-types
     provides:
       - name: srv-api
         properties:
