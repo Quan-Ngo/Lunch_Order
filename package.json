@@ -72,15 +72,20 @@
         "application-logging": true
       },
       "notifications": {
-        "kind": "notifications",
-        "impl": "@cap-js/notifications",
-        "vcap": {
-          "name": "cnma_internallunchorder_alert_notification"
+        "[development]": {
+          "kind": "notify-to-console"
         },
-        "outbound": {
-          "auth": "OAuth2ClientCredentials",
+        "[hybrid]": {
+          "kind": "notify-to-rest",
           "destination": "SAP_Notifications"
-        }
+        },
+        "[production]": {
+          "kind": "notify-to-rest",
+          "destination": "SAP_Notifications"
+        },
+        "prefix": "$app-name",
+        "types": "srv/notification-types.json",
+        "outbox": true
       }
     }
   }

@@ -3,19 +3,9 @@ const axios = require('axios');
 const { sendEmail } = require('./lib/email-service');
 
 module.exports = class LunchService extends cds.ApplicationService {
-    _hasNotificationsBinding() {
-        const vcapServices = process.env.VCAP_SERVICES;
-        return Boolean(vcapServices && vcapServices.includes('alert-notification'));
-    }
-
     async _getNotificationsService() {
         if (this.notifications) return this.notifications;
         if (this._notificationsUnavailable) return null;
-        if (!this._notificationsConnectPromise && !this._hasNotificationsBinding()) {
-            console.warn('[LunchService] Alert Notification binding not detected. Skipping notifications service connection.');
-            this._notificationsUnavailable = true;
-            return null;
-        }
 
         if (!this._notificationsConnectPromise) {
             console.log('[LunchService] Connecting to notifications service on demand...');
