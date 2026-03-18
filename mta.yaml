@@ -39,17 +39,23 @@ modules:
     type: nodejs
     path: gen/srv
     parameters:
-      memory: 256M
+      memory: 512M
       disk-quota: 512M
+      tasks:
+        - name: deploy-notification-types
+          command: npm run deploy:notification-types
     provides:
       - name: srv-api
         properties:
           srv-url: "${default-url}"
+    properties:
+      NODE_ENV: production
     requires:
       - name: cnma_hdi_container
       - name: cnma_internallunchorder_xsuaa
       - name: cnma_internallunchorder_destination
       - name: cnma_internallunchorder_connectivity
+      - name: cnma_internallunchorder_alert_notification
 
   # ------------------------------------------------------------
   # (3) UI MODULE
@@ -205,3 +211,12 @@ resources:
     parameters:
       service: html5-apps-repo
       service-plan: app-runtime
+
+  # ------------------------------------------------------------
+  # (7) ALERT NOTIFICATION SERVICE
+  # ------------------------------------------------------------
+  - name: cnma_internallunchorder_alert_notification
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: alert-notification
+      service-plan: free
