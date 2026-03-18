@@ -170,10 +170,17 @@ module.exports = class LunchService extends cds.ApplicationService {
         });
 
         this.on('confirmMenu', async (req) => {
-            const { date } = req.data;
+            const { date, orderOpens, orderCloses } = req.data;
             if (!date) return req.error(400, 'date is required');
 
             const { DailyMenu, Staff } = this.entities;
+
+            if (orderOpens || orderCloses) {
+                const updateData = {};
+                if (orderOpens) updateData.orderOpens = orderOpens;
+                if (orderCloses) updateData.orderCloses = orderCloses;
+                await UPDATE(DailyMenu).set(updateData).where({ date });
+            }
 
             console.log(`[LunchService] confirmMenu: Skipping mark as complete for ${date}.`);
 

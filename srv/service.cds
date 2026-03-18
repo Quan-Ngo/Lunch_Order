@@ -70,7 +70,7 @@ service LunchService {
     function getBtpUsers() returns String;
 
     function userInfo() returns String;
-    action confirmMenu(date : String) returns String;
+    action confirmMenu(date : String, orderOpens: Timestamp, orderCloses: Timestamp) returns String;
     action confirmOrder(date : String, supplierEmail : String) returns String;
     function getCurrentUser() returns String;
 }

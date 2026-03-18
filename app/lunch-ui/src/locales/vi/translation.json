@@ -127,7 +127,11 @@
         "itemCount_other": "{{count}} món trong thực đơn",
         "emptyMenu": "Chưa có món nào trong thực đơn hôm nay. Bấm 'Chọn Từ Danh Mục' để thêm!",
         "menuCompleted": "Thực đơn đã được gửi đến tất cả nhân viên!",
-        "fromTodaysMenu": "khỏi thực đơn hôm nay"
+        "fromTodaysMenu": "khỏi thực đơn hôm nay",
+        "missingDates": "Vui lòng nhập đầy đủ cả hai ngày.",
+        "invalidDates": "Ngày mở order phải trước ngày đóng order.",
+        "completeMenu": "Xác nhận thực đơn",
+        "completing": "Đang xác nhận..."
     },
     "employees": {
         "title": "Quản Lý Nhân Viên",

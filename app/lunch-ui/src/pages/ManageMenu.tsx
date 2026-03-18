@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/elements/EmptyState';
 import { DateWheel, toISODate } from '@/components/elements/DateWheel';
 import { RemovalModal } from '@/components/fragments/RemovalModal';
 import { SelectFromCatalogModal } from '@/components/fragments/SelectFromCatalogModal';
+import { ConfirmMenuModal } from '@/components/fragments/ConfirmMenuModal';
 import { dailyMenuService, staffCatalogService, type Food } from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
@@ -18,6 +19,7 @@ export default function ManageMenu() {
     const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = useState<string>(toISODate(new Date()));
     const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; image?: string } | null>(null);
     const [pendingAdditions, setPendingAdditions] = useState<Food[]>([]);
 
@@ -102,9 +104,11 @@ export default function ManageMenu() {
     });
 
     const completeMenuMutation = useMutation({
-        mutationFn: () => dailyMenuService.markCompleteByDate(selectedDate),
+        mutationFn: ({ orderOpens, orderCloses }: { orderOpens: string; orderCloses: string }) => 
+            dailyMenuService.markCompleteByDate(selectedDate, orderOpens, orderCloses),
         onSuccess: () => {
             toast.success(t('manageMenu.menuCompleted'));
+            setIsConfirmModalOpen(false);
             queryClient.invalidateQueries({ queryKey: ['dailyMenu', selectedDate] });
             queryClient.invalidateQueries({ queryKey: ['isComplete', selectedDate] });
         },
@@ -131,11 +135,20 @@ export default function ManageMenu() {
 
     const handleCompleteMenu = async () => {
         if (isLocked || allMenuEntries.length === 0) return;
-        // Persist new selections to the DB before notifying staff
-        if (pendingAdditions.length > 0) {
-            await addFoodsMutation.mutateAsync(pendingAdditions);
+        setIsConfirmModalOpen(true);
+    };
+
+    const onConfirmCompleteMenu = async (orderOpens: string, orderCloses: string) => {
+        try {
+            // Persist new selections to the DB AFTER user confirms in the modal
+            if (pendingAdditions.length > 0) {
+                await addFoodsMutation.mutateAsync(pendingAdditions);
+            }
+            // Then call the confirm action with the dates provided
+            await completeMenuMutation.mutateAsync({ orderOpens, orderCloses });
+        } catch (err) {
+            console.error('Failed to complete menu confirmation flow:', err);
         }
-        await completeMenuMutation.mutateAsync();
     };
 
     const existingCatalogIds = allMenuEntries.map((c) => c.ID);
@@ -223,11 +236,17 @@ export default function ManageMenu() {
                 contextText={t('manageMenu.fromTodaysMenu')}
                 variant="food"
             />
+            <ConfirmMenuModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={onConfirmCompleteMenu}
+                isPending={completeMenuMutation.isPending || addFoodsMutation.isPending}
+            />
             <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
                 <button
                     id="btn-complete-menu"
                     onClick={handleCompleteMenu}
-                    disabled={isLocked || completeMenuMutation.isPending}
+                    disabled={isLocked || completeMenuMutation.isPending || allMenuEntries.length === 0}
                     className={`group flex items-center gap-4 px-10 py-5 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all transform origin-bottom-right scale-[0.75] sm:scale-100 font-bold text-2xl border-4 border-black uppercase tracking-tighter 
                         ${(isLocked || completeMenuMutation.isPending)
                             ? 'bg-primary text-black opacity-60 cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'

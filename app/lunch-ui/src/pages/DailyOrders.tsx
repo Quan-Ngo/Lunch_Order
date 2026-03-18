@@ -10,7 +10,8 @@ import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
 import { formatPriceLabel } from '@/config/currency';
 import { useFormatters } from '@/hooks/useFormatters';
-import { statisticsService, foodService, summaryService, dailyMenuService, billService } from '@/services/api';
+import { statisticsService, foodService, summaryService, dailyMenuService, billService, staffCatalogService } from '@/services/api';
+import { StaffListModal } from '@/components/fragments/StaffListModal';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -35,6 +36,7 @@ export default function DailyOrders() {
     const [deleteBillTarget, setDeleteBillTarget] = useState<string | null>(null);
     const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState<boolean>(false);
     const [supplierEmail, setSupplierEmail] = useState<string>('');
+    const [selectedFoodDetails, setSelectedFoodDetails] = useState<{ id: string; name: string } | null>(null);
 
     const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     const isEmailValid = isValidEmail(supplierEmail);
@@ -69,10 +71,15 @@ export default function DailyOrders() {
         queryFn: () => billService.getByDate(formattedDate)
     });
 
-    const { data: isLocked = false } = useQuery({
-        queryKey: ['isComplete', formattedDate],
-        queryFn: () => dailyMenuService.isDateComplete(formattedDate),
+    const { data: staffCatalogs = [] } = useQuery({
+        queryKey: ['staffCatalogs', formattedDate],
+        queryFn: () => staffCatalogService.getForDate(formattedDate)
     });
+
+    const currentMenu = dailyMenus[0];
+    const currentStatus = currentMenu?.status || 'open';
+    const isLocked = currentStatus === 'complete';
+    const isClosed = currentStatus === 'close';
 
     const uploadBillMutation = useMutation({
         mutationFn: (file: File) => billService.upload(formattedDate, file),
@@ -98,10 +105,26 @@ export default function DailyOrders() {
         mutationFn: () => dailyMenuService.completeOrder(formattedDate),
         onSuccess: () => {
             setIsCompleteModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
             queryClient.invalidateQueries({ queryKey: ['isComplete', formattedDate] });
         },
         onError: (error) => {
             console.error('Failed to mark complete:', error);
+        }
+    });
+
+    const closeOrdersMutation = useMutation({
+        mutationFn: () => {
+            if (!currentMenu) throw new Error('No menu found');
+            return dailyMenuService.updateStatus(currentMenu.ID, 'close');
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
+            queryClient.invalidateQueries({ queryKey: ['isComplete', formattedDate] });
+            toast.success('Orders closed successfully.');
+        },
+        onError: (error) => {
+            console.error('Failed to close orders:', error);
         }
     });
 
@@ -358,6 +381,7 @@ export default function DailyOrders() {
                         <Table
                             title={t('dailyOrders.orderDetails')}
                             data={orders}
+                            onRowClick={(order) => setSelectedFoodDetails({ id: order.id, name: order.name })}
                             keyExtractor={(row) => row.id}
                             columns={[
                                 {
@@ -582,21 +606,42 @@ export default function DailyOrders() {
                                 <span className="material-icons text-sm">lock</span>
                                 {t('dailyOrders.isLocked')}
                             </div>
-                        ) : bills.length === 0 ? (
-                            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm font-medium">
-                                <span className="material-icons-outlined text-base">receipt_long</span>
-                                <span>{t('dailyOrders.uploadBillFirst', 'Upload a bill before marking complete')}</span>
+                        ) : isClosed ? (
+                            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-orange-50 border-2 border-orange-300 text-orange-700 font-semibold text-sm">
+                                <span className="material-icons text-sm">event_busy</span>
+                                {t('dailyOrders.isClosed', 'Orders Closed')}
                             </div>
                         ) : (
-                            <Button
-                                variant="primary"
-                                fullWidth
-                                disabled={markCompleteMutation.isPending}
-                                icon={<span className="material-icons-outlined">check_circle</span>}
-                                onClick={() => setIsCompleteModalOpen(true)}
-                            >
-                                {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
-                            </Button>
+                            <>
+                                {currentStatus === 'open' && (
+                                    <Button
+                                        variant="secondary"
+                                        fullWidth
+                                        disabled={closeOrdersMutation.isPending}
+                                        icon={<span className="material-icons-outlined">lock_clock</span>}
+                                        onClick={() => closeOrdersMutation.mutate()}
+                                    >
+                                        {closeOrdersMutation.isPending ? 'Closing...' : 'Close Orders'}
+                                    </Button>
+                                )}
+                                
+                                {bills.length === 0 ? (
+                                    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm font-medium">
+                                        <span className="material-icons-outlined text-base">receipt_long</span>
+                                        <span>{t('dailyOrders.uploadBillFirst', 'Upload a bill before marking complete')}</span>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        variant="primary"
+                                        fullWidth
+                                        disabled={markCompleteMutation.isPending}
+                                        icon={<span className="material-icons-outlined">check_circle</span>}
+                                        onClick={() => setIsCompleteModalOpen(true)}
+                                    >
+                                        {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
+                                    </Button>
+                                )}
+                            </>
                         )}
                     </div>
 
@@ -859,6 +904,13 @@ export default function DailyOrders() {
                     </div>
                 </div>
             )}
+
+            <StaffListModal
+                isOpen={!!selectedFoodDetails}
+                onClose={() => setSelectedFoodDetails(null)}
+                catalogName={selectedFoodDetails?.name || ''}
+                staffOrders={staffCatalogs.filter((sc: any) => sc.Catalog_ID === selectedFoodDetails?.id)}
+            />
         </RootLayout>
     );
 }

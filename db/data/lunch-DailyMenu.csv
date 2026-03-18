@@ -1,4 +1,4 @@
-ID,date,isComplete,note
-f1a2b3c4-d5e6-4a7b-8c9d-1e2f3a4b5c6d,2023-10-24,false,Menu for Tuesday
-e2b3c4d5-f6a7-4b8c-9012-1f2a3b4c5d6e,2023-10-25,false,Menu for Wednesday
-d3c4d5e6-f7a8-4c9d-0123-1a2b3c4d5e6f,2023-10-26,false,Menu for Thursday
+ID,date,status,note
+f1a2b3c4-d5e6-4a7b-8c9d-1e2f3a4b5c6d,2023-10-24,open,Menu for Tuesday
+e2b3c4d5-f6a7-4b8c-9012-1f2a3b4c5d6e,2023-10-25,open,Menu for Wednesday
+d3c4d5e6-f7a8-4c9d-0123-1a2b3c4d5e6f,2023-10-26,open,Menu for Thursday
