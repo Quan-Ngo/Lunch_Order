@@ -284,8 +284,11 @@ module.exports = class LunchService extends cds.ApplicationService {
             console.log('🔔 [LunchService] Catalog AFTER UPDATE hook triggered');
             console.log('🔔 [LunchService] req.data:', JSON.stringify(req.data));
             
-            // Re-fetch data if data.name is missing, though usually it's returned
-            const updatedItem = data;
+            let updatedItem = data;
+            if ((!updatedItem?.name) && req.data?.ID) {
+                updatedItem = await SELECT.one.from(req.target).where({ ID: req.data.ID });
+                console.log(`🔔 [LunchService] Re-fetched Catalog item for notification: ${JSON.stringify(updatedItem)}`);
+            }
 
             // Using strict check to see if dailyMenu_ID is explicitly being set to null
             if (req.data && req.data.hasOwnProperty('dailyMenu_ID') && req.data.dailyMenu_ID === null) {
