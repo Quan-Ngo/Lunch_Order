@@ -64,6 +64,8 @@ service LunchService {
     @restrict: [{ grant: '*', to: 'CMNA_READ_ALL_USER' }]
     action grantAdminRole(userEmail : String) returns String;
 
+    action extractMenuFromImage(image : LargeString, mimeType : String) returns String;
+
     @restrict: [{ grant: '*', to: 'CMNA_READ_ALL_USER' }]
     function getBtpUsers() returns String;
 

@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/elements/Button';
 import { CURRENCY_OPTIONS } from '@/config/currency';
+import { foodService } from '@/services/api';
+import { toast } from 'react-toastify';
+import { useQueryClient } from '@tanstack/react-query';
+import { ExtractedMenuModal, type ExtractedItem } from './ExtractedMenuModal';
 
 export interface FoodFormData {
     name: string;
@@ -28,6 +32,11 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [errors, setErrors] = useState<{ name: boolean; price: boolean }>({ name: false, price: false });
+    const [isExtracting, setIsExtracting] = useState<boolean>(false);
+    const [extractedItems, setExtractedItems] = useState<ExtractedItem[]>([]);
+    const [isExtractedModalOpen, setIsExtractedModalOpen] = useState(false);
+    const queryClient = useQueryClient();
+    const invalidateFoods = () => queryClient.invalidateQueries({ queryKey: ['foods'] });
 
     // Populate data when editing
     React.useEffect(() => {
@@ -52,12 +61,81 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
         }
     }, [isOpen, mode, initialData]);
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     // Reset state on close could be done here if we used useEffect, but for simplicity we rely on isOpen prop
     // to mount/unmount or just return null.
     // However, if we return null, state is lost if we unmount.
     // If the parent keeps it mounted but hidden (not the case here), state persists.
     // Given the structure, we return null to not render.
     if (!isOpen) return null;
+
+    const handleMenuUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleMenuFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIsExtracting(true);
+            const loadingToastId = toast.loading(t('foodModal.extracting', 'Extracting menu items...'));
+            try {
+                const items = await foodService.extractMenuFromImage(file);
+                if (items && items.length > 0) {
+                    toast.dismiss(loadingToastId);
+                    setExtractedItems(items.map((it, idx) => ({
+                        id: `item-${Date.now()}-${idx}`,
+                        name: it.name,
+                        price: it.price,
+                        description: it.description || '',
+                        imageFile: null,
+                        imagePreview: null
+                    })));
+                    setIsExtractedModalOpen(true);
+                } else {
+                    toast.update(loadingToastId, { render: t('foodModal.extractEmpty', 'No items extracted'), type: 'info', isLoading: false, autoClose: 3000 });
+                }
+            } catch (err: any) {
+                toast.update(loadingToastId, { render: t('foodModal.extractFailed', 'Failed to extract menu'), type: 'error', isLoading: false, autoClose: 3000 });
+            } finally {
+                setIsExtracting(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleSaveExtracted = async (itemsToSave: ExtractedItem[]) => {
+        const saveToastId = toast.loading(t('foodModal.savingExtracted', 'Saving extracted items...'));
+        try {
+            const insertPromises = itemsToSave.map(async (item) => {
+                if (!item.name.trim()) return;
+                try {
+                    const parsedPrice = parseFloat(item.price as any) || 0;
+                    const newId = await foodService.create({
+                        name: item.name,
+                        price: parsedPrice,
+                        currency: 'VND',
+                        description: item.description,
+                    });
+                    if (item.imageFile && newId) {
+                        await foodService.uploadImage(newId, item.imageFile);
+                    }
+                } catch (e) {
+                     console.error("Failed to insert item:", item, e);
+                     throw e;
+                }
+            });
+            
+            await Promise.all(insertPromises);
+            
+            invalidateFoods();
+            toast.update(saveToastId, { render: t('foodModal.extractSuccess', `Saved ${itemsToSave.length} items successfully!`), type: 'success', isLoading: false, autoClose: 3000 });
+            setIsExtractedModalOpen(false);
+            onClose(); 
+        } catch (err) {
+            toast.update(saveToastId, { render: t('foodModal.saveExtractedFailed', 'Some items failed to save'), type: 'error', isLoading: false, autoClose: 3000 });
+        }
+    };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file: File | undefined = e.target.files?.[0];
@@ -276,9 +354,35 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                         >
                             {t('foodModal.cancel')}
                         </Button>
+                        <button
+                            type="button"
+                            disabled={isExtracting}
+                            className={`sm:mr-auto w-full sm:w-auto inline-flex items-center justify-center rounded-md border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] px-4 py-2 bg-white text-sm font-bold text-black hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-transform whitespace-nowrap ${isExtracting ? 'opacity-50 cursor-not-allowed' : 'active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'}`}
+                            onClick={handleMenuUploadClick}
+                        >
+                            <span className="material-icons-outlined mr-2 text-lg">
+                                {isExtracting ? 'hourglass_empty' : 'image'}
+                            </span>
+                            {isExtracting ? t('foodModal.extractingBtn', 'Extracting...') : t('foodModal.uploadMenu', 'Upload Menu')}
+                        </button>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            ref={fileInputRef}
+                            onChange={handleMenuFileChange}
+                        />
                     </div>
                 </div>
             </div>
+            {isExtractedModalOpen && (
+                <ExtractedMenuModal 
+                    isOpen={isExtractedModalOpen} 
+                    onClose={() => setIsExtractedModalOpen(false)} 
+                    items={extractedItems} 
+                    onSave={handleSaveExtracted} 
+                />
+            )}
         </div>
     );
 }
