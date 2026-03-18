@@ -1,6 +1,7 @@
 const cds = require('@sap/cds');
 const axios = require('axios');
 const { sendEmail } = require('./lib/email-service');
+require('dotenv').config();
 
 module.exports = class LunchService extends cds.ApplicationService {
     async init() {
@@ -92,7 +93,81 @@ module.exports = class LunchService extends cds.ApplicationService {
             }
         });
 
+        this.on('extractMenuFromImage', async (req) => {
+            const { image, mimeType } = req.data;
+            if (!image) return req.error(400, "Image data is required");
 
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                return req.error(500, "Sever is missing GEMINI_API_KEY environment variable. Cannot process image.");
+            }
+
+            try {
+                const { GoogleGenAI } = require('@google/genai');
+                const ai = new GoogleGenAI({ apiKey: apiKey });
+
+                const base64Data = image.includes(',') ? image.split(',')[1] : image;
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: [
+                        {
+                            role: 'user',
+                            parts: [
+                                {
+                                    inlineData: {
+                                        data: base64Data,
+                                        mimeType: mimeType || 'image/jpeg'
+                                    }
+                                },
+                                {
+                                    text: `
+                                        Hãy phân tích hình ảnh quyển menu này và trích xuất tất cả các món ăn gồm tên món và giá tiền.
+
+                                        Quy tắc xử lý giá tiền:
+                                        - Giá có thể có các định dạng như: 195k, 195 K, 195.000, 195,000, 195000, hoặc 195k - 220k.
+                                        - Nếu giá có chữ "k" hoặc "K" thì hiểu đó là đơn vị nghìn (ví dụ: 195k = 195000).
+                                        - Nếu một món có khoảng giá (ví dụ: 15k - 20k hoặc 15000 - 20000) thì chỉ lấy giá cao nhất trong khoảng đó.
+                                        - Nếu giá có đơn vị VND hoặc VNĐ thì bỏ phần chữ đó.
+                                        - Chuẩn hóa giá tiền thành số nguyên.
+
+                                        Kết quả trả về:
+                                        - Chỉ trả về một JSON hợp lệ là mảng các object theo định dạng:
+                                        [{name, price}]
+
+                                        Quy tắc output:
+                                        - Không thêm giải thích.
+                                        - Không thêm markdown.
+                                        - Không thêm \`\`\`json hoặc \`\`\`.
+                                        - Chỉ trả về đúng một mảng JSON.
+                                    `
+                                }
+                            ]
+                        }
+                    ],
+                    config: {
+                        temperature: 0.1
+                    }
+                });
+
+                let text = response.text || "[]";
+                // clean markdown if any
+                text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+
+                // validate JSON parsability
+                try {
+                    JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse Gemini output as JSON:", text);
+                    return req.error(500, "Gemini output was not valid JSON");
+                }
+
+                return text;
+            } catch (err) {
+                console.error("Gemini Extraction Error:", err);
+                return req.error(500, "Failed to extract menu using Gemini API: " + err.message);
+            }
+        });
 
         this.on('confirmMenu', async (req) => {
             const { date } = req.data;
