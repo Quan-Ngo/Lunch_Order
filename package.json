@@ -4,8 +4,9 @@
   "description": "A simple CAP project.",
   "dependencies": {
     "@cap-js/hana": "^2",
-    "@cap-js/notifications": "*",
     "@sap/cds": "^9",
+    "@sap-cloud-sdk/connectivity": "^3.13.0",
+    "@sap-cloud-sdk/http-client": "^3.13.0",
     "@sap/xssec": "^4",
     "axios": "^1.13.6",
     "express": "^4",
@@ -72,21 +73,9 @@
         "html5-repo": true,
         "application-logging": true
       },
-      "notifications": {
-        "[development]": {
-          "kind": "notify-to-console"
-        },
-        "[hybrid]": {
-          "kind": "notify-to-rest",
-          "destination": "SAP_Notifications"
-        },
-        "[production]": {
-          "kind": "notify-to-rest",
-          "destination": "SAP_Notifications"
-        },
-        "prefix": "$app-name",
-        "types": "srv/notification-types.json",
-        "outbox": true
+      "workzoneNotifications": {
+        "destination": "Alert_Notification_Connectivity_ANS",
+        "types": "srv/notification-types.json"
       }
     }
   }

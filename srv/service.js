@@ -1,38 +1,11 @@
 const cds = require('@sap/cds');
 const axios = require('axios');
 const { sendEmail } = require('./lib/email-service');
+const { sendTypedNotification } = require('./lib/workzone-notification-service');
 
 module.exports = class LunchService extends cds.ApplicationService {
-    async _getNotificationsService() {
-        if (this.notifications) return this.notifications;
-        if (this._notificationsUnavailable) return null;
-
-        if (!this._notificationsConnectPromise) {
-            console.log('[LunchService] Connecting to notifications service on demand...');
-            this._notificationsConnectPromise = cds.connect.to('notifications')
-                .then(service => {
-                    this.notifications = service;
-                    console.log('[LunchService] Connected to notifications service successfully.');
-                    return service;
-                })
-                .catch(error => {
-                    this._notificationsUnavailable = true;
-                    console.error('[LunchService] Error connecting to notifications:', error.message || error);
-                    return null;
-                })
-                .finally(() => {
-                    this._notificationsConnectPromise = null;
-                });
-        }
-
-        return this._notificationsConnectPromise;
-    }
-
     async init() {
         const { Staff } = this.entities;
-        this.notifications = null;
-        this._notificationsUnavailable = false;
-        this._notificationsConnectPromise = null;
 
         this.on('userInfo', async (req) => {
             if (req.user.is('anonymous')) {
@@ -159,22 +132,20 @@ module.exports = class LunchService extends cds.ApplicationService {
             });
 
             // 5. Send Workzone Built-in Notification
-            const notifications = await this._getNotificationsService();
-            if (notifications) {
-                console.log(`🔔 [LunchService] Attempting to send default Workzone Notification for ${formattedDate}`);
-                try {
-                    await notifications.notify({
-                        recipients: recipients.map(s => s.email),
-                        priority: 'NEUTRAL',
-                        title: `Lunch menu for ${formattedDate} is ready`,
-                        description: 'Please make your selection.'
-                    });
-                    console.log(`🔔 [LunchService] Default Workzone Notification sent successfully.`);
-                } catch(err) {
-                    console.error('🔔 [LunchService] ERROR sending default Workzone Notification:', err.message || err);
-                }
-            } else {
-                console.warn('🔔 [LunchService] Notifications service NOT connected at send time.');
+            console.log(`🔔 [LunchService] Attempting to send Work Zone typed notification for ${formattedDate}`);
+            try {
+                await sendTypedNotification({
+                    recipients: recipients.map(s => s.email),
+                    notificationTypeKey: 'MenuConfirmed',
+                    notificationTypeVersion: '1.0',
+                    priority: 'NEUTRAL',
+                    data: {
+                        date: formattedDate
+                    }
+                });
+                console.log(`🔔 [LunchService] Work Zone typed notification sent successfully.`);
+            } catch(err) {
+                console.error('🔔 [LunchService] ERROR sending Work Zone typed notification:', err.message || err);
             }
 
             return `Menu confirmed for ${formattedDate}. Notifications sent to ${recipients.length} staff member(s).`;
@@ -319,32 +290,30 @@ module.exports = class LunchService extends cds.ApplicationService {
             // Using strict check to see if dailyMenu_ID is explicitly being set to null
             if (req.data && req.data.hasOwnProperty('dailyMenu_ID') && req.data.dailyMenu_ID === null) {
                 console.log(`🔔 [LunchService] Detection confirmed: Food item ${updatedItem?.name || updatedItem?.ID} removed from menu.`);
-                const notifications = updatedItem && updatedItem.name
-                    ? await this._getNotificationsService()
-                    : null;
-
-                if (notifications && updatedItem && updatedItem.name) {
+                if (updatedItem && updatedItem.name) {
                     try {
                         const staffList = await SELECT.from(Staff).where({ status: true, notification: true });
                         const recipients = staffList.filter(s => s.email && s.email.trim() !== '').map(s => s.email);
 
                         if (recipients.length > 0) {
-                            console.log(`🔔 [LunchService] Sending default FoodRemoved notification to ${recipients.length} users.`);
-                            await notifications.notify({
+                            console.log(`🔔 [LunchService] Sending typed FoodRemoved notification to ${recipients.length} users.`);
+                            await sendTypedNotification({
                                 recipients: recipients,
+                                notificationTypeKey: 'FoodRemoved',
+                                notificationTypeVersion: '1.0',
                                 priority: 'HIGH',
-                                title: `${updatedItem.name} removed from today's menu`,
-                                description: 'Please review the daily menu and update your selection if needed.'
+                                data: {
+                                    foodName: updatedItem.name,
+                                    date: 'today'
+                                }
                             });
-                            console.log(`🔔 [LunchService] Default FoodRemoved Notification sent.`);
+                            console.log(`🔔 [LunchService] Typed FoodRemoved Notification sent.`);
                         } else {
                             console.log('🔔 [LunchService] No eligible recipients for FoodRemoved notification.');
                         }
                     } catch(err) {
                         console.error('🔔 [LunchService] ERROR sending FoodRemoved notification:', err.message || err);
                     }
-                } else if (!this.notifications) {
-                    console.warn('🔔 [LunchService] Notifications service NOT connected at the time of food removal.');
                 }
             }
         });

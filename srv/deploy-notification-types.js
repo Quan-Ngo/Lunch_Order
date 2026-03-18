@@ -1,18 +1,7 @@
-const cds = require('@sap/cds');
+const { publishNotificationTypes } = require('./lib/workzone-notification-service');
 
 async function main() {
-    const profileInfo = cds.env.profiles?.length ? cds.env.profiles.join(', ') : 'none';
-    const typesPath = cds.env.requires?.notifications?.types;
-
-    console.log(`[deploy:notification-types] cds profiles: ${profileInfo}`);
-    console.log(`[deploy:notification-types] notification types path: ${typesPath || 'not configured'}`);
-
-    if (!typesPath) {
-        throw new Error('cds.requires.notifications.types is not configured.');
-    }
-
-    const { deployNotificationTypes } = require('@cap-js/notifications/lib/content-deployment');
-    await deployNotificationTypes();
+    await publishNotificationTypes();
     console.log('[deploy:notification-types] Notification types deployment finished.');
 }
 
