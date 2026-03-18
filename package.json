@@ -24,7 +24,7 @@
     "watch-without-livereload": "cds watch --no-live-reload",
     "start-ui": "cd app/lunch-ui && npm run dev",
     "start-local": "concurrently \"npm run watch-without-livereload\" \"cd app/lunch-ui && npm run dev\"",
-    "deploy:notification-types": "node scripts/deploy-notification-types.js"
+    "deploy:notification-types": "node srv/deploy-notification-types.js"
   },
   "private": true,
   "cds": {
