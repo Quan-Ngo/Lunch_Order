@@ -3,21 +3,46 @@ const axios = require('axios');
 const { sendEmail } = require('./lib/email-service');
 
 module.exports = class LunchService extends cds.ApplicationService {
+    _hasNotificationsBinding() {
+        const vcapServices = process.env.VCAP_SERVICES;
+        return Boolean(vcapServices && vcapServices.includes('alert-notification'));
+    }
+
+    async _getNotificationsService() {
+        if (this.notifications) return this.notifications;
+        if (this._notificationsUnavailable) return null;
+        if (!this._notificationsConnectPromise && !this._hasNotificationsBinding()) {
+            console.warn('[LunchService] Alert Notification binding not detected. Skipping notifications service connection.');
+            this._notificationsUnavailable = true;
+            return null;
+        }
+
+        if (!this._notificationsConnectPromise) {
+            console.log('[LunchService] Connecting to notifications service on demand...');
+            this._notificationsConnectPromise = cds.connect.to('notifications')
+                .then(service => {
+                    this.notifications = service;
+                    console.log('[LunchService] Connected to notifications service successfully.');
+                    return service;
+                })
+                .catch(error => {
+                    this._notificationsUnavailable = true;
+                    console.error('[LunchService] Error connecting to notifications:', error.message || error);
+                    return null;
+                })
+                .finally(() => {
+                    this._notificationsConnectPromise = null;
+                });
+        }
+
+        return this._notificationsConnectPromise;
+    }
+
     async init() {
         const { Staff } = this.entities;
-        
-        // Connect to Notification Service
-        console.log('🔔 [LunchService] Attempting to connect to notifications service...');
-        try {
-            this.notifications = await cds.connect.to('notifications');
-            if (this.notifications) {
-                console.log('🔔 [LunchService] Connected to notifications service successfully.');
-            } else {
-                console.warn('🔔 [LunchService] cds.connect.to("notifications") returned falsy result.');
-            }
-        } catch (e) {
-            console.error('🔔 [LunchService] Error connecting to notifications:', e.message || e);
-        }
+        this.notifications = null;
+        this._notificationsUnavailable = false;
+        this._notificationsConnectPromise = null;
 
         this.on('userInfo', async (req) => {
             if (req.user.is('anonymous')) {
@@ -144,10 +169,11 @@ module.exports = class LunchService extends cds.ApplicationService {
             });
 
             // 5. Send Workzone Built-in Notification
-            if (this.notifications) {
+            const notifications = await this._getNotificationsService();
+            if (notifications) {
                 console.log(`🔔 [LunchService] Attempting to send Workzone Notification: MenuConfirmed for ${formattedDate}`);
                 try {
-                    await this.notifications.notify({
+                    await notifications.notify({
                         recipients: recipients.map(s => s.email),
                         type: 'MenuConfirmed',
                         data: {
@@ -304,14 +330,18 @@ module.exports = class LunchService extends cds.ApplicationService {
             // Using strict check to see if dailyMenu_ID is explicitly being set to null
             if (req.data && req.data.hasOwnProperty('dailyMenu_ID') && req.data.dailyMenu_ID === null) {
                 console.log(`🔔 [LunchService] Detection confirmed: Food item ${updatedItem?.name || updatedItem?.ID} removed from menu.`);
-                if (this.notifications && updatedItem && updatedItem.name) {
+                const notifications = updatedItem && updatedItem.name
+                    ? await this._getNotificationsService()
+                    : null;
+
+                if (notifications && updatedItem && updatedItem.name) {
                     try {
                         const staffList = await SELECT.from(Staff).where({ status: true, notification: true });
                         const recipients = staffList.filter(s => s.email && s.email.trim() !== '').map(s => s.email);
 
                         if (recipients.length > 0) {
                             console.log(`🔔 [LunchService] Sending FoodRemoved notification to ${recipients.length} users.`);
-                            await this.notifications.notify({
+                            await notifications.notify({
                                 recipients: recipients,
                                 type: 'FoodRemoved',
                                 data: {
