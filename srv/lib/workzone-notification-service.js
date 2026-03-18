@@ -3,8 +3,8 @@ const { existsSync, readFileSync } = require('fs');
 const { getDestination, buildHeadersForDestination } = require('@sap-cloud-sdk/connectivity');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
 
-const NOTIFICATION_API_BASE_PATH = '/Notification.svc';
-const NOTIFICATION_TYPE_API_BASE_PATH = '/NotificationType.svc';
+const NOTIFICATION_API_BASE_PATH = '/v2/Notification.svc';
+const NOTIFICATION_TYPE_API_BASE_PATH = '/v2/NotificationType.svc';
 const ALLOWED_PRIORITIES = new Set(['LOW', 'NEUTRAL', 'MEDIUM', 'HIGH']);
 const DESTINATION_NAME = 'Alert_Notification_Connectivity_ANS';
 
