@@ -35,13 +35,37 @@ async function executeNotificationRequest(destination, requestConfig) {
     console.log(`🔔 [WorkZoneNotifications] Preparing authenticated request: ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`);
     const headers = await buildHeadersForDestination(destination, { url: requestConfig.url });
     console.log(`🔔 [WorkZoneNotifications] Auth headers built for ${requestConfig.url}.`);
-    return executeHttpRequest(destination, {
+    const finalRequest = {
         ...requestConfig,
         headers: {
             ...headers,
             ...(requestConfig.headers || {})
         }
-    });
+    };
+
+    try {
+        return await executeHttpRequest(destination, finalRequest);
+    } catch (error) {
+        const response = error.response || {};
+        const responseHeaders = response.headers || {};
+        const authHeader = finalRequest.headers?.authorization || finalRequest.headers?.Authorization || '';
+        const bearerPrefix = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+            ? authHeader.slice(0, 24) + '...'
+            : '[missing]';
+
+        console.error(`🔔 [WorkZoneNotifications] Request failed: ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`);
+        console.error(`🔔 [WorkZoneNotifications] Response status: ${response.status || '[none]'}`);
+        console.error(`🔔 [WorkZoneNotifications] Response body: ${JSON.stringify(response.data || error.message || null)}`);
+        console.error(`🔔 [WorkZoneNotifications] www-authenticate: ${responseHeaders['www-authenticate'] || responseHeaders['WWW-Authenticate'] || '[missing]'}`);
+        console.error(`🔔 [WorkZoneNotifications] Response headers: ${JSON.stringify(responseHeaders)}`);
+        console.error(`🔔 [WorkZoneNotifications] Destination name: ${DESTINATION_NAME}`);
+        console.error(`🔔 [WorkZoneNotifications] Destination URL: ${destination.url || '[missing]'}`);
+        console.error(`🔔 [WorkZoneNotifications] Request authorization prefix: ${bearerPrefix}`);
+        console.error(`🔔 [WorkZoneNotifications] Request header keys: ${JSON.stringify(Object.keys(finalRequest.headers || {}))}`);
+        console.error(`🔔 [WorkZoneNotifications] Request payload: ${JSON.stringify(requestConfig.data || null)}`);
+
+        throw error;
+    }
 }
 
 function loadNotificationTypes() {

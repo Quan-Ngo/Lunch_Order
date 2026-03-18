@@ -1,26 +1,26 @@
 [
   {
     "NotificationTypeKey": "MenuConfirmed",
-    "NotificationTypeVersion": "1.0",
+    "NotificationTypeVersion": "1",
     "Templates": [
       {
         "Language": "en",
         "TemplatePublic": "Lunch menu for {date} is ready",
         "TemplateSensitive": "The lunch menu for {date} has been confirmed. Please make your selection.",
-        "TemplateGroup": "LunchOrder",
+        "TemplateGrouped": "Lunch menu ready",
         "Subtitle": "Lunch Menu Ready"
       }
     ]
   },
   {
     "NotificationTypeKey": "FoodRemoved",
-    "NotificationTypeVersion": "1.0",
+    "NotificationTypeVersion": "1",
     "Templates": [
       {
         "Language": "en",
         "TemplatePublic": "{foodName} removed from today's menu",
         "TemplateSensitive": "The item {foodName} was removed from the daily menu for {date}. Please select something else if you ordered it.",
-        "TemplateGroup": "LunchOrder",
+        "TemplateGrouped": "Menu change alert",
         "Subtitle": "Menu Change Alert"
       }
     ]
