@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'odata/v4/lunch',
+    headers: {
+        'x-requested-with': 'XMLHttpRequest'
+    }
 });
 
 // ─────────────────────────────────────────────
@@ -11,7 +14,7 @@ let csrfToken: string | null = null;
 
 const fetchCsrfToken = async (): Promise<string> => {
     try {
-        const response = await api.head('/', {
+        const response = await api.get('', {
             headers: {
                 'x-csrf-token': 'fetch',
                 'x-requested-with': 'XMLHttpRequest'
@@ -47,7 +50,7 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response?.status === 401) {
-            if (!import.meta.env.DEV) {
+            if (!import.meta.env.DEV && !window.location.hostname.includes('localhost')) {
                 // Reloading the page forces the BTP AppRouter to redirect the user to the XSUAA login page
                 window.location.reload();
                 return Promise.reject(error);

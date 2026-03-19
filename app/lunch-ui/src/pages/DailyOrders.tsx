@@ -94,10 +94,13 @@ export default function DailyOrders() {
     const deleteBillMutation = useMutation({
         mutationFn: (id: string) => billService.delete(id),
         onSuccess: () => {
+            toast.success(t('dailyMenu.orderCancelled'));
             queryClient.invalidateQueries({ queryKey: ['bills', formattedDate] });
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
         },
         onError: (error) => {
             console.error('Failed to delete bill:', error);
+            toast.error(t('dailyMenu.cancelFailed'));
         }
     });
 
@@ -570,6 +573,7 @@ export default function DailyOrders() {
                                 }}
                             />
                             <button
+                                type="button"
                                 onClick={() => billInputRef.current?.click()}
                                 disabled={uploadBillMutation.isPending || isLocked}
                                 className={`w-full flex items-center justify-center gap-2 text-sm font-bold border-2 border-dashed rounded-lg py-2.5 transition-colors ${isLocked
@@ -617,18 +621,26 @@ export default function DailyOrders() {
 
                                 {currentStatus === 'open' && (
                                     <Button
+                                        type="button"
                                         variant="secondary"
                                         fullWidth
                                         disabled={closeOrdersMutation.isPending}
                                         icon={<span className="material-icons-outlined">lock_clock</span>}
-                                        onClick={() => closeOrdersMutation.mutate()}
+                                        onClick={() => {
+                                            if (!currentMenu) {
+                                                toast.error(t('dailyOrders.noMenuError', 'This order does not have a menu, please add at least one dish.'));
+                                                return;
+                                            }
+                                            closeOrdersMutation.mutate();
+                                        }}
                                     >
                                         {closeOrdersMutation.isPending ? 'Closing...' : 'Close Orders'}
                                     </Button>
                                 )}
 
-                                {bills.length > 0 && (
+                                {bills.length > 0 ? (
                                     <Button
+                                        type="button"
                                         variant="primary"
                                         fullWidth
                                         disabled={markCompleteMutation.isPending}
@@ -637,6 +649,11 @@ export default function DailyOrders() {
                                     >
                                         {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
                                     </Button>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 border-2 border-blue-300 text-blue-700 font-semibold text-sm text-center">
+                                        <span className="material-icons text-sm">info</span>
+                                        {t('dailyOrders.uploadBillAlert', 'Upload bill to complete the order.')}
+                                    </div>
                                 )}
                             </>
                         )}
