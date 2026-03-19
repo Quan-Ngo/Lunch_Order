@@ -606,13 +606,15 @@ export default function DailyOrders() {
                                 <span className="material-icons text-sm">lock</span>
                                 {t('dailyOrders.isLocked')}
                             </div>
-                        ) : isClosed ? (
-                            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-orange-50 border-2 border-orange-300 text-orange-700 font-semibold text-sm">
-                                <span className="material-icons text-sm">event_busy</span>
-                                {t('dailyOrders.isClosed', 'Orders Closed')}
-                            </div>
                         ) : (
                             <>
+                                {isClosed && (
+                                    <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-orange-50 border-2 border-orange-300 text-orange-700 font-semibold text-sm">
+                                        <span className="material-icons text-sm">event_busy</span>
+                                        {t('dailyOrders.isClosed', 'Orders Closed')}
+                                    </div>
+                                )}
+
                                 {currentStatus === 'open' && (
                                     <Button
                                         variant="secondary"
@@ -624,13 +626,8 @@ export default function DailyOrders() {
                                         {closeOrdersMutation.isPending ? 'Closing...' : 'Close Orders'}
                                     </Button>
                                 )}
-                                
-                                {bills.length === 0 ? (
-                                    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm font-medium">
-                                        <span className="material-icons-outlined text-base">receipt_long</span>
-                                        <span>{t('dailyOrders.uploadBillFirst', 'Upload a bill before marking complete')}</span>
-                                    </div>
-                                ) : (
+
+                                {bills.length > 0 && (
                                     <Button
                                         variant="primary"
                                         fullWidth
