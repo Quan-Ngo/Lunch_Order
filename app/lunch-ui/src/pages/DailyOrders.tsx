@@ -80,6 +80,7 @@ export default function DailyOrders() {
             queryClient.invalidateQueries({ queryKey: ['bills', formattedDate] });
         },
         onError: (error) => {
+            queryClient.invalidateQueries({ queryKey: ['bills', formattedDate] });
             console.error('Failed to upload bill:', error);
         }
     });

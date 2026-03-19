@@ -49,6 +49,7 @@ service LunchService {
     @restrict: [
         { grant: 'READ',   to: 'CMNA_READ_ALL_USER' },
         { grant: 'CREATE', to: 'CMNA_ADD_USER' },
+        { grant: 'UPDATE', to: 'CMNA_UPDATE_USER' },
         { grant: 'DELETE', to: 'CMNA_DELETE_USER' }
     ]
     entity DailyOrderBill as projection on lunch.DailyOrderBill;
