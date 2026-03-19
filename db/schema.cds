@@ -32,7 +32,9 @@ entity CatalogFile : cuid, managed {
 
 entity DailyMenu : cuid, managed {
     date         : Date;
-    isComplete   : Boolean;
+    status       : String(10) default 'open'; // 'open', 'close', 'complete'
+    orderOpens   : Timestamp;
+    orderCloses  : Timestamp;
     catalogs     : Association to many Catalog on catalogs.dailyMenu = $self;
     note         : String(500);
 }

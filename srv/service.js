@@ -171,11 +171,19 @@ module.exports = class LunchService extends cds.ApplicationService {
         });
 
         this.on('confirmMenu', async (req) => {
-            const { date } = req.data;
+            const { date, orderOpens, orderCloses } = req.data;
             if (!date) return req.error(400, 'date is required');
 
             const { DailyMenu, Staff } = this.entities;
-            console.log(`🔔 [LunchService] confirmMenu triggered for date: ${date}`);
+
+            if (orderOpens || orderCloses) {
+                const updateData = {};
+                if (orderOpens) updateData.orderOpens = orderOpens;
+                if (orderCloses) updateData.orderCloses = orderCloses;
+                await UPDATE(DailyMenu).set(updateData).where({ date });
+            }
+
+            console.log(`[LunchService] confirmMenu: Skipping mark as complete for ${date}.`);
 
             // 2. Format date DD/MM/YYYY for the email body
             const parts = date.split('-');
@@ -219,7 +227,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                     }
                 });
                 console.log(`🔔 [LunchService] Work Zone typed notification sent successfully.`);
-            } catch(err) {
+            } catch (err) {
                 console.error('🔔 [LunchService] ERROR sending Work Zone typed notification:', err.message || err);
             }
 
@@ -358,7 +366,7 @@ module.exports = class LunchService extends cds.ApplicationService {
         this.after('UPDATE', 'Catalog', async (data, req) => {
             console.log('🔔 [LunchService] Catalog AFTER UPDATE hook triggered');
             console.log('🔔 [LunchService] req.data:', JSON.stringify(req.data));
-            
+
             let updatedItem = data;
             if ((!updatedItem?.name) && req.data?.ID) {
                 updatedItem = await SELECT.one.from(req.target).where({ ID: req.data.ID });
@@ -389,7 +397,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                         } else {
                             console.log('🔔 [LunchService] No eligible recipients for FoodRemoved notification.');
                         }
-                    } catch(err) {
+                    } catch (err) {
                         console.error('🔔 [LunchService] ERROR sending FoodRemoved notification:', err.message || err);
                     }
                 }

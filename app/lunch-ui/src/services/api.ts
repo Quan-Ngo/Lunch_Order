@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'odata/v4/lunch',
+    headers: {
+        'x-requested-with': 'XMLHttpRequest'
+    }
 });
 
 // ─────────────────────────────────────────────
@@ -11,7 +14,7 @@ let csrfToken: string | null = null;
 
 const fetchCsrfToken = async (): Promise<string> => {
     try {
-        const response = await api.head('/', {
+        const response = await api.get('', {
             headers: {
                 'x-csrf-token': 'fetch',
                 'x-requested-with': 'XMLHttpRequest'
@@ -47,7 +50,7 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response?.status === 401) {
-            if (!import.meta.env.DEV) {
+            if (!import.meta.env.DEV && !window.location.hostname.includes('localhost')) {
                 // Reloading the page forces the BTP AppRouter to redirect the user to the XSUAA login page
                 window.location.reload();
                 return Promise.reject(error);
@@ -251,7 +254,9 @@ export const employeeService = {
 export interface DailyMenuEntity {
     ID: string;
     date: string;
-    isComplete: boolean;
+    status: 'open' | 'close' | 'complete';
+    orderOpens?: string;
+    orderCloses?: string;
     catalogs?: Array<CatalogEntity & { file?: { url: string } }>;
     note?: string;
 }
@@ -275,7 +280,7 @@ export const dailyMenuService = {
         let menuId = response.data.value[0]?.ID;
 
         if (!menuId) {
-            const createRes = await api.post('/DailyMenu', { date: dateString, isComplete: false });
+            const createRes = await api.post('/DailyMenu', { date: dateString, status: 'open' });
             menuId = createRes.data.ID;
         }
 
@@ -296,20 +301,20 @@ export const dailyMenuService = {
 
     /** Create a note-only daily menu entry */
     createNote: async (dateString: string, note: string): Promise<void> => {
-        await api.post('/DailyMenu', { date: dateString, note, isComplete: false });
+        await api.post('/DailyMenu', { date: dateString, note, status: 'open' });
     },
 
     /** Confirm menu: marks complete AND sends email notifications to eligible staff */
-    markCompleteByDate: async (dateString: string): Promise<void> => {
-        await api.post('/confirmMenu', { date: dateString });
+    markCompleteByDate: async (dateString: string, orderOpens?: string, orderCloses?: string): Promise<void> => {
+        await api.post('/confirmMenu', { date: dateString, orderOpens, orderCloses });
     },
 
-    /** Check if any entry for a date is marked complete */
+    /** Check if any entry for a date is marked locked (not open) */
     isDateComplete: async (dateString: string): Promise<boolean> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'`
         );
-        return response.data.value.some((e) => e.isComplete === true);
+        return response.data.value.some((e) => e.status !== 'open');
     },
 
     /** Send the day's order to supplier via email */
@@ -321,14 +326,19 @@ export const dailyMenuService = {
         return response.data.value;
     },
 
-    /** Set isComplete=true for menu by date */
+    /** Update status of a menu record */
+    updateStatus: async (id: string, status: 'open' | 'close' | 'complete'): Promise<void> => {
+        await api.patch(`/DailyMenu(${id})`, { status });
+    },
+
+    /** Set status='complete' for menu by date */
     completeOrder: async (dateString: string): Promise<void> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'`
         );
         const menu = response.data.value[0];
         if (!menu) throw new Error('Menu not found');
-        await api.patch(`/DailyMenu(${menu.ID})`, { isComplete: true });
+        await api.patch(`/DailyMenu(${menu.ID})`, { status: 'complete' });
     },
 };
 
@@ -421,6 +431,15 @@ export const staffCatalogService = {
         const filter = `Catalog_ID eq '${catalogId}' and date eq '${date}'`;
         const response = await api.get<{ value: StaffCatalogEntity[] }>(
             `/StaffCatalog?$filter=${encodeURIComponent(filter)}`
+        );
+        return response.data.value;
+    },
+
+    /** Get ALL staff orders for a specific date */
+    getForDate: async (date: string): Promise<StaffCatalogEntity[]> => {
+        const filter = `date eq '${date}'`;
+        const response = await api.get<{ value: StaffCatalogEntity[] }>(
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=staff`
         );
         return response.data.value;
     },
