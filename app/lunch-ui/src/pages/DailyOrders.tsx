@@ -24,6 +24,65 @@ function toISODate(d: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+// --- Staff Breakdown Types & Helper for PDF Page 2 ---
+
+interface StaffFoodRow {
+    foodName: string;
+    unitPrice: number;
+    qty: number;
+    subtotal: number;
+    currency: string;
+}
+
+interface StaffBreakdownGroup {
+    staffName: string;
+    rows: StaffFoodRow[];
+    staffTotal: number;
+}
+
+interface StaffBreakdownResult {
+    groups: StaffBreakdownGroup[];
+    grandTotal: number;
+}
+
+function buildStaffBreakdown(
+    staffCatalogs: { staff?: { name?: string }; catalog?: { name?: string; price?: number; currency?: string } }[],
+    fallbackCurrency: string
+): StaffBreakdownResult {
+    const staffMap = new Map<string, Map<string, StaffFoodRow>>();
+
+    for (const sc of staffCatalogs) {
+        const staffName = sc.staff?.name || 'Unknown';
+        const foodName = sc.catalog?.name || 'Unknown';
+        const unitPrice = sc.catalog?.price || 0;
+        const currency = sc.catalog?.currency || fallbackCurrency;
+
+        if (!staffMap.has(staffName)) {
+            staffMap.set(staffName, new Map());
+        }
+        const foodMap = staffMap.get(staffName)!;
+        if (!foodMap.has(foodName)) {
+            foodMap.set(foodName, { foodName, unitPrice, qty: 0, subtotal: 0, currency });
+        }
+        const row = foodMap.get(foodName)!;
+        row.qty += 1;
+        row.subtotal = row.qty * row.unitPrice;
+    }
+
+    const groups: StaffBreakdownGroup[] = [];
+    let grandTotal = 0;
+
+    for (const [staffName, foodMap] of staffMap) {
+        const rows = Array.from(foodMap.values());
+        const staffTotal = rows.reduce((sum, r) => sum + r.subtotal, 0);
+        grandTotal += staffTotal;
+        groups.push({ staffName, rows, staffTotal });
+    }
+
+    groups.sort((a, b) => a.staffName.localeCompare(b.staffName));
+    return { groups, grandTotal };
+}
+
 export default function DailyOrders() {
     const { t, i18n } = useTranslation();
     const { formatPriceLabel: fmtPriceLabel, formatDate } = useFormatters();
@@ -296,6 +355,78 @@ export default function DailyOrders() {
             doc.setFontSize(10);
             const splitNotes = doc.splitTextToSize(orderNote, pageWidth - 28);
             doc.text(splitNotes, 14, finalY + 23);
+        }
+
+        // ── Page 2: Staff Breakdown ──────────────────────────────────
+        if (staffCatalogs.length > 0) {
+            const currency = orders[0]?.currency || 'VND';
+            const { groups, grandTotal } = buildStaffBreakdown(staffCatalogs, currency);
+
+            doc.addPage();
+
+            // Page 2 title
+            doc.setFontSize(16);
+            doc.text('Staff Order Breakdown', pageWidth / 2, 18, { align: 'center' });
+            doc.setFontSize(11);
+            doc.text(`${t('dailyOrders.pdfDate')}: ${dateString}`, pageWidth / 2, 26, { align: 'center' });
+            doc.setDrawColor(200, 200, 200);
+            doc.line(14, 30, pageWidth - 14, 30);
+
+            // Build flat table body with staff section headers + food rows + subtotals
+            const tableBody: any[][] = [];
+
+            for (const group of groups) {
+                // Staff header row (spans all columns)
+                tableBody.push([
+                    { content: group.staffName, colSpan: 4, styles: { fillColor: [255, 214, 0], fontStyle: 'bold', textColor: [0, 0, 0] } },
+                ]);
+
+                // Food rows
+                for (const row of group.rows) {
+                    tableBody.push([
+                        row.foodName,
+                        formatPriceLabel(row.unitPrice, row.currency, i18n.language),
+                        row.qty.toString(),
+                        formatPriceLabel(row.subtotal, row.currency, i18n.language),
+                    ]);
+                }
+
+                // Staff subtotal row
+                tableBody.push([
+                    { content: `Total (${group.staffName})`, colSpan: 3, styles: { fillColor: [245, 245, 245], fontStyle: 'bold', halign: 'right' as const } },
+                    { content: formatPriceLabel(group.staffTotal, currency, i18n.language), styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } },
+                ]);
+            }
+
+            // Grand total row
+            tableBody.push([
+                { content: 'Grand Total (All Staff)', colSpan: 3, styles: { fillColor: [30, 30, 30], fontStyle: 'bold', textColor: [255, 255, 255], halign: 'right' as const } },
+                { content: formatPriceLabel(grandTotal, currency, i18n.language), styles: { fillColor: [30, 30, 30], fontStyle: 'bold', textColor: [255, 255, 255] } },
+            ]);
+
+            // Mismatch check
+            const mismatch = Math.abs(grandTotal - total);
+            if (mismatch > 0.01) {
+                console.warn(`[PDF] Grand total mismatch: staff grand total ${grandTotal} vs page 1 total ${total}, diff = ${mismatch}`);
+                tableBody.push([
+                    { content: `⚠ Mismatch: ${formatPriceLabel(mismatch, currency, i18n.language)}`, colSpan: 4, styles: { fillColor: [255, 230, 230], textColor: [180, 0, 0], fontStyle: 'bold' } },
+                ]);
+            }
+
+            autoTable(doc, {
+                startY: 35,
+                head: [['Food', 'Unit Price', 'Qty', 'Subtotal']],
+                body: tableBody,
+                theme: 'grid',
+                headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold', font: 'Roboto' },
+                styles: { fontSize: 9, font: 'Roboto' },
+                columnStyles: {
+                    0: { cellWidth: 'auto' },
+                    1: { cellWidth: 35, halign: 'right' as const },
+                    2: { cellWidth: 15, halign: 'center' as const },
+                    3: { cellWidth: 35, halign: 'right' as const },
+                },
+            });
         }
 
         doc.save(`lunch-order-${selectedDate}.pdf`);
@@ -590,14 +721,14 @@ export default function DailyOrders() {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-3">
-                        <Button
+                        {/* <Button
                             variant="primary"
                             fullWidth
                             icon={<span className="material-icons-outlined">email</span>}
                             onClick={() => setIsSendEmailModalOpen(true)}
                         >
                             {t('dailyOrders.sendEmailToSupplier', 'Send email to supplier')}
-                        </Button>
+                        </Button> */}
                         <Button
                             variant="secondary"
                             fullWidth
