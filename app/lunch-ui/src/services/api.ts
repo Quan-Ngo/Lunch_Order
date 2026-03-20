@@ -439,7 +439,7 @@ export const staffCatalogService = {
     getForDate: async (date: string): Promise<StaffCatalogEntity[]> => {
         const filter = `date eq '${date}'`;
         const response = await api.get<{ value: StaffCatalogEntity[] }>(
-            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=staff`
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=staff,catalog`
         );
         return response.data.value;
     },
