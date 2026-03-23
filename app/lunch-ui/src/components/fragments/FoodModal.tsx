@@ -96,7 +96,18 @@ export function FoodModal({ isOpen, onClose, onSave, mode = 'create', initialDat
                     toast.update(loadingToastId, { render: t('foodModal.extractEmpty', 'No items extracted'), type: 'info', isLoading: false, autoClose: 3000 });
                 }
             } catch (err: any) {
-                toast.update(loadingToastId, { render: t('foodModal.extractFailed', 'Failed to extract menu'), type: 'error', isLoading: false, autoClose: 3000 });
+                const backendMessage =
+                    err?.response?.data?.error?.message ||
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    '';
+                const baseMessage = t('foodModal.extractFailed', 'Failed to extract menu');
+                toast.update(loadingToastId, {
+                    render: backendMessage ? `${baseMessage}: ${backendMessage}` : baseMessage,
+                    type: 'error',
+                    isLoading: false,
+                    autoClose: 5000
+                });
             } finally {
                 setIsExtracting(false);
                 if (fileInputRef.current) fileInputRef.current.value = '';

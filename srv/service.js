@@ -8,6 +8,12 @@ module.exports = class LunchService extends cds.ApplicationService {
     async init() {
         const { Staff } = this.entities;
 
+        // Cloud Foundry note: `.env` is usually not shipped with the deployed app.
+        // If menu extraction is used in production, GEMINI_API_KEY must be set as an app environment variable.
+        if (process.env.NODE_ENV === 'production' && !process.env.GEMINI_API_KEY) {
+            console.warn('[LunchService] GEMINI_API_KEY is not set. `extractMenuFromImage` will fail until configured in Cloud Foundry app env.');
+        }
+
         this.on('userInfo', async (req) => {
             if (req.user.is('anonymous')) {
                 return req.error(401, 'Not authenticated');
@@ -100,7 +106,8 @@ module.exports = class LunchService extends cds.ApplicationService {
 
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) {
-                return req.error(500, "Sever is missing GEMINI_API_KEY environment variable. Cannot process image.");
+                console.error('[extractMenuFromImage] Missing GEMINI_API_KEY. Configure it in Cloud Foundry app env (e.g. `cf set-env <app> GEMINI_API_KEY <key>` then restage).');
+                return req.reject(500, "Server is missing GEMINI_API_KEY environment variable. Cannot process image.");
             }
 
             try {
@@ -165,8 +172,12 @@ module.exports = class LunchService extends cds.ApplicationService {
 
                 return text;
             } catch (err) {
-                console.error("Gemini Extraction Error:", err);
-                return req.error(500, "Failed to extract menu using Gemini API: " + err.message);
+                const details =
+                    err?.response?.data ||
+                    err?.message ||
+                    (typeof err === 'string' ? err : JSON.stringify(err));
+                console.error('[extractMenuFromImage] Gemini Extraction Error:', details);
+                return req.reject(502, "Failed to extract menu using Gemini API. Check server logs for details.");
             }
         });
 
