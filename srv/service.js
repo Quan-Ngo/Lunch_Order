@@ -74,6 +74,10 @@ module.exports = class LunchService extends cds.ApplicationService {
             const tokenUrl = 'https://proconarum-development-system.authentication.eu10.hana.ondemand.com/oauth/token?grant_type=client_credentials';
             const usersUrl = 'https://api.authentication.eu10.hana.ondemand.com/Users';
 
+            // Pagination params (SCIM uses 1-based startIndex)
+            const startIndex = req.data.startIndex || 1;
+            const count = req.data.count || 100;
+
             try {
                 // 1. Fetch OAuth Token
                 const tokenRes = await axios.post(tokenUrl, null, {
@@ -84,16 +88,29 @@ module.exports = class LunchService extends cds.ApplicationService {
                 });
                 const token = tokenRes.data.access_token;
 
-                // 2. Fetch Users from SCIM API
+                // 2. Fetch Users from SCIM API with pagination
                 const usersRes = await axios.get(usersUrl, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/json'
+                    },
+                    params: {
+                        startIndex: startIndex,
+                        count: count
                     }
                 });
 
-                // Return as stringyfied JSON since results might be complex
-                return JSON.stringify(usersRes.data);
+                const scimData = usersRes.data;
+
+                // Return users + pagination metadata
+                const result = {
+                    Resources: scimData.Resources || scimData.resources || [],
+                    totalResults: scimData.totalResults || 0,
+                    startIndex: scimData.startIndex || startIndex,
+                    itemsPerPage: scimData.itemsPerPage || count,
+                };
+
+                return JSON.stringify(result);
             } catch (err) {
                 console.error("Failed to fetch BTP users in backend:", err.response?.data || err.message);
                 return req.error(500, "Failed to fetch BTP users: " + err.message);

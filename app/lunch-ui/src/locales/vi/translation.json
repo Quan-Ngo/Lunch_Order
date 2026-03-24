@@ -172,7 +172,8 @@
             "noUsers": "Không tìm thấy người dùng nào trong CSDL công ty.",
             "error": "Lỗi khi lấy dữ liệu người dùng từ CSDL công ty.",
             "success": "Đăng ký nhân viên thành công!",
-            "alreadyRegistered": "Đã đăng ký"
+            "alreadyRegistered": "Đã đăng ký",
+            "showingRange": "Hiển thị {{start}}–{{end}} / {{total}}"
         },
         "editModal": {
             "title": "Chỉnh Sửa Thông Tin",

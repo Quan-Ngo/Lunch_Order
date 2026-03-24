@@ -172,7 +172,8 @@
             "noUsers": "No users found in company database.",
             "error": "Failed to fetch users from company database.",
             "success": "Employee registered successfully!",
-            "alreadyRegistered": "Already registered"
+            "alreadyRegistered": "Already registered",
+            "showingRange": "Showing {{start}}–{{end}} of {{total}}"
         },
         "editModal": {
             "title": "Edit Information",
