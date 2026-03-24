@@ -520,35 +520,48 @@ export interface ScimUser {
 
 export interface ScimUsersResponse {
     totalResults: number;
+    startIndex: number;
+    itemsPerPage: number;
     Resources: ScimUser[];
 }
 
 export const scimService = {
     /** 
-     * Fetch users securely via CAP backend.
+     * Fetch users securely via CAP backend with pagination support.
      * This avoids CORS issues on the frontend and keeps credentials secure on the backend.
      */
-    fetchBtpUsers: async (): Promise<ScimUser[]> => {
+    fetchBtpUsers: async (startIndex: number = 1, count: number = 100): Promise<ScimUsersResponse> => {
         try {
-            // Call the custom OData function on the backend
-            const response = await api.get<{ value: string }>('/getBtpUsers()');
+            // Call the custom OData function on the backend with pagination params
+            const response = await api.get<{ value: string }>(`/getBtpUsers(startIndex=${startIndex},count=${count})`);
 
             // OData functions return the result in a 'value' property
             const dataStr = response.data.value;
-            if (!dataStr) return [];
+            if (!dataStr) return { totalResults: 0, startIndex: 1, itemsPerPage: count, Resources: [] };
 
             // Backend returns a JSON string, so we parse it
             const parsedData = JSON.parse(dataStr);
 
             console.log('DEBUG: scimService.fetchBtpUsers from backend:', parsedData);
 
-            // Handle different possible response structures from SCIM/Identity API
-            if (Array.isArray(parsedData)) return parsedData;
-            if (parsedData.Resources && Array.isArray(parsedData.Resources)) return parsedData.Resources;
-            if (parsedData.resources && Array.isArray(parsedData.resources)) return parsedData.resources;
-            if (parsedData.value && Array.isArray(parsedData.value)) return parsedData.value;
+            // Extract Resources from various possible response structures
+            let resources: ScimUser[] = [];
+            if (Array.isArray(parsedData)) {
+                resources = parsedData;
+            } else if (parsedData.Resources && Array.isArray(parsedData.Resources)) {
+                resources = parsedData.Resources;
+            } else if (parsedData.resources && Array.isArray(parsedData.resources)) {
+                resources = parsedData.resources;
+            } else if (parsedData.value && Array.isArray(parsedData.value)) {
+                resources = parsedData.value;
+            }
 
-            return [];
+            return {
+                totalResults: parsedData.totalResults || resources.length,
+                startIndex: parsedData.startIndex || startIndex,
+                itemsPerPage: parsedData.itemsPerPage || count,
+                Resources: resources,
+            };
         } catch (error: any) {
             console.error('fetchBtpUsers failed:', error.response?.status, error.response?.data || error.message);
             throw error;

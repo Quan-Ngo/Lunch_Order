@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/elements/Button';
 import { SearchBar } from '@/components/elements/SearchBar';
 import { LoadingState } from '@/components/elements/LoadingState';
 import { scimService, type ScimUser, employeeService } from '@/services/api';
+
+const PAGE_SIZE = 100;
 
 interface RegisterEmployeeModalProps {
     isOpen: boolean;
@@ -23,31 +25,48 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
     const [manualEmail, setManualEmail] = useState('');
     const [isManualAdding, setIsManualAdding] = useState(false);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalResults, setTotalResults] = useState(0);
+    const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE));
+
     useEffect(() => {
         if (isOpen) {
-            void fetchUsers();
+            setCurrentPage(1);
+            void fetchUsers(1);
         } else {
             setSearchTerm('');
             setError(null);
             setManualName('');
             setManualEmail('');
+            setUsers([]);
+            setTotalResults(0);
+            setCurrentPage(1);
         }
     }, [isOpen]);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async (page: number) => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await scimService.fetchBtpUsers();
+            const startIndex = (page - 1) * PAGE_SIZE + 1;
+            const data = await scimService.fetchBtpUsers(startIndex, PAGE_SIZE);
             console.log('SCIM users fetched:', data);
-            setUsers(data);
+            setUsers(data.Resources);
+            setTotalResults(data.totalResults);
         } catch (err) {
             console.error('Failed to fetch BTP users:', err);
             setError(t('employees.registerModal.error'));
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [t]);
+
+    const handlePageChange = useCallback((page: number) => {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        setCurrentPage(page);
+        void fetchUsers(page);
+    }, [totalPages, currentPage, fetchUsers]);
 
     const getDisplayName = (user: ScimUser) =>
         user.name?.formatted ||
@@ -104,6 +123,23 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
         }
     };
 
+    // Build page numbers to display (show max 5 page buttons with ellipsis)
+    const getPageNumbers = (): (number | '...')[] => {
+        const pages: (number | '...')[] = [];
+        if (totalPages <= 5) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            pages.push(1);
+            if (currentPage > 3) pages.push('...');
+            const start = Math.max(2, currentPage - 1);
+            const end = Math.min(totalPages - 1, currentPage + 1);
+            for (let i = start; i <= end; i++) pages.push(i);
+            if (currentPage < totalPages - 2) pages.push('...');
+            pages.push(totalPages);
+        }
+        return pages;
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -158,7 +194,7 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
                                     variant="secondary"
                                     size="sm"
                                     className="mt-4"
-                                    onClick={fetchUsers}
+                                    onClick={() => fetchUsers(currentPage)}
                                 >
                                     Retry
                                 </Button>
@@ -204,6 +240,60 @@ export function RegisterEmployeeModal({ isOpen, onClose, onSuccess, existingEmpl
                             </ul>
                         )}
                     </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && !isLoading && !error && (
+                        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                            <p className="text-xs text-gray-500">
+                                {t('employees.registerModal.showingRange', {
+                                    start: (currentPage - 1) * PAGE_SIZE + 1,
+                                    end: Math.min(currentPage * PAGE_SIZE, totalResults),
+                                    total: totalResults,
+                                    defaultValue: `Showing ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, totalResults)} of ${totalResults}`,
+                                })}
+                            </p>
+                            <div className="flex items-center gap-1">
+                                {/* Previous button */}
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    aria-label="Previous page"
+                                >
+                                    <span className="material-icons text-sm">chevron_left</span>
+                                </button>
+
+                                {/* Page numbers */}
+                                {getPageNumbers().map((page, idx) =>
+                                    page === '...' ? (
+                                        <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-xs">…</span>
+                                    ) : (
+                                        <button
+                                            key={page}
+                                            onClick={() => handlePageChange(page)}
+                                            className={`min-w-[28px] h-7 rounded-lg text-xs font-bold transition-colors ${
+                                                page === currentPage
+                                                    ? 'bg-primary text-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                                                    : 'text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    )
+                                )}
+
+                                {/* Next button */}
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    aria-label="Next page"
+                                >
+                                    <span className="material-icons text-sm">chevron_right</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Footer – Manual registration */}
                     <div className="px-6 py-5 bg-gray-50 border-t border-gray-100">
