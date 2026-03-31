@@ -68,10 +68,10 @@ service LunchService {
     action extractMenuFromImage(image : LargeString, mimeType : String) returns String;
 
     @restrict: [{ grant: '*', to: 'CMNA_READ_ALL_USER' }]
-    function getBtpUsers() returns String;
+    function getBtpUsers(startIndex: Integer, count: Integer) returns String;
 
     function userInfo() returns String;
-    action confirmMenu(date : String) returns String;
+    action confirmMenu(date : String, orderOpens: Timestamp, orderCloses: Timestamp) returns String;
     action confirmOrder(date : String, supplierEmail : String) returns String;
     function getCurrentUser() returns String;
 }

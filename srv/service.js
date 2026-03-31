@@ -8,6 +8,12 @@ module.exports = class LunchService extends cds.ApplicationService {
     async init() {
         const { Staff } = this.entities;
 
+        // Cloud Foundry note: `.env` is usually not shipped with the deployed app.
+        // If menu extraction is used in production, GEMINI_API_KEY must be set as an app environment variable.
+        if (process.env.NODE_ENV === 'production' && !process.env.GEMINI_API_KEY) {
+            console.warn('[LunchService] GEMINI_API_KEY is not set. `extractMenuFromImage` will fail until configured in Cloud Foundry app env.');
+        }
+
         this.on('userInfo', async (req) => {
             if (req.user.is('anonymous')) {
                 return req.error(401, 'Not authenticated');
@@ -68,6 +74,10 @@ module.exports = class LunchService extends cds.ApplicationService {
             const tokenUrl = 'https://proconarum-development-system.authentication.eu10.hana.ondemand.com/oauth/token?grant_type=client_credentials';
             const usersUrl = 'https://api.authentication.eu10.hana.ondemand.com/Users';
 
+            // Pagination params (SCIM uses 1-based startIndex)
+            const startIndex = req.data.startIndex || 1;
+            const count = req.data.count || 100;
+
             try {
                 // 1. Fetch OAuth Token
                 const tokenRes = await axios.post(tokenUrl, null, {
@@ -78,16 +88,29 @@ module.exports = class LunchService extends cds.ApplicationService {
                 });
                 const token = tokenRes.data.access_token;
 
-                // 2. Fetch Users from SCIM API
+                // 2. Fetch Users from SCIM API with pagination
                 const usersRes = await axios.get(usersUrl, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/json'
+                    },
+                    params: {
+                        startIndex: startIndex,
+                        count: count
                     }
                 });
 
-                // Return as stringyfied JSON since results might be complex
-                return JSON.stringify(usersRes.data);
+                const scimData = usersRes.data;
+
+                // Return users + pagination metadata
+                const result = {
+                    Resources: scimData.Resources || scimData.resources || [],
+                    totalResults: scimData.totalResults || 0,
+                    startIndex: scimData.startIndex || startIndex,
+                    itemsPerPage: scimData.itemsPerPage || count,
+                };
+
+                return JSON.stringify(result);
             } catch (err) {
                 console.error("Failed to fetch BTP users in backend:", err.response?.data || err.message);
                 return req.error(500, "Failed to fetch BTP users: " + err.message);
@@ -100,7 +123,8 @@ module.exports = class LunchService extends cds.ApplicationService {
 
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) {
-                return req.error(500, "Sever is missing GEMINI_API_KEY environment variable. Cannot process image.");
+                console.error('[extractMenuFromImage] Missing GEMINI_API_KEY. Configure it in Cloud Foundry app env (e.g. `cf set-env <app> GEMINI_API_KEY <key>` then restage).');
+                return req.reject(500, "Server is missing GEMINI_API_KEY environment variable. Cannot process image.");
             }
 
             try {
@@ -165,17 +189,29 @@ module.exports = class LunchService extends cds.ApplicationService {
 
                 return text;
             } catch (err) {
-                console.error("Gemini Extraction Error:", err);
-                return req.error(500, "Failed to extract menu using Gemini API: " + err.message);
+                const details =
+                    err?.response?.data ||
+                    err?.message ||
+                    (typeof err === 'string' ? err : JSON.stringify(err));
+                console.error('[extractMenuFromImage] Gemini Extraction Error:', details);
+                return req.reject(502, "Failed to extract menu using Gemini API. Check server logs for details.");
             }
         });
 
         this.on('confirmMenu', async (req) => {
-            const { date } = req.data;
+            const { date, orderOpens, orderCloses } = req.data;
             if (!date) return req.error(400, 'date is required');
 
             const { DailyMenu, Staff } = this.entities;
-            console.log(`🔔 [LunchService] confirmMenu triggered for date: ${date}`);
+
+            if (orderOpens || orderCloses) {
+                const updateData = {};
+                if (orderOpens) updateData.orderOpens = orderOpens;
+                if (orderCloses) updateData.orderCloses = orderCloses;
+                await UPDATE(DailyMenu).set(updateData).where({ date });
+            }
+
+            console.log(`[LunchService] confirmMenu: Skipping mark as complete for ${date}.`);
 
             // 2. Format date DD/MM/YYYY for the email body
             const parts = date.split('-');
@@ -219,7 +255,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                     }
                 });
                 console.log(`🔔 [LunchService] Work Zone typed notification sent successfully.`);
-            } catch(err) {
+            } catch (err) {
                 console.error('🔔 [LunchService] ERROR sending Work Zone typed notification:', err.message || err);
             }
 
@@ -358,7 +394,7 @@ module.exports = class LunchService extends cds.ApplicationService {
         this.after('UPDATE', 'Catalog', async (data, req) => {
             console.log('🔔 [LunchService] Catalog AFTER UPDATE hook triggered');
             console.log('🔔 [LunchService] req.data:', JSON.stringify(req.data));
-            
+
             let updatedItem = data;
             if ((!updatedItem?.name) && req.data?.ID) {
                 updatedItem = await SELECT.one.from(req.target).where({ ID: req.data.ID });
@@ -389,7 +425,7 @@ module.exports = class LunchService extends cds.ApplicationService {
                         } else {
                             console.log('🔔 [LunchService] No eligible recipients for FoodRemoved notification.');
                         }
-                    } catch(err) {
+                    } catch (err) {
                         console.error('🔔 [LunchService] ERROR sending FoodRemoved notification:', err.message || err);
                     }
                 }

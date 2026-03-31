@@ -127,7 +127,11 @@
         "itemCount_other": "{{count}} món trong thực đơn",
         "emptyMenu": "Chưa có món nào trong thực đơn hôm nay. Bấm 'Chọn Từ Danh Mục' để thêm!",
         "menuCompleted": "Thực đơn đã được gửi đến tất cả nhân viên!",
-        "fromTodaysMenu": "khỏi thực đơn hôm nay"
+        "fromTodaysMenu": "khỏi thực đơn hôm nay",
+        "missingDates": "Vui lòng nhập đầy đủ cả hai ngày.",
+        "invalidDates": "Ngày mở order phải trước ngày đóng order.",
+        "completeMenu": "Xác nhận thực đơn",
+        "completing": "Đang xác nhận..."
     },
     "employees": {
         "title": "Quản Lý Nhân Viên",
@@ -168,7 +172,8 @@
             "noUsers": "Không tìm thấy người dùng nào trong CSDL công ty.",
             "error": "Lỗi khi lấy dữ liệu người dùng từ CSDL công ty.",
             "success": "Đăng ký nhân viên thành công!",
-            "alreadyRegistered": "Đã đăng ký"
+            "alreadyRegistered": "Đã đăng ký",
+            "showingRange": "Hiển thị {{start}}–{{end}} / {{total}}"
         },
         "editModal": {
             "title": "Chỉnh Sửa Thông Tin",

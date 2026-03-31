@@ -127,7 +127,11 @@
         "itemCount_other": "{{count}} items on the menu",
         "emptyMenu": "No food on the menu for this day yet. Click 'Select from Catalog' to add some!",
         "menuCompleted": "Menu sent to all staff!",
-        "fromTodaysMenu": "from today's menu"
+        "fromTodaysMenu": "from today's menu",
+        "missingDates": "Please fill in both dates.",
+        "invalidDates": "Order opens date must be before closes date.",
+        "completeMenu": "Confirm Menu",
+        "completing": "Confirming..."
     },
     "employees": {
         "title": "Manage Employees",
@@ -168,7 +172,8 @@
             "noUsers": "No users found in company database.",
             "error": "Failed to fetch users from company database.",
             "success": "Employee registered successfully!",
-            "alreadyRegistered": "Already registered"
+            "alreadyRegistered": "Already registered",
+            "showingRange": "Showing {{start}}–{{end}} of {{total}}"
         },
         "editModal": {
             "title": "Edit Information",

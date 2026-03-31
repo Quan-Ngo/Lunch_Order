@@ -167,7 +167,8 @@
             "noUsers": "社内データベースにユーザーが見つかりません。",
             "error": "社内データベースからユーザーを取得できませんでした。",
             "success": "従業員を正常に登録しました。",
-            "alreadyRegistered": "登録済み"
+            "alreadyRegistered": "登録済み",
+            "showingRange": "{{start}}–{{end}} / {{total}} 件"
         },
         "editModal": {
             "title": "情報を編集",

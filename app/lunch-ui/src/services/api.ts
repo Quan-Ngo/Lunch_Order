@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'odata/v4/lunch',
+    headers: {
+        'x-requested-with': 'XMLHttpRequest'
+    }
 });
 
 // ─────────────────────────────────────────────
@@ -11,7 +14,7 @@ let csrfToken: string | null = null;
 
 const fetchCsrfToken = async (): Promise<string> => {
     try {
-        const response = await api.head('/', {
+        const response = await api.get('', {
             headers: {
                 'x-csrf-token': 'fetch',
                 'x-requested-with': 'XMLHttpRequest'
@@ -47,7 +50,7 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response?.status === 401) {
-            if (!import.meta.env.DEV) {
+            if (!import.meta.env.DEV && !window.location.hostname.includes('localhost')) {
                 // Reloading the page forces the BTP AppRouter to redirect the user to the XSUAA login page
                 window.location.reload();
                 return Promise.reject(error);
@@ -251,7 +254,9 @@ export const employeeService = {
 export interface DailyMenuEntity {
     ID: string;
     date: string;
-    isComplete: boolean;
+    status: 'open' | 'close' | 'complete';
+    orderOpens?: string;
+    orderCloses?: string;
     catalogs?: Array<CatalogEntity & { file?: { url: string } }>;
     note?: string;
 }
@@ -275,7 +280,7 @@ export const dailyMenuService = {
         let menuId = response.data.value[0]?.ID;
 
         if (!menuId) {
-            const createRes = await api.post('/DailyMenu', { date: dateString, isComplete: false });
+            const createRes = await api.post('/DailyMenu', { date: dateString, status: 'open' });
             menuId = createRes.data.ID;
         }
 
@@ -296,20 +301,20 @@ export const dailyMenuService = {
 
     /** Create a note-only daily menu entry */
     createNote: async (dateString: string, note: string): Promise<void> => {
-        await api.post('/DailyMenu', { date: dateString, note, isComplete: false });
+        await api.post('/DailyMenu', { date: dateString, note, status: 'open' });
     },
 
     /** Confirm menu: marks complete AND sends email notifications to eligible staff */
-    markCompleteByDate: async (dateString: string): Promise<void> => {
-        await api.post('/confirmMenu', { date: dateString });
+    markCompleteByDate: async (dateString: string, orderOpens?: string, orderCloses?: string): Promise<void> => {
+        await api.post('/confirmMenu', { date: dateString, orderOpens, orderCloses });
     },
 
-    /** Check if any entry for a date is marked complete */
+    /** Check if any entry for a date is marked locked (not open) */
     isDateComplete: async (dateString: string): Promise<boolean> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'`
         );
-        return response.data.value.some((e) => e.isComplete === true);
+        return response.data.value.some((e) => e.status !== 'open');
     },
 
     /** Send the day's order to supplier via email */
@@ -321,14 +326,19 @@ export const dailyMenuService = {
         return response.data.value;
     },
 
-    /** Set isComplete=true for menu by date */
+    /** Update status of a menu record */
+    updateStatus: async (id: string, status: 'open' | 'close' | 'complete'): Promise<void> => {
+        await api.patch(`/DailyMenu(${id})`, { status });
+    },
+
+    /** Set status='complete' for menu by date */
     completeOrder: async (dateString: string): Promise<void> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'`
         );
         const menu = response.data.value[0];
         if (!menu) throw new Error('Menu not found');
-        await api.patch(`/DailyMenu(${menu.ID})`, { isComplete: true });
+        await api.patch(`/DailyMenu(${menu.ID})`, { status: 'complete' });
     },
 };
 
@@ -425,6 +435,15 @@ export const staffCatalogService = {
         return response.data.value;
     },
 
+    /** Get ALL staff orders for a specific date */
+    getForDate: async (date: string): Promise<StaffCatalogEntity[]> => {
+        const filter = `date eq '${date}'`;
+        const response = await api.get<{ value: StaffCatalogEntity[] }>(
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=staff,catalog`
+        );
+        return response.data.value;
+    },
+
     /**
      * Clear all selections for a catalog item on a date.
      * Catalog_ID is part of the key, so "set to null" is represented by deleting those rows.
@@ -501,35 +520,48 @@ export interface ScimUser {
 
 export interface ScimUsersResponse {
     totalResults: number;
+    startIndex: number;
+    itemsPerPage: number;
     Resources: ScimUser[];
 }
 
 export const scimService = {
     /** 
-     * Fetch users securely via CAP backend.
+     * Fetch users securely via CAP backend with pagination support.
      * This avoids CORS issues on the frontend and keeps credentials secure on the backend.
      */
-    fetchBtpUsers: async (): Promise<ScimUser[]> => {
+    fetchBtpUsers: async (startIndex: number = 1, count: number = 100): Promise<ScimUsersResponse> => {
         try {
-            // Call the custom OData function on the backend
-            const response = await api.get<{ value: string }>('/getBtpUsers()');
+            // Call the custom OData function on the backend with pagination params
+            const response = await api.get<{ value: string }>(`/getBtpUsers(startIndex=${startIndex},count=${count})`);
 
             // OData functions return the result in a 'value' property
             const dataStr = response.data.value;
-            if (!dataStr) return [];
+            if (!dataStr) return { totalResults: 0, startIndex: 1, itemsPerPage: count, Resources: [] };
 
             // Backend returns a JSON string, so we parse it
             const parsedData = JSON.parse(dataStr);
 
             console.log('DEBUG: scimService.fetchBtpUsers from backend:', parsedData);
 
-            // Handle different possible response structures from SCIM/Identity API
-            if (Array.isArray(parsedData)) return parsedData;
-            if (parsedData.Resources && Array.isArray(parsedData.Resources)) return parsedData.Resources;
-            if (parsedData.resources && Array.isArray(parsedData.resources)) return parsedData.resources;
-            if (parsedData.value && Array.isArray(parsedData.value)) return parsedData.value;
+            // Extract Resources from various possible response structures
+            let resources: ScimUser[] = [];
+            if (Array.isArray(parsedData)) {
+                resources = parsedData;
+            } else if (parsedData.Resources && Array.isArray(parsedData.Resources)) {
+                resources = parsedData.Resources;
+            } else if (parsedData.resources && Array.isArray(parsedData.resources)) {
+                resources = parsedData.resources;
+            } else if (parsedData.value && Array.isArray(parsedData.value)) {
+                resources = parsedData.value;
+            }
 
-            return [];
+            return {
+                totalResults: parsedData.totalResults || resources.length,
+                startIndex: parsedData.startIndex || startIndex,
+                itemsPerPage: parsedData.itemsPerPage || count,
+                Resources: resources,
+            };
         } catch (error: any) {
             console.error('fetchBtpUsers failed:', error.response?.status, error.response?.data || error.message);
             throw error;

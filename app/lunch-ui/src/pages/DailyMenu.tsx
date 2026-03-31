@@ -164,6 +164,9 @@ export default function DailyMenu() {
                 toast.success(t('dailyMenu.orderSuccessToast', { itemName, date: selectedDate }));
             }
             queryClient.invalidateQueries({ queryKey: ['staffOrder', staffId, selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['orderStatistics', selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['orderSummary', selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['staffCatalogs', selectedDate] });
         },
         onError: () => {
             setSelectedCatalogId(savedCatalogId);
@@ -178,6 +181,9 @@ export default function DailyMenu() {
         onSuccess: () => {
             setSelectedCatalogId(null);
             queryClient.invalidateQueries({ queryKey: ['staffOrder', staffId, selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['orderStatistics', selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['orderSummary', selectedDate] });
+            queryClient.invalidateQueries({ queryKey: ['staffCatalogs', selectedDate] });
         },
     });
 

@@ -167,7 +167,8 @@
             "noUsers": "Keine Benutzer in der Unternehmensdatenbank gefunden.",
             "error": "Benutzer aus der Unternehmensdatenbank konnten nicht geladen werden.",
             "success": "Mitarbeiter erfolgreich registriert.",
-            "alreadyRegistered": "Bereits registriert"
+            "alreadyRegistered": "Bereits registriert",
+            "showingRange": "{{start}}–{{end}} von {{total}}"
         },
         "editModal": {
             "title": "Informationen bearbeiten",

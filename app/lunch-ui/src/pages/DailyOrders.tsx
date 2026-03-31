@@ -10,7 +10,8 @@ import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
 import { formatPriceLabel } from '@/config/currency';
 import { useFormatters } from '@/hooks/useFormatters';
-import { statisticsService, foodService, summaryService, dailyMenuService, billService } from '@/services/api';
+import { statisticsService, foodService, summaryService, dailyMenuService, billService, staffCatalogService } from '@/services/api';
+import { StaffListModal } from '@/components/fragments/StaffListModal';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -21,6 +22,65 @@ function toISODate(d: Date): string {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+// --- Staff Breakdown Types & Helper for PDF Page 2 ---
+
+interface StaffFoodRow {
+    foodName: string;
+    unitPrice: number;
+    qty: number;
+    subtotal: number;
+    currency: string;
+}
+
+interface StaffBreakdownGroup {
+    staffName: string;
+    rows: StaffFoodRow[];
+    staffTotal: number;
+}
+
+interface StaffBreakdownResult {
+    groups: StaffBreakdownGroup[];
+    grandTotal: number;
+}
+
+function buildStaffBreakdown(
+    staffCatalogs: { staff?: { name?: string }; catalog?: { name?: string; price?: number; currency?: string } }[],
+    fallbackCurrency: string
+): StaffBreakdownResult {
+    const staffMap = new Map<string, Map<string, StaffFoodRow>>();
+
+    for (const sc of staffCatalogs) {
+        const staffName = sc.staff?.name || 'Unknown';
+        const foodName = sc.catalog?.name || 'Unknown';
+        const unitPrice = sc.catalog?.price || 0;
+        const currency = sc.catalog?.currency || fallbackCurrency;
+
+        if (!staffMap.has(staffName)) {
+            staffMap.set(staffName, new Map());
+        }
+        const foodMap = staffMap.get(staffName)!;
+        if (!foodMap.has(foodName)) {
+            foodMap.set(foodName, { foodName, unitPrice, qty: 0, subtotal: 0, currency });
+        }
+        const row = foodMap.get(foodName)!;
+        row.qty += 1;
+        row.subtotal = row.qty * row.unitPrice;
+    }
+
+    const groups: StaffBreakdownGroup[] = [];
+    let grandTotal = 0;
+
+    for (const [staffName, foodMap] of staffMap) {
+        const rows = Array.from(foodMap.values());
+        const staffTotal = rows.reduce((sum, r) => sum + r.subtotal, 0);
+        grandTotal += staffTotal;
+        groups.push({ staffName, rows, staffTotal });
+    }
+
+    groups.sort((a, b) => a.staffName.localeCompare(b.staffName));
+    return { groups, grandTotal };
 }
 
 export default function DailyOrders() {
@@ -35,6 +95,7 @@ export default function DailyOrders() {
     const [deleteBillTarget, setDeleteBillTarget] = useState<string | null>(null);
     const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState<boolean>(false);
     const [supplierEmail, setSupplierEmail] = useState<string>('');
+    const [selectedFoodDetails, setSelectedFoodDetails] = useState<{ id: string; name: string } | null>(null);
 
     const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     const isEmailValid = isValidEmail(supplierEmail);
@@ -69,10 +130,15 @@ export default function DailyOrders() {
         queryFn: () => billService.getByDate(formattedDate)
     });
 
-    const { data: isLocked = false } = useQuery({
-        queryKey: ['isComplete', formattedDate],
-        queryFn: () => dailyMenuService.isDateComplete(formattedDate),
+    const { data: staffCatalogs = [] } = useQuery({
+        queryKey: ['staffCatalogs', formattedDate],
+        queryFn: () => staffCatalogService.getForDate(formattedDate)
     });
+
+    const currentMenu = dailyMenus[0];
+    const currentStatus = currentMenu?.status || 'open';
+    const isLocked = currentStatus === 'complete';
+    const isClosed = currentStatus === 'close';
 
     const uploadBillMutation = useMutation({
         mutationFn: (file: File) => billService.upload(formattedDate, file),
@@ -88,10 +154,13 @@ export default function DailyOrders() {
     const deleteBillMutation = useMutation({
         mutationFn: (id: string) => billService.delete(id),
         onSuccess: () => {
+            toast.success(t('dailyMenu.orderCancelled'));
             queryClient.invalidateQueries({ queryKey: ['bills', formattedDate] });
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
         },
         onError: (error) => {
             console.error('Failed to delete bill:', error);
+            toast.error(t('dailyMenu.cancelFailed'));
         }
     });
 
@@ -99,10 +168,26 @@ export default function DailyOrders() {
         mutationFn: () => dailyMenuService.completeOrder(formattedDate),
         onSuccess: () => {
             setIsCompleteModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
             queryClient.invalidateQueries({ queryKey: ['isComplete', formattedDate] });
         },
         onError: (error) => {
             console.error('Failed to mark complete:', error);
+        }
+    });
+
+    const closeOrdersMutation = useMutation({
+        mutationFn: () => {
+            if (!currentMenu) throw new Error('No menu found');
+            return dailyMenuService.updateStatus(currentMenu.ID, 'close');
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyMenu', formattedDate] });
+            queryClient.invalidateQueries({ queryKey: ['isComplete', formattedDate] });
+            toast.success('Orders closed successfully.');
+        },
+        onError: (error) => {
+            console.error('Failed to close orders:', error);
         }
     });
 
@@ -272,6 +357,78 @@ export default function DailyOrders() {
             doc.text(splitNotes, 14, finalY + 23);
         }
 
+        // ── Page 2: Staff Breakdown ──────────────────────────────────
+        if (staffCatalogs.length > 0) {
+            const currency = orders[0]?.currency || 'VND';
+            const { groups, grandTotal } = buildStaffBreakdown(staffCatalogs, currency);
+
+            doc.addPage();
+
+            // Page 2 title
+            doc.setFontSize(16);
+            doc.text('Staff Order Breakdown', pageWidth / 2, 18, { align: 'center' });
+            doc.setFontSize(11);
+            doc.text(`${t('dailyOrders.pdfDate')}: ${dateString}`, pageWidth / 2, 26, { align: 'center' });
+            doc.setDrawColor(200, 200, 200);
+            doc.line(14, 30, pageWidth - 14, 30);
+
+            // Build flat table body with staff section headers + food rows + subtotals
+            const tableBody: any[][] = [];
+
+            for (const group of groups) {
+                // Staff header row (spans all columns)
+                tableBody.push([
+                    { content: group.staffName, colSpan: 4, styles: { fillColor: [255, 214, 0], fontStyle: 'bold', textColor: [0, 0, 0] } },
+                ]);
+
+                // Food rows
+                for (const row of group.rows) {
+                    tableBody.push([
+                        row.foodName,
+                        formatPriceLabel(row.unitPrice, row.currency, i18n.language),
+                        row.qty.toString(),
+                        formatPriceLabel(row.subtotal, row.currency, i18n.language),
+                    ]);
+                }
+
+                // Staff subtotal row
+                tableBody.push([
+                    { content: `Total (${group.staffName})`, colSpan: 3, styles: { fillColor: [245, 245, 245], fontStyle: 'bold', halign: 'right' as const } },
+                    { content: formatPriceLabel(group.staffTotal, currency, i18n.language), styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } },
+                ]);
+            }
+
+            // Grand total row
+            tableBody.push([
+                { content: 'Grand Total (All Staff)', colSpan: 3, styles: { fillColor: [30, 30, 30], fontStyle: 'bold', textColor: [255, 255, 255], halign: 'right' as const } },
+                { content: formatPriceLabel(grandTotal, currency, i18n.language), styles: { fillColor: [30, 30, 30], fontStyle: 'bold', textColor: [255, 255, 255] } },
+            ]);
+
+            // Mismatch check
+            const mismatch = Math.abs(grandTotal - total);
+            if (mismatch > 0.01) {
+                console.warn(`[PDF] Grand total mismatch: staff grand total ${grandTotal} vs page 1 total ${total}, diff = ${mismatch}`);
+                tableBody.push([
+                    { content: `⚠ Mismatch: ${formatPriceLabel(mismatch, currency, i18n.language)}`, colSpan: 4, styles: { fillColor: [255, 230, 230], textColor: [180, 0, 0], fontStyle: 'bold' } },
+                ]);
+            }
+
+            autoTable(doc, {
+                startY: 35,
+                head: [['Food', 'Unit Price', 'Qty', 'Subtotal']],
+                body: tableBody,
+                theme: 'grid',
+                headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold', font: 'Roboto' },
+                styles: { fontSize: 9, font: 'Roboto' },
+                columnStyles: {
+                    0: { cellWidth: 'auto' },
+                    1: { cellWidth: 35, halign: 'right' as const },
+                    2: { cellWidth: 15, halign: 'center' as const },
+                    3: { cellWidth: 35, halign: 'right' as const },
+                },
+            });
+        }
+
         doc.save(`lunch-order-${selectedDate}.pdf`);
     };
 
@@ -359,6 +516,7 @@ export default function DailyOrders() {
                         <Table
                             title={t('dailyOrders.orderDetails')}
                             data={orders}
+                            onRowClick={(order) => setSelectedFoodDetails({ id: order.id, name: order.name })}
                             keyExtractor={(row) => row.id}
                             columns={[
                                 {
@@ -547,6 +705,7 @@ export default function DailyOrders() {
                                 }}
                             />
                             <button
+                                type="button"
                                 onClick={() => billInputRef.current?.click()}
                                 disabled={uploadBillMutation.isPending || isLocked}
                                 className={`w-full flex items-center justify-center gap-2 text-sm font-bold border-2 border-dashed rounded-lg py-2.5 transition-colors ${isLocked
@@ -562,14 +721,14 @@ export default function DailyOrders() {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-3">
-                        <Button
+                        {/* <Button
                             variant="primary"
                             fullWidth
                             icon={<span className="material-icons-outlined">email</span>}
                             onClick={() => setIsSendEmailModalOpen(true)}
                         >
                             {t('dailyOrders.sendEmailToSupplier', 'Send email to supplier')}
-                        </Button>
+                        </Button> */}
                         <Button
                             variant="secondary"
                             fullWidth
@@ -583,21 +742,52 @@ export default function DailyOrders() {
                                 <span className="material-icons text-sm">lock</span>
                                 {t('dailyOrders.isLocked')}
                             </div>
-                        ) : bills.length === 0 ? (
-                            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm font-medium">
-                                <span className="material-icons-outlined text-base">receipt_long</span>
-                                <span>{t('dailyOrders.uploadBillFirst', 'Upload a bill before marking complete')}</span>
-                            </div>
                         ) : (
-                            <Button
-                                variant="primary"
-                                fullWidth
-                                disabled={markCompleteMutation.isPending}
-                                icon={<span className="material-icons-outlined">check_circle</span>}
-                                onClick={() => setIsCompleteModalOpen(true)}
-                            >
-                                {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
-                            </Button>
+                            <>
+                                {isClosed && (
+                                    <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-orange-50 border-2 border-orange-300 text-orange-700 font-semibold text-sm">
+                                        <span className="material-icons text-sm">event_busy</span>
+                                        {t('dailyOrders.isClosed', 'Orders Closed')}
+                                    </div>
+                                )}
+
+                                {currentStatus === 'open' && (
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        fullWidth
+                                        disabled={closeOrdersMutation.isPending}
+                                        icon={<span className="material-icons-outlined">lock_clock</span>}
+                                        onClick={() => {
+                                            if (!currentMenu) {
+                                                toast.error(t('dailyOrders.noMenuError', 'This order does not have a menu, please add at least one dish.'));
+                                                return;
+                                            }
+                                            closeOrdersMutation.mutate();
+                                        }}
+                                    >
+                                        {closeOrdersMutation.isPending ? 'Closing...' : 'Close Orders'}
+                                    </Button>
+                                )}
+
+                                {bills.length > 0 ? (
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        fullWidth
+                                        disabled={markCompleteMutation.isPending}
+                                        icon={<span className="material-icons-outlined">check_circle</span>}
+                                        onClick={() => setIsCompleteModalOpen(true)}
+                                    >
+                                        {markCompleteMutation.isPending ? t('dailyOrders.markCompleting') : t('dailyOrders.markComplete')}
+                                    </Button>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 border-2 border-blue-300 text-blue-700 font-semibold text-sm text-center">
+                                        <span className="material-icons text-sm">info</span>
+                                        {t('dailyOrders.uploadBillAlert', 'Upload bill to complete the order.')}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 
@@ -860,6 +1050,13 @@ export default function DailyOrders() {
                     </div>
                 </div>
             )}
+
+            <StaffListModal
+                isOpen={!!selectedFoodDetails}
+                onClose={() => setSelectedFoodDetails(null)}
+                catalogName={selectedFoodDetails?.name || ''}
+                staffOrders={staffCatalogs.filter((sc: any) => sc.Catalog_ID === selectedFoodDetails?.id)}
+            />
         </RootLayout>
     );
 }
