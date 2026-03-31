@@ -25,7 +25,12 @@ This feature extends the current Lunch Order app with a separate order flow that
 
 ## 3.1 Quick Order List Screen
 
-Shows quick orders created by current user.
+Shows quick orders visible to current user.
+
+Visibility rule:
+- Show orders where current user is invited.
+- Creator is always invited to their own order.
+- If creator selected invite-all, all employees can see the order.
 
 Columns:
 - Order name
@@ -40,7 +45,7 @@ Behavior:
 ## 3.2 Quick Order Detail Screen
 
 Displays:
-- Restaurant name
+- Order name
 - Share-bill status (`enabled` or `disabled`)
 - Order status (`open`, `closed`, `completed`)
 - Food options list
@@ -58,8 +63,9 @@ Actions:
 
 Inputs:
 - Order name
-- Restaurant name
 - Share-bill checkbox
+- Invite employees selector (from `Staff` table only)
+- Invite all checkbox (quick option)
 - Currency selector
 - Food rows: `food name`, `price`
 - Scan Menu button
@@ -67,6 +73,9 @@ Inputs:
 Behavior:
 - Scan Menu populates food rows from extracted menu items.
 - User can edit scanned rows before confirm.
+- Creator is automatically added to invited users.
+- If invite-all is checked, order is visible to all employees.
+- Invitable employees are restricted to users in `Staff`.
 - Confirm creates a new `open` order.
 
 ## 4. Status Lifecycle
@@ -107,11 +116,15 @@ Notes:
 
 1. User can create a quick order with manual food entries.
 2. User can scan menu and edit extracted items before confirming.
-3. New quick order appears in list with status `open`.
-4. Clicking list row opens detail with all required sections.
-5. Additional costs update total in real time.
-6. User can export staff choices PDF from detail page.
-7. User can close order only when status is `open`.
-8. Share-bill toggle controls bill visibility to other users.
-9. List screen always shows: name, date, total, status.
-
+3. User can select invited employees during creation.
+4. Creator is automatically invited on creation.
+5. User can choose invite-all to make order visible to all employees.
+6. Invitable employees come only from `Staff` table.
+7. New quick order appears in list with status `open`.
+8. Only invited users can see order in list view.
+9. Clicking list row opens detail with all required sections.
+10. Additional costs update total in real time.
+11. User can export staff choices PDF from detail page.
+12. User can close order only when status is `open`.
+13. Share-bill toggle controls bill visibility to other users.
+14. List screen always shows: name, date, total, status.
