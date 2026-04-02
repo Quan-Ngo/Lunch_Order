@@ -5,6 +5,8 @@
         "catalog": "Catalog",
         "manageMenu": "Manage Menu",
         "dailyOrders": "Daily Orders",
+        "quickOrderManagement": "Quick Order Management",
+        "quickOrderHistory": "Quick Order History",
         "selectUser": "Select User",
         "admin": "Admin",
         "staff": "Staff",

@@ -11,6 +11,8 @@ const navLinks = [
     { to: '/catalog', labelKey: 'navbar.catalog', allowedRoles: ['admin'] },
     { to: '/manage-menu', labelKey: 'navbar.manageMenu', allowedRoles: ['admin'] },
     { to: '/daily-orders', labelKey: 'navbar.dailyOrders', allowedRoles: ['admin'] },
+    { to: '/quick-order-management', labelKey: 'navbar.quickOrderManagement', allowedRoles: ['admin'] },
+    { to: '/quick-order-history', labelKey: 'navbar.quickOrderHistory', allowedRoles: ['admin', 'staff'] },
 ];
 
 const LANGUAGE_LABELS: Record<string, string> = {
