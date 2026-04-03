@@ -35,6 +35,8 @@ entity DailyMenu : cuid, managed {
     status       : String(10) default 'open'; // 'open', 'close', 'complete'
     orderOpens   : Timestamp;
     orderCloses  : Timestamp;
+    isShare      : Boolean;
+    type         : String(20) default 'quick'; // daily or quick
     catalogs     : Association to many Catalog on catalogs.dailyMenu = $self;
     note         : String(500);
 }

@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 /* === Neo-Brutalist Design Tokens === */
 @theme {
@@ -97,70 +96,4 @@ body {
 .neo-input:focus {
     box-shadow: var(--shadow-neobrutalism-lg);
     transform: translate(-2px, -2px);
-}
-
-/* === Quick Order Styles === */
-.font-headline {
-    font-family: 'Space Grotesk', sans-serif;
-}
-
-.font-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-.font-label {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-
-.pop-art-shadow {
-    box-shadow: 8px 8px 0px 0px rgba(12, 15, 15, 1);
-}
-
-.pop-art-shadow-small {
-    box-shadow: 4px 4px 0px 0px rgba(12, 15, 15, 1);
-}
-
-.pop-art-border {
-    border: 2px solid #0c0f0f;
-}
-
-.sticker-rotate-left {
-    transform: rotate(-3deg);
-}
-
-.sticker-rotate-right {
-    transform: rotate(3deg);
-}
-
-.custom-checkbox {
-    appearance: none;
-    width: 1.15rem;
-    height: 1.15rem;
-    border: 1.5px solid #ffffff;
-    border-radius: 4px;
-    background-color: transparent;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.1s;
-}
-
-.custom-checkbox:checked {
-    background-color: #ffd709;
-    border-color: #ffd709;
-}
-
-.custom-checkbox:checked::after {
-    content: 'check';
-    font-family: 'Material Icons Outlined';
-    font-size: 1rem;
-    color: #0c0f0f;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.custom-checkbox-dark-border {
-    border-color: #0c0f0f;
 }
