@@ -5,6 +5,8 @@ import FoodCatalog from '@/pages/FoodCatalog';
 import Employees from '@/pages/Employees';
 import ManageMenu from '@/pages/ManageMenu';
 import DailyOrders from '@/pages/DailyOrders';
+import QuickOrderManagement from '@/pages/QuickOrderManagement';
+import QuickOrderHistory from '@/pages/QuickOrderHistory';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 const queryClient = new QueryClient({
@@ -29,6 +31,8 @@ export default function App() {
           <Route path="/employees" element={<ProtectedRoute allowedRoles={['admin']}><Employees /></ProtectedRoute>} />
           <Route path="/manage-menu" element={<ProtectedRoute allowedRoles={['admin']}><ManageMenu /></ProtectedRoute>} />
           <Route path="/daily-orders" element={<ProtectedRoute allowedRoles={['admin']}><DailyOrders /></ProtectedRoute>} />
+          <Route path="/quick-order-management" element={<ProtectedRoute allowedRoles={['admin', 'staff']}><QuickOrderManagement /></ProtectedRoute>} />
+          <Route path="/quick-order-history" element={<ProtectedRoute allowedRoles={['admin', 'staff']}><QuickOrderHistory /></ProtectedRoute>} />
         </Routes>
       </HashRouter>
       <style>{`

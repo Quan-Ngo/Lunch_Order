@@ -109,9 +109,9 @@ export default function Employees() {
             className: 'col-span-4 flex justify-end',
             render: (row) => (
                 <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
+                    {/* <Button variant="secondary" size="sm" className="border-0 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-0 focus:ring-offset-0 shadow-none hover:shadow-none" onClick={() => { }}>
                         {t('employees.actions.grantAdmin')}
-                    </Button>
+                    </Button> */}
                     <Button
                         variant="secondary"
                         size="sm"

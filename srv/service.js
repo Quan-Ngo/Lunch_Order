@@ -203,12 +203,23 @@ module.exports = class LunchService extends cds.ApplicationService {
             if (!date) return req.error(400, 'date is required');
 
             const { DailyMenu, Staff } = this.entities;
+            const existingMenu = await SELECT.one.from(DailyMenu).where({ date });
+            const menuPayload = {
+                status: 'open',
+                isShare: true,
+                type: 'daily',
+            };
 
-            if (orderOpens || orderCloses) {
-                const updateData = {};
-                if (orderOpens) updateData.orderOpens = orderOpens;
-                if (orderCloses) updateData.orderCloses = orderCloses;
-                await UPDATE(DailyMenu).set(updateData).where({ date });
+            if (orderOpens) menuPayload.orderOpens = orderOpens;
+            if (orderCloses) menuPayload.orderCloses = orderCloses;
+
+            if (existingMenu) {
+                await UPDATE(DailyMenu).set(menuPayload).where({ ID: existingMenu.ID });
+            } else {
+                await INSERT.into(DailyMenu).entries({
+                    date,
+                    ...menuPayload,
+                });
             }
 
             console.log(`[LunchService] confirmMenu: Skipping mark as complete for ${date}.`);
@@ -363,31 +374,256 @@ module.exports = class LunchService extends cds.ApplicationService {
                 return req.error(401, 'No authenticated user found');
             }
 
-            const email = (user.id || '').trim().toLowerCase();
-            const firstname = user.attr?.given_name ?? '';
-            const lastname = user.attr?.family_name ?? '';
-            const displayName = (firstname && lastname)
-                ? `${firstname} ${lastname}`
-                : user.id;
-            const normalizedDisplayName = displayName.trim().toLowerCase();
+            const KNOWN_SCOPES = [
+                'CMNA_READ_ASSIGNED_USER',
+                'CMNA_READ_ALL_USER',
+                'CMNA_ADD_USER',
+                'CMNA_UPDATE_USER',
+                'CMNA_DELETE_USER',
+            ];
+            const ROLE_TEMPLATE_SCOPE_MAP = {
+                CMNA_USER: ['CMNA_READ_ASSIGNED_USER'],
+                CMNA_ADMIN: [
+                    'CMNA_ADD_USER',
+                    'CMNA_DELETE_USER',
+                    'CMNA_READ_ASSIGNED_USER',
+                    'CMNA_READ_ALL_USER',
+                    'CMNA_UPDATE_USER',
+                ],
+            };
+            const AUTH_TRACE_ENABLED = String(process.env.AUTH_TRACE || '').toLowerCase() === 'true';
 
-            // Match the authenticated user against the Staff table server-side
-            const matchedStaff = await SELECT.one.from(Staff).where({
-                email: email
-            }).or({
-                name: displayName
-            }).or({
-                name: email
-            });
+            const asTrimmedString = (value) => {
+                if (typeof value === 'string' && value.trim()) return value.trim();
+                return null;
+            };
 
-            return JSON.stringify({
+            const toFirstString = (...values) => {
+                for (const value of values) {
+                    if (Array.isArray(value)) {
+                        const firstNonEmpty = value.find((entry) => typeof entry === 'string' && entry.trim());
+                        if (firstNonEmpty) return firstNonEmpty.trim();
+                        continue;
+                    }
+                    if (typeof value === 'string' && value.trim()) {
+                        return value.trim();
+                    }
+                }
+                return '';
+            };
+
+            const toStringArray = (value) => {
+                if (Array.isArray(value)) {
+                    return value
+                        .filter((entry) => typeof entry === 'string')
+                        .map((entry) => entry.trim())
+                        .filter(Boolean);
+                }
+                if (typeof value === 'string' && value.trim()) {
+                    return [value.trim()];
+                }
+                return [];
+            };
+
+            const uniqueSorted = (values) => Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+            const normalize = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+            const looksLikeEmail = (value) => typeof value === 'string' && value.includes('@');
+            const normalizeScopeToRole = (value) => {
+                const normalized = asTrimmedString(value);
+                if (!normalized) return null;
+                return normalized.includes('.') ? normalized.split('.').pop() : normalized;
+            };
+            const collectRolesFromUser = (targetUser) => uniqueSorted([
+                ...Object.keys(targetUser?._roles || {}),
+                ...toStringArray(targetUser?.roles),
+                ...toStringArray(targetUser?.scopes),
+            ].map(normalizeScopeToRole).filter(Boolean));
+            const inferScopesFromReqUser = (targetUser) => KNOWN_SCOPES.filter((scope) => targetUser?.is?.(scope));
+            const inferRoleTemplates = (resolvedScopes) => {
+                const availableScopes = new Set(resolvedScopes.map(normalizeScopeToRole).filter(Boolean));
+                return Object.entries(ROLE_TEMPLATE_SCOPE_MAP)
+                    .filter(([, requiredScopes]) => requiredScopes.every((scope) => availableScopes.has(scope)))
+                    .map(([roleTemplate]) => roleTemplate)
+                    .sort((a, b) => a.localeCompare(b));
+            };
+
+            const getAttr = (attributeName) => {
+                const attrValue = user.attr?.[attributeName];
+                const fromUser = toStringArray(attrValue);
+                if (fromUser.length > 0) return fromUser;
+
+                const authInfoValue = user.authInfo?.getAttribute?.(attributeName);
+                return toStringArray(authInfoValue);
+            };
+
+            const getNestedClaimValue = (source, path) => {
+                if (!source || typeof source !== 'object') return null;
+                return path.split('.').reduce((current, key) => {
+                    if (current && typeof current === 'object' && key in current) {
+                        return current[key];
+                    }
+                    return undefined;
+                }, source);
+            };
+
+            const decodeJwtPayload = (token) => {
+                if (!token || typeof token !== 'string') return {};
+                const parts = token.split('.');
+                if (parts.length < 2) return {};
+                try {
+                    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                    const padded = payload.padEnd(payload.length + ((4 - payload.length % 4) % 4), '=');
+                    return JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+                } catch (error) {
+                    return {};
+                }
+            };
+
+            const bearerToken = req.headers?.authorization || req.http?.req?.headers?.authorization || '';
+            const rawToken = typeof bearerToken === 'string' && bearerToken.toLowerCase().startsWith('bearer ')
+                ? bearerToken.slice(7)
+                : '';
+            const authPayload = {
+                ...decodeJwtPayload(rawToken),
+                ...(user.authInfo?.getPayload?.() || {}),
+            };
+
+            const rawEmail = toFirstString(
+                getAttr('email'),
+                getAttr('mail'),
+                getAttr('user_name'),
+                getAttr('preferred_username'),
+                getAttr('subaccountuseremail'),
+                getNestedClaimValue(authPayload, 'email'),
+                getNestedClaimValue(authPayload, 'mail'),
+                getNestedClaimValue(authPayload, 'upn'),
+                getNestedClaimValue(authPayload, 'emails'),
+                getNestedClaimValue(authPayload, 'ext_attr.email'),
+                getNestedClaimValue(authPayload, 'ext_attr.mail'),
+                looksLikeEmail(user.id) ? user.id : ''
+            );
+
+            const firstname = toFirstString(
+                getAttr('given_name'),
+                getAttr('givenName'),
+                getAttr('firstname'),
+                getNestedClaimValue(authPayload, 'given_name'),
+                getNestedClaimValue(authPayload, 'givenName'),
+                getNestedClaimValue(authPayload, 'ext_attr.given_name')
+            );
+            const lastname = toFirstString(
+                getAttr('family_name'),
+                getAttr('familyName'),
+                getAttr('lastname'),
+                getNestedClaimValue(authPayload, 'family_name'),
+                getNestedClaimValue(authPayload, 'familyName'),
+                getNestedClaimValue(authPayload, 'ext_attr.family_name')
+            );
+            const displayName = toFirstString(
+                [firstname, lastname].filter(Boolean).join(' '),
+                getAttr('name'),
+                getAttr('display_name'),
+                getAttr('displayName'),
+                getNestedClaimValue(authPayload, 'name'),
+                getNestedClaimValue(authPayload, 'display_name'),
+                rawEmail,
+                user.id
+            );
+
+            const email = normalize(rawEmail);
+            const normalizedDisplayName = normalize(displayName);
+            const normalizedUserId = normalize(user.id);
+            const rawTokenScopes = uniqueSorted([
+                ...toStringArray(authPayload.scope),
+                ...toStringArray(authPayload.scopes),
+                ...toStringArray(authPayload.authorities),
+                ...toStringArray(user.scopes),
+                ...toStringArray(req.user?.scopes),
+            ]);
+
+            const inferredScopes = inferScopesFromReqUser(user);
+            const tokenScopes = uniqueSorted([
+                ...rawTokenScopes,
+                ...inferredScopes,
+            ]);
+
+            const reqUserRoles = uniqueSorted([
+                ...collectRolesFromUser(user),
+                ...collectRolesFromUser(req.user),
+                ...inferredScopes,
+            ]);
+
+            const roleCollections = uniqueSorted([
+                ...toStringArray(getNestedClaimValue(authPayload, 'xs.system.attributes.xs.rolecollections')),
+                ...toStringArray(getNestedClaimValue(authPayload, 'xs.rolecollections')),
+                ...toStringArray(getNestedClaimValue(authPayload, 'xs.system.attributes.rolecollections')),
+                ...toStringArray(getNestedClaimValue(authPayload, 'role_collections')),
+                ...toStringArray(getNestedClaimValue(authPayload, 'granted_roles')),
+                ...toStringArray(getNestedClaimValue(authPayload, 'groups')),
+            ]);
+
+            const genericRoles = new Set(['any', 'authenticated-user', 'identified-user']);
+            const roles = uniqueSorted([
+                ...reqUserRoles.map(normalizeScopeToRole),
+                ...toStringArray(getAttr('roles')).map(normalizeScopeToRole),
+                ...tokenScopes.map(normalizeScopeToRole),
+                ...roleCollections.map(normalizeScopeToRole),
+            ].filter((role) => role && !genericRoles.has(role)));
+
+            const scopes = uniqueSorted([
+                ...tokenScopes,
+                ...roleCollections,
+            ]);
+            const roleTemplates = uniqueSorted([
+                ...roleCollections,
+                ...inferRoleTemplates(scopes),
+            ]);
+
+            // In BTP, req.user.id can be a GUID, so we match against Staff using email/name claims instead.
+            const allStaff = await SELECT.from(Staff);
+            const matchedStaff = allStaff.find((staff) => {
+                const staffEmail = normalize(staff.email);
+                const staffName = normalize(staff.name);
+                return (
+                    (email && staffEmail === email) ||
+                    (normalizedDisplayName && staffName === normalizedDisplayName) ||
+                    (normalizedUserId && staffEmail === normalizedUserId) ||
+                    (normalizedUserId && staffName === normalizedUserId)
+                );
+            }) || null;
+
+            if (AUTH_TRACE_ENABLED) {
+                console.log('[getCurrentUser TRACE]', JSON.stringify({
+                    userId: user.id,
+                    email,
+                    displayName,
+                    grantType: authPayload.grant_type || '',
+                    authInfoPayloadKeys: Object.keys(authPayload || {}),
+                    tokenScopes,
+                    roleCollections,
+                    roles,
+                    roleTemplates,
+                    inferredScopes,
+                    userRolesRaw: user._roles || {},
+                    userScopesRaw: user.scopes || [],
+                    userAttrKeys: Object.keys(user.attr || {}),
+                }, null, 2));
+            }
+
+            return {
                 name: user.id,
-                email: user.id,
+                email: rawEmail || user.id,
                 firstname,
                 lastname,
                 displayName,
-                staff: matchedStaff || null
-            });
+                scopes: scopes.join(','),
+                roles: roles.join(','),
+                roleTemplates: roleTemplates.join(','),
+                tokenScopes: tokenScopes.join(','),
+                grantType: authPayload.grant_type || '',
+                isAdmin: req.user.is('CMNA_READ_ALL_USER'),
+                staff: matchedStaff
+            };
         });
 
         // Detect when a food item is removed from the daily menu

@@ -11,6 +11,8 @@ const navLinks = [
     { to: '/catalog', labelKey: 'navbar.catalog', allowedRoles: ['admin'] },
     { to: '/manage-menu', labelKey: 'navbar.manageMenu', allowedRoles: ['admin'] },
     { to: '/daily-orders', labelKey: 'navbar.dailyOrders', allowedRoles: ['admin'] },
+    { to: '/quick-order-management', labelKey: 'navbar.quickOrderManagement', allowedRoles: ['admin', 'staff'] },
+    { to: '/quick-order-history', labelKey: 'navbar.quickOrderHistory', allowedRoles: ['admin', 'staff'] },
 ];
 
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -152,8 +154,8 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16 sm:h-20 items-center gap-3">
-                    <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
+                <div className="flex h-16 sm:h-20 items-center gap-3">
+                    <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
                         <div className="bg-primary p-1.5 sm:p-2 rounded-lg border-2 border-black shadow-[var(--shadow-neobrutalism)] transition-transform group-hover:rotate-3">
                             <span className="material-icons text-black text-xl sm:text-2xl">lunch_dining</span>
                         </div>
@@ -162,7 +164,8 @@ export default function Navbar() {
                         </span>
                     </Link>
 
-                    <div className="hidden md:flex items-center gap-6">
+                    <div className="hidden md:flex flex-1 min-w-0 items-center justify-center px-4">
+                        <div className="flex items-center gap-4 lg:gap-6 min-w-0">
                         {navLinks
                             .filter((link) => link.allowedRoles.includes(currentUser?.role ?? 'staff'))
                             .map((link) => (
@@ -170,12 +173,23 @@ export default function Navbar() {
                                     <NavigationPageSelect
                                         variant={isActive(link.to) ? 'primary' : 'ghost'}
                                         size="sm"
-                                        className={isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'}
+                                        className={`${isActive(link.to) ? '' : 'border-transparent font-medium hover:border-gray-200'} ${
+                                            link.to === '/quick-order-history' ? 'w-[8.5rem] whitespace-normal leading-tight text-center' : ''
+                                        }`}
                                     >
-                                        {t(link.labelKey)}
+                                        {link.to === '/quick-order-history' ? (
+                                            <span>
+                                                Quick Order
+                                                <br />
+                                                History
+                                            </span>
+                                        ) : (
+                                            t(link.labelKey)
+                                        )}
                                     </NavigationPageSelect>
                                 </Link>
                             ))}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-3 shrink-0">

@@ -41,9 +41,9 @@ modules:
     parameters:
       memory: 512M
       disk-quota: 512M
-      tasks:
-        - name: deploy-notification-types
-          command: npm run deploy:notification-types
+      # tasks:
+      #   - name: deploy-notification-types
+      #     command: npm run deploy:notification-types
     provides:
       - name: srv-api
         properties:
@@ -55,7 +55,7 @@ modules:
       - name: cnma_internallunchorder_xsuaa
       - name: cnma_internallunchorder_destination
       - name: cnma_internallunchorder_connectivity
-      - name: cnma_internallunchorder_alert_notification
+      # - name: cnma_internallunchorder_alert_notification
 
   # ------------------------------------------------------------
   # (3) UI MODULE
@@ -73,7 +73,7 @@ modules:
       build-result: .
       builder: custom
       commands:
-        - npm ci
+        - npm install
         - npm run build
       ignore: ["node_modules/", "src/", "public/", "dist/"]
 
@@ -215,8 +215,8 @@ resources:
   # ------------------------------------------------------------
   # (7) ALERT NOTIFICATION SERVICE
   # ------------------------------------------------------------
-  - name: cnma_internallunchorder_alert_notification
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: alert-notification
-      service-plan: free
+  # - name: cnma_internallunchorder_alert_notification
+  #   type: org.cloudfoundry.managed-service
+  #   parameters:
+  #     service: alert-notification
+  #     service-plan: free

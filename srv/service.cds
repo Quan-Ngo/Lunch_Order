@@ -1,9 +1,37 @@
 using lunch from '../db/schema';
 
+type CurrentUserStaff {
+    ID           : UUID;
+    createdAt    : Timestamp;
+    createdBy    : String;
+    email        : String(255);
+    modifiedAt   : Timestamp;
+    modifiedBy   : String;
+    name         : String(100);
+    notification : Boolean;
+    status       : Boolean;
+}
+
+type CurrentUserResponse {
+    name         : String(255);
+    email        : String(255);
+    firstname    : String(255);
+    lastname     : String(255);
+    displayName  : String(255);
+    scopes       : String(5000);
+    roles        : String(5000);
+    roleTemplates: String(5000);
+    tokenScopes  : String(5000);
+    grantType    : String(255);
+    isAdmin      : Boolean;
+    staff        : CurrentUserStaff;
+}
+
 @path: '/odata/v4/lunch'
 service LunchService {
     @restrict: [
         { grant: 'READ',   to: 'CMNA_READ_ASSIGNED_USER' },
+        { grant: ['CREATE', 'UPDATE', 'DELETE'], to: 'CMNA_READ_ASSIGNED_USER' },
         { grant: 'READ',   to: 'CMNA_READ_ALL_USER' },
         { grant: 'CREATE', to: 'CMNA_ADD_USER' },
         { grant: 'UPDATE', to: 'CMNA_UPDATE_USER' },
@@ -26,16 +54,23 @@ service LunchService {
 
     @restrict: [
         { grant: 'READ', to: 'CMNA_READ_ASSIGNED_USER' },
+        { grant: ['CREATE', 'UPDATE', 'DELETE'], to: 'CMNA_READ_ASSIGNED_USER' },
         { grant: 'READ', to: 'CMNA_READ_ALL_USER' },
         { grant: ['CREATE', 'UPDATE', 'DELETE'], to: 'CMNA_READ_ALL_USER' }
     ]
     entity DailyMenu    as projection on lunch.DailyMenu;
 
     @restrict: [
-        { grant: ['READ', 'CREATE', 'DELETE'], to: 'CMNA_READ_ASSIGNED_USER' },
+        { grant: ['READ', 'CREATE', 'UPDATE', 'DELETE'], to: 'CMNA_READ_ASSIGNED_USER' },
         { grant: '*', to: 'CMNA_READ_ALL_USER' }
     ]
     entity StaffCatalog as projection on lunch.StaffCatalog;
+
+    @restrict: [
+        { grant: ['READ', 'CREATE', 'DELETE'], to: 'CMNA_READ_ASSIGNED_USER' },
+        { grant: '*', to: 'CMNA_READ_ALL_USER' }
+    ]
+    entity MenuInviteStaff as projection on lunch.MenuInviteStaff;
 
     @restrict: [
         { grant: 'READ',   to: 'CMNA_READ_ASSIGNED_USER' },
@@ -47,6 +82,8 @@ service LunchService {
     entity CatalogFile  as projection on lunch.CatalogFile;
 
     @restrict: [
+        { grant: 'READ',   to: 'CMNA_READ_ASSIGNED_USER' },
+        { grant: ['CREATE', 'UPDATE'], to: 'CMNA_READ_ASSIGNED_USER' },
         { grant: 'READ',   to: 'CMNA_READ_ALL_USER' },
         { grant: 'CREATE', to: 'CMNA_ADD_USER' },
         { grant: 'UPDATE', to: 'CMNA_UPDATE_USER' },
@@ -73,5 +110,5 @@ service LunchService {
     function userInfo() returns String;
     action confirmMenu(date : String, orderOpens: Timestamp, orderCloses: Timestamp) returns String;
     action confirmOrder(date : String, supplierEmail : String) returns String;
-    function getCurrentUser() returns String;
+    function getCurrentUser() returns CurrentUserResponse;
 }

@@ -92,7 +92,7 @@ export interface Food {
 }
 
 // Interface from the backend (matches CDS model)
-interface CatalogEntity {
+export interface CatalogEntity {
     ID: string;
     name: string;
     description: string;
@@ -100,6 +100,8 @@ interface CatalogEntity {
     currency: string;
     category: string;
     isActive: boolean;
+    type?: 'daily' | 'quick';
+    dailyMenu_ID?: string | null;
     file?: {
         ID: string;
         url: string;
@@ -112,6 +114,12 @@ export interface StaffEntity {
     email?: string;
     notification: boolean;
     status: boolean;
+}
+
+export interface MenuInviteStaffEntity {
+    DailyMenu_ID: string;
+    Staff_ID: string;
+    staff?: StaffEntity;
 }
 
 // ─────────────────────────────────────────────
@@ -174,6 +182,33 @@ export const foodService = {
             price: data.price,
             currency: data.currency,
             description: data.description,
+        });
+    },
+    createQuickOrderItem: async (
+        dailyMenuId: string,
+        data: { name: string; price: number; currency: string }
+    ): Promise<string> => {
+        const response = await api.post('/Catalog', {
+            name: data.name,
+            price: data.price,
+            currency: data.currency,
+            description: '',
+            category: 'General',
+            isActive: true,
+            type: 'quick',
+            dailyMenu_ID: dailyMenuId,
+        });
+        return response.data.ID;
+    },
+    updateQuickOrderItem: async (
+        id: string,
+        data: { name: string; price: number; currency: string }
+    ): Promise<void> => {
+        await api.patch(`/Catalog(${id})`, {
+            name: data.name,
+            price: data.price,
+            currency: data.currency,
+            type: 'quick',
         });
     },
     toggleActive: async (id: string, isActive: boolean): Promise<void> => {
@@ -253,19 +288,59 @@ export const employeeService = {
 // ─────────────────────────────────────────────
 export interface DailyMenuEntity {
     ID: string;
+    createdAt?: string;
+    createdBy?: string;
     date: string;
+    name?: string;
     status: 'open' | 'close' | 'complete';
+    isShare?: boolean;
+    additionalCost?: number;
+    additionalCostCurrency?: string;
+    type?: 'daily' | 'quick';
     orderOpens?: string;
     orderCloses?: string;
     catalogs?: Array<CatalogEntity & { file?: { url: string } }>;
+    menuInvites?: MenuInviteStaffEntity[];
     note?: string;
 }
 
 export const dailyMenuService = {
+    buildQuotedODataValue: (value: string): string =>
+        `'${value.replace(/'/g, "''")}'`,
+
+    buildCreatorFilter: (values: string[]): string =>
+        values
+            .map((value) => value.trim())
+            .filter(Boolean)
+            .map((value) => `createdBy eq ${dailyMenuService.buildQuotedODataValue(value)}`)
+            .join(' or '),
+
     /** Get all menu items for a given date */
     getByDate: async (dateString: string): Promise<DailyMenuEntity[]> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
             `/DailyMenu?$filter=date eq '${dateString}'&$expand=catalogs($expand=file)`
+        );
+        return response.data.value;
+    },
+
+    /** Get quick orders created by a specific user identity, newest first */
+    getQuickOrdersByCreator: async (creatorIdentities: string[]): Promise<DailyMenuEntity[]> => {
+        const normalizedIdentities = Array.from(
+            new Set(creatorIdentities.map((value) => value.trim()).filter(Boolean))
+        );
+        if (normalizedIdentities.length === 0) return [];
+
+        const creatorFilter = dailyMenuService.buildCreatorFilter(normalizedIdentities);
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=type eq 'quick' and (${creatorFilter})&$expand=catalogs,menuInvites($expand=staff)&$orderby=createdAt desc`
+        );
+        return response.data.value;
+    },
+
+    /** Get quick orders invited for a specific staff member, newest first */
+    getInvitedQuickOrdersByStaff: async (staffId: string): Promise<DailyMenuEntity[]> => {
+        const response = await api.get<{ value: DailyMenuEntity[] }>(
+            `/DailyMenu?$filter=type eq 'quick' and menuInvites/any(i:i/Staff_ID eq ${staffId})&$expand=catalogs,menuInvites($expand=staff)&$orderby=createdAt desc`
         );
         return response.data.value;
     },
@@ -280,7 +355,12 @@ export const dailyMenuService = {
         let menuId = response.data.value[0]?.ID;
 
         if (!menuId) {
-            const createRes = await api.post('/DailyMenu', { date: dateString, status: 'open' });
+            const createRes = await api.post('/DailyMenu', {
+                date: dateString,
+                status: 'open',
+                isShare: true,
+                type: 'daily',
+            });
             menuId = createRes.data.ID;
         }
 
@@ -301,7 +381,13 @@ export const dailyMenuService = {
 
     /** Create a note-only daily menu entry */
     createNote: async (dateString: string, note: string): Promise<void> => {
-        await api.post('/DailyMenu', { date: dateString, note, status: 'open' });
+        await api.post('/DailyMenu', {
+            date: dateString,
+            note,
+            status: 'open',
+            isShare: true,
+            type: 'daily',
+        });
     },
 
     /** Confirm menu: marks complete AND sends email notifications to eligible staff */
@@ -331,6 +417,19 @@ export const dailyMenuService = {
         await api.patch(`/DailyMenu(${id})`, { status });
     },
 
+    /** Update editable quick-order fields */
+    updateQuickOrder: async (
+        id: string,
+        data: { name: string; isShare: boolean; additionalCost: number; additionalCostCurrency: string }
+    ): Promise<void> => {
+        await api.patch(`/DailyMenu(${id})`, {
+            name: data.name,
+            isShare: data.isShare,
+            additionalCost: data.additionalCost,
+            additionalCostCurrency: data.additionalCostCurrency,
+        });
+    },
+
     /** Set status='complete' for menu by date */
     completeOrder: async (dateString: string): Promise<void> => {
         const response = await api.get<{ value: DailyMenuEntity[] }>(
@@ -339,6 +438,94 @@ export const dailyMenuService = {
         const menu = response.data.value[0];
         if (!menu) throw new Error('Menu not found');
         await api.patch(`/DailyMenu(${menu.ID})`, { status: 'complete' });
+    },
+
+    /** Create a quick order with its own menu items */
+    createQuickOrder: async (
+        dateString: string,
+        data: {
+            menuName: string;
+            isShare: boolean;
+            additionalCost: number;
+            additionalCostCurrency: string;
+            creatorStaffId?: string;
+            items: Array<{ name: string; price: string; currency: string }>;
+        }
+    ): Promise<string> => {
+        const menuResponse = await api.post('/DailyMenu', {
+            date: dateString,
+            name: data.menuName,
+            status: 'open',
+            isShare: data.isShare,
+            additionalCost: data.additionalCost,
+            additionalCostCurrency: data.additionalCostCurrency,
+            type: 'quick',
+        });
+
+        const menuId = menuResponse.data.ID;
+
+        const createRequests = [
+            ...(data.creatorStaffId
+                ? [
+                    api.post('/MenuInviteStaff', {
+                        DailyMenu_ID: menuId,
+                        Staff_ID: data.creatorStaffId,
+                    }),
+                ]
+                : []),
+            data.items.map((item) =>
+                api.post('/Catalog', {
+                    name: item.name,
+                    price: parseFloat(item.price),
+                    currency: item.currency,
+                    description: '',
+                    category: 'General',
+                    isActive: true,
+                    type: 'quick',
+                    dailyMenu_ID: menuId,
+                })
+            ),
+        ].flat();
+
+        await Promise.all(createRequests);
+
+        return menuId;
+    },
+};
+
+export const menuInviteStaffService = {
+    create: async (dailyMenuId: string, staffId: string): Promise<void> => {
+        await api.post('/MenuInviteStaff', {
+            DailyMenu_ID: dailyMenuId,
+            Staff_ID: staffId,
+        });
+    },
+
+    delete: async (dailyMenuId: string, staffId: string): Promise<void> => {
+        await api.delete(`/MenuInviteStaff(DailyMenu_ID=${dailyMenuId},Staff_ID=${staffId})`);
+    },
+
+    deleteByDailyMenu: async (dailyMenuId: string): Promise<void> => {
+        const response = await api.get<{ value: MenuInviteStaffEntity[] }>(
+            `/MenuInviteStaff?$filter=DailyMenu_ID eq ${dailyMenuId}`
+        );
+
+        await Promise.all(
+            response.data.value.map((invite) =>
+                menuInviteStaffService.delete(invite.DailyMenu_ID, invite.Staff_ID)
+            )
+        );
+    },
+
+    replaceForDailyMenu: async (dailyMenuId: string, staffIds: string[]): Promise<void> => {
+        await menuInviteStaffService.deleteByDailyMenu(dailyMenuId);
+
+        if (staffIds.length === 0) return;
+
+        const uniqueStaffIds = Array.from(new Set(staffIds));
+        await Promise.all(
+            uniqueStaffIds.map((staffId) => menuInviteStaffService.create(dailyMenuId, staffId))
+        );
     },
 };
 
@@ -386,7 +573,9 @@ export const summaryService = {
 export interface StaffCatalogEntity {
     Staff_ID: string;
     Catalog_ID: string;
+    DailyMenu_ID: string;
     date: string; // YYYY-MM-DD
+    note?: string;
     staff?: StaffEntity;
     catalog?: {
         ID: string;
@@ -398,37 +587,62 @@ export interface StaffCatalogEntity {
         isActive: boolean;
         file?: { url: string };
     };
+    dailyMenu?: DailyMenuEntity;
 }
 
 export const staffCatalogService = {
     /** Get today's order for a given staff member */
-    getForStaffAndDate: async (staffId: string, date: string): Promise<StaffCatalogEntity | null> => {
-        const filter = `Staff_ID eq ${staffId} and date eq '${date}'`;
+    getForStaffAndDate: async (staffId: string, date: string, dailyMenuId?: string): Promise<StaffCatalogEntity | null> => {
+        const filter = dailyMenuId
+            ? `Staff_ID eq ${staffId} and DailyMenu_ID eq ${dailyMenuId} and date eq '${date}'`
+            : `Staff_ID eq ${staffId} and date eq '${date}'`;
         const response = await api.get<{ value: StaffCatalogEntity[] }>(
             `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=catalog($expand=file)`
         );
         return response.data.value[0] ?? null;
     },
 
+    /** Get all orders for a given staff member on a given date */
+    getAllForStaffAndDate: async (staffId: string, date: string, dailyMenuId?: string): Promise<StaffCatalogEntity[]> => {
+        const filter = dailyMenuId
+            ? `Staff_ID eq ${staffId} and DailyMenu_ID eq ${dailyMenuId} and date eq '${date}'`
+            : `Staff_ID eq ${staffId} and date eq '${date}'`;
+        const response = await api.get<{ value: StaffCatalogEntity[] }>(
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=catalog($expand=file),staff,dailyMenu`
+        );
+        return response.data.value;
+    },
+
     /** Create a new order */
-    createOrder: async (staffId: string, catalogId: string, date: string): Promise<void> => {
+    createOrder: async (staffId: string, catalogId: string, dailyMenuId: string, date: string, note?: string): Promise<void> => {
         await api.post('/StaffCatalog', {
             Staff_ID: staffId,
             Catalog_ID: catalogId,
+            DailyMenu_ID: dailyMenuId,
             date: date,
+            note: note || '',
+        });
+    },
+
+    /** Update note on an order */
+    updateOrderNote: async (staffId: string, catalogId: string, dailyMenuId: string, date: string, note: string): Promise<void> => {
+        await api.patch(`/StaffCatalog(Staff_ID=${staffId},Catalog_ID=${catalogId},DailyMenu_ID=${dailyMenuId},date='${date}')`, {
+            note,
         });
     },
 
     /** Delete an order (composite key: Staff_ID + Catalog_ID + date) */
-    deleteOrder: async (staffId: string, catalogId: string, date: string): Promise<void> => {
+    deleteOrder: async (staffId: string, catalogId: string, dailyMenuId: string, date: string): Promise<void> => {
         await api.delete(
-            `/StaffCatalog(Staff_ID=${staffId},Catalog_ID=${catalogId},date='${date}')`
+            `/StaffCatalog(Staff_ID=${staffId},Catalog_ID=${catalogId},DailyMenu_ID=${dailyMenuId},date='${date}')`
         );
     },
 
     /** Get all orders for a catalog item on a specific date */
-    getByCatalogAndDate: async (catalogId: string, date: string): Promise<StaffCatalogEntity[]> => {
-        const filter = `Catalog_ID eq '${catalogId}' and date eq '${date}'`;
+    getByCatalogAndDate: async (catalogId: string, date: string, dailyMenuId?: string): Promise<StaffCatalogEntity[]> => {
+        const filter = dailyMenuId
+            ? `Catalog_ID eq '${catalogId}' and DailyMenu_ID eq ${dailyMenuId} and date eq '${date}'`
+            : `Catalog_ID eq '${catalogId}' and date eq '${date}'`;
         const response = await api.get<{ value: StaffCatalogEntity[] }>(
             `/StaffCatalog?$filter=${encodeURIComponent(filter)}`
         );
@@ -444,14 +658,23 @@ export const staffCatalogService = {
         return response.data.value;
     },
 
+    /** Get all staff orders for a specific daily menu */
+    getForDailyMenu: async (dailyMenuId: string): Promise<StaffCatalogEntity[]> => {
+        const filter = `DailyMenu_ID eq ${dailyMenuId}`;
+        const response = await api.get<{ value: StaffCatalogEntity[] }>(
+            `/StaffCatalog?$filter=${encodeURIComponent(filter)}&$expand=staff,catalog,dailyMenu`
+        );
+        return response.data.value;
+    },
+
     /**
      * Clear all selections for a catalog item on a date.
      * Catalog_ID is part of the key, so "set to null" is represented by deleting those rows.
      */
-    clearCatalogSelectionsByDate: async (catalogId: string, date: string): Promise<void> => {
-        const orders = await staffCatalogService.getByCatalogAndDate(catalogId, date);
+    clearCatalogSelectionsByDate: async (catalogId: string, date: string, dailyMenuId?: string): Promise<void> => {
+        const orders = await staffCatalogService.getByCatalogAndDate(catalogId, date, dailyMenuId);
         await Promise.all(
-            orders.map((order) => staffCatalogService.deleteOrder(order.Staff_ID, order.Catalog_ID, date))
+            orders.map((order) => staffCatalogService.deleteOrder(order.Staff_ID, order.Catalog_ID, order.DailyMenu_ID, date))
         );
     },
 };
@@ -462,6 +685,7 @@ export const staffCatalogService = {
 export interface DailyOrderBillEntity {
     ID: string;
     date: string;
+    dailyMenu_ID?: string;
     fileName: string;
     mediaType: string;
 }
@@ -475,11 +699,20 @@ export const billService = {
         return response.data.value;
     },
 
+    /** Get all bills for a specific daily menu */
+    getByDailyMenu: async (dailyMenuId: string): Promise<DailyOrderBillEntity[]> => {
+        const response = await api.get<{ value: DailyOrderBillEntity[] }>(
+            `/DailyOrderBill?$filter=dailyMenu_ID eq ${dailyMenuId}`
+        );
+        return response.data.value;
+    },
+
     /** Upload a bill file (two-step: create record, then PUT content) */
-    upload: async (dateString: string, file: File): Promise<void> => {
+    upload: async (dateString: string, file: File, dailyMenuId?: string): Promise<void> => {
         // Step 1: Create the metadata record
         const response = await api.post('/DailyOrderBill', {
             date: dateString,
+            ...(dailyMenuId ? { dailyMenu_ID: dailyMenuId } : {}),
             fileName: file.name,
             mediaType: file.type,
         });
