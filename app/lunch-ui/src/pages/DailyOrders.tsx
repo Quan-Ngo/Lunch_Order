@@ -8,12 +8,10 @@ import { SoftCard } from '@/components/elements/SoftCard';
 import { Button } from '@/components/elements/Button';
 import { Badge } from '@/components/elements/Badge';
 import { Table } from '@/components/elements/Table';
-import { formatPriceLabel } from '@/config/currency';
 import { useFormatters } from '@/hooks/useFormatters';
 import { statisticsService, foodService, summaryService, dailyMenuService, billService, staffCatalogService } from '@/services/api';
 import { StaffListModal } from '@/components/fragments/StaffListModal';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { exportOrderPdf } from '@/utils/exportOrderPdf';
 
 // --- Helper Functions ---
 
@@ -22,65 +20,6 @@ function toISODate(d: Date): string {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-}
-
-// --- Staff Breakdown Types & Helper for PDF Page 2 ---
-
-interface StaffFoodRow {
-    foodName: string;
-    unitPrice: number;
-    qty: number;
-    subtotal: number;
-    currency: string;
-}
-
-interface StaffBreakdownGroup {
-    staffName: string;
-    rows: StaffFoodRow[];
-    staffTotal: number;
-}
-
-interface StaffBreakdownResult {
-    groups: StaffBreakdownGroup[];
-    grandTotal: number;
-}
-
-function buildStaffBreakdown(
-    staffCatalogs: { staff?: { name?: string }; catalog?: { name?: string; price?: number; currency?: string } }[],
-    fallbackCurrency: string
-): StaffBreakdownResult {
-    const staffMap = new Map<string, Map<string, StaffFoodRow>>();
-
-    for (const sc of staffCatalogs) {
-        const staffName = sc.staff?.name || 'Unknown';
-        const foodName = sc.catalog?.name || 'Unknown';
-        const unitPrice = sc.catalog?.price || 0;
-        const currency = sc.catalog?.currency || fallbackCurrency;
-
-        if (!staffMap.has(staffName)) {
-            staffMap.set(staffName, new Map());
-        }
-        const foodMap = staffMap.get(staffName)!;
-        if (!foodMap.has(foodName)) {
-            foodMap.set(foodName, { foodName, unitPrice, qty: 0, subtotal: 0, currency });
-        }
-        const row = foodMap.get(foodName)!;
-        row.qty += 1;
-        row.subtotal = row.qty * row.unitPrice;
-    }
-
-    const groups: StaffBreakdownGroup[] = [];
-    let grandTotal = 0;
-
-    for (const [staffName, foodMap] of staffMap) {
-        const rows = Array.from(foodMap.values());
-        const staffTotal = rows.reduce((sum, r) => sum + r.subtotal, 0);
-        grandTotal += staffTotal;
-        groups.push({ staffName, rows, staffTotal });
-    }
-
-    groups.sort((a, b) => a.staffName.localeCompare(b.staffName));
-    return { groups, grandTotal };
 }
 
 export default function DailyOrders() {
@@ -274,162 +213,34 @@ export default function DailyOrders() {
     };
 
     const handleExportPdf = async () => {
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-
-        // Load Roboto font to support Vietnamese characters
-        try {
-            // Fetch raw TTF Roboto font
-            const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/fonts/Roboto/Roboto-Regular.ttf');
-            const buffer = await response.arrayBuffer();
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            const base64Font = window.btoa(binary);
-
-            // Register font for both normal and bold styles
-            // (autoTable uses fontStyle:'bold' in head/foot, so we need bold registered too)
-            doc.addFileToVFS('Roboto-Regular.ttf', base64Font);
-            doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
-            doc.addFont('Roboto-Regular.ttf', 'Roboto', 'bold');
-            doc.setFont('Roboto', 'normal');
-        } catch (error) {
-            console.error('Failed to load font for PDF:', error);
-            doc.setFont('helvetica', 'normal');
-        }
-
-        // Title
-        doc.setFontSize(20);
-        // doc.setFont('helvetica', 'bold'); -> Roboto normal for title to keep it simple since we only loaded normal weight, or we can just use normal and bigger size
-        doc.text(t('dailyOrders.pdfTitle'), pageWidth / 2, 20, { align: 'center' });
-
-        // Date
-        doc.setFontSize(12);
-        doc.text(`${t('dailyOrders.pdfDate')}: ${dateString}`, pageWidth / 2, 30, { align: 'center' });
-
-        // Line separator
-        doc.setDrawColor(200, 200, 200);
-        doc.line(14, 35, pageWidth - 14, 35);
-
-        // Table
-        if (orders.length > 0) {
-            const tableData = orders.map((order) => [
-                order.name,
-                formatPriceLabel(order.unitPrice, order.currency || 'VND', i18n.language),
-                order.qty.toString(),
-                formatPriceLabel(order.subtotal, order.currency || 'VND', i18n.language),
-            ]);
-
-            autoTable(doc, {
-                startY: 40,
-                head: [[
-                    t('dailyOrders.table.item'),
-                    t('dailyOrders.table.unitPrice'),
-                    t('dailyOrders.table.qty'),
-                    t('dailyOrders.table.tableSubtotal'),
-                ]],
-                body: tableData,
-                foot: [[
-                    t('dailyOrders.total'),
-                    '',
-                    totalQty.toString(),
-                    formatPriceLabel(total, orders[0]?.currency || 'VND', i18n.language),
-                ]],
-                theme: 'grid',
-                headStyles: { fillColor: [255, 214, 0], textColor: [0, 0, 0], fontStyle: 'bold', font: 'Roboto' },
-                footStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', font: 'Roboto' },
-                styles: { fontSize: 10, font: 'Roboto' },
-            });
-        } else {
-            doc.setFontSize(11);
-            doc.text(t('dailyOrders.noOrders'), pageWidth / 2, 50, { align: 'center' });
-        }
-
-        // Notes section
-        if (orderNote) {
-            const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 60;
-            doc.setFontSize(12);
-            doc.text(t('dailyOrders.orderNotes') + ':', 14, finalY + 15);
-            doc.setFontSize(10);
-            const splitNotes = doc.splitTextToSize(orderNote, pageWidth - 28);
-            doc.text(splitNotes, 14, finalY + 23);
-        }
-
-        // ── Page 2: Staff Breakdown ──────────────────────────────────
-        if (staffCatalogs.length > 0) {
-            const currency = orders[0]?.currency || 'VND';
-            const { groups, grandTotal } = buildStaffBreakdown(staffCatalogs, currency);
-
-            doc.addPage();
-
-            // Page 2 title
-            doc.setFontSize(16);
-            doc.text('Staff Order Breakdown', pageWidth / 2, 18, { align: 'center' });
-            doc.setFontSize(11);
-            doc.text(`${t('dailyOrders.pdfDate')}: ${dateString}`, pageWidth / 2, 26, { align: 'center' });
-            doc.setDrawColor(200, 200, 200);
-            doc.line(14, 30, pageWidth - 14, 30);
-
-            // Build flat table body with staff section headers + food rows + subtotals
-            const tableBody: any[][] = [];
-
-            for (const group of groups) {
-                // Staff header row (spans all columns)
-                tableBody.push([
-                    { content: group.staffName, colSpan: 4, styles: { fillColor: [255, 214, 0], fontStyle: 'bold', textColor: [0, 0, 0] } },
-                ]);
-
-                // Food rows
-                for (const row of group.rows) {
-                    tableBody.push([
-                        row.foodName,
-                        formatPriceLabel(row.unitPrice, row.currency, i18n.language),
-                        row.qty.toString(),
-                        formatPriceLabel(row.subtotal, row.currency, i18n.language),
-                    ]);
-                }
-
-                // Staff subtotal row
-                tableBody.push([
-                    { content: `Total (${group.staffName})`, colSpan: 3, styles: { fillColor: [245, 245, 245], fontStyle: 'bold', halign: 'right' as const } },
-                    { content: formatPriceLabel(group.staffTotal, currency, i18n.language), styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } },
-                ]);
-            }
-
-            // Grand total row
-            tableBody.push([
-                { content: 'Grand Total (All Staff)', colSpan: 3, styles: { fillColor: [30, 30, 30], fontStyle: 'bold', textColor: [255, 255, 255], halign: 'right' as const } },
-                { content: formatPriceLabel(grandTotal, currency, i18n.language), styles: { fillColor: [30, 30, 30], fontStyle: 'bold', textColor: [255, 255, 255] } },
-            ]);
-
-            // Mismatch check
-            const mismatch = Math.abs(grandTotal - total);
-            if (mismatch > 0.01) {
-                console.warn(`[PDF] Grand total mismatch: staff grand total ${grandTotal} vs page 1 total ${total}, diff = ${mismatch}`);
-                tableBody.push([
-                    { content: `⚠ Mismatch: ${formatPriceLabel(mismatch, currency, i18n.language)}`, colSpan: 4, styles: { fillColor: [255, 230, 230], textColor: [180, 0, 0], fontStyle: 'bold' } },
-                ]);
-            }
-
-            autoTable(doc, {
-                startY: 35,
-                head: [['Food', 'Unit Price', 'Qty', 'Subtotal']],
-                body: tableBody,
-                theme: 'grid',
-                headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold', font: 'Roboto' },
-                styles: { fontSize: 9, font: 'Roboto' },
-                columnStyles: {
-                    0: { cellWidth: 'auto' },
-                    1: { cellWidth: 35, halign: 'right' as const },
-                    2: { cellWidth: 15, halign: 'center' as const },
-                    3: { cellWidth: 35, halign: 'right' as const },
-                },
-            });
-        }
-
-        doc.save(`lunch-order-${selectedDate}.pdf`);
+        await exportOrderPdf({
+            title: t('dailyOrders.pdfTitle'),
+            dateLabel: dateString,
+            fileName: `lunch-order-${selectedDate}.pdf`,
+            orders: orders.map((order) => ({
+                name: order.name,
+                unitPrice: order.unitPrice,
+                qty: order.qty,
+                subtotal: order.subtotal,
+                currency: order.currency || 'VND',
+            })),
+            totalQty,
+            total,
+            language: i18n.language,
+            labels: {
+                date: t('dailyOrders.pdfDate'),
+                item: t('dailyOrders.table.item'),
+                unitPrice: t('dailyOrders.table.unitPrice'),
+                qty: t('dailyOrders.table.qty'),
+                subtotal: t('dailyOrders.table.tableSubtotal'),
+                total: t('dailyOrders.total'),
+                noOrders: t('dailyOrders.noOrders'),
+                notes: t('dailyOrders.orderNotes'),
+            },
+            note: orderNote,
+            staffCatalogs,
+            staffBreakdownTitle: 'Staff Order Breakdown',
+        });
     };
 
     return (

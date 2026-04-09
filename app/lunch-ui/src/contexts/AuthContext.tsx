@@ -6,6 +6,9 @@ export type UserRole = 'admin' | 'staff';
 
 export interface AuthUser {
     role: UserRole;
+    name?: string;
+    email?: string;
+    displayName?: string;
     staff?: StaffEntity;
 }
 
@@ -41,9 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // 2. Fetch current user + matched staff profile (resolved server-side)
                 let staff: StaffEntity | undefined;
+                let resolvedName: string | undefined;
+                let resolvedEmail: string | undefined;
+                let resolvedDisplayName: string | undefined;
                 try {
-                    const response = await api.get<{ value: string }>('/getCurrentUser()');
-                    const userData = JSON.parse(response.data.value);
+                    const response = await api.get<{
+                        name: string;
+                        email: string;
+                        firstname: string;
+                        lastname: string;
+                        displayName: string;
+                        scopes: string;
+                        staff?: StaffEntity | null;
+                    }>('/getCurrentUser()');
+                    const userData = response.data;
+                    resolvedName = userData.name;
+                    resolvedEmail = userData.email;
+                    resolvedDisplayName = userData.displayName;
                     staff = userData.staff ?? undefined;
                     if (!staff) {
                         console.warn('[Auth] No matching staff profile found for portal user:', userData);
@@ -55,7 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (!isMounted) return;
 
                 if (staff || role === 'admin') {
-                    setCurrentUser({ role, staff });
+                    setCurrentUser({
+                        role,
+                        name: resolvedName,
+                        email: resolvedEmail,
+                        displayName: resolvedDisplayName,
+                        staff,
+                    });
                 } else {
                     console.warn('[Auth] Not admin and no staff profile, setting user to null');
                     setCurrentUser(null);

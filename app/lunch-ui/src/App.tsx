@@ -31,7 +31,7 @@ export default function App() {
           <Route path="/employees" element={<ProtectedRoute allowedRoles={['admin']}><Employees /></ProtectedRoute>} />
           <Route path="/manage-menu" element={<ProtectedRoute allowedRoles={['admin']}><ManageMenu /></ProtectedRoute>} />
           <Route path="/daily-orders" element={<ProtectedRoute allowedRoles={['admin']}><DailyOrders /></ProtectedRoute>} />
-          <Route path="/quick-order-management" element={<ProtectedRoute allowedRoles={['admin']}><QuickOrderManagement /></ProtectedRoute>} />
+          <Route path="/quick-order-management" element={<ProtectedRoute allowedRoles={['admin', 'staff']}><QuickOrderManagement /></ProtectedRoute>} />
           <Route path="/quick-order-history" element={<ProtectedRoute allowedRoles={['admin', 'staff']}><QuickOrderHistory /></ProtectedRoute>} />
         </Routes>
       </HashRouter>

@@ -1,0 +1,43 @@
+{
+  "AccessToken": "",
+  "APIVersion": "",
+  "AsyncTimeout": 0,
+  "AuthorizationEndpoint": "",
+  "CFOnK8s": {
+    "Enabled": false,
+    "AuthInfo": ""
+  },
+  "ColorEnabled": "",
+  "ConfigVersion": 4,
+  "DopplerEndPoint": "",
+  "Locale": "",
+  "LogCacheEndPoint": "",
+  "MinCLIVersion": "",
+  "MinRecommendedCLIVersion": "",
+  "NetworkPolicyV1Endpoint": "",
+  "OrganizationFields": {
+    "GUID": "",
+    "Name": ""
+  },
+  "PluginRepos": [
+    {
+      "Name": "CF-Community",
+      "URL": "https://plugins.cloudfoundry.org"
+    }
+  ],
+  "RefreshToken": "",
+  "RoutingAPIEndpoint": "",
+  "SpaceFields": {
+    "GUID": "",
+    "Name": "",
+    "AllowSSH": false
+  },
+  "SSHOAuthClient": "ssh-proxy",
+  "SSLDisabled": false,
+  "Target": "",
+  "Trace": "",
+  "UaaEndpoint": "",
+  "UAAGrantType": "",
+  "UAAOAuthClient": "cf",
+  "UAAOAuthClientSecret": ""
+}

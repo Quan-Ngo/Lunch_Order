@@ -7,7 +7,11 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-    const { currentUser } = useAuth();
+    const { currentUser, isLoadingUser } = useAuth();
+
+    if (isLoadingUser) {
+        return null;
+    }
 
     const userRole: UserRole = currentUser?.role ?? 'staff';
 

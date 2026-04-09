@@ -110,7 +110,7 @@ export default function DailyMenu() {
         queryFn: () => dailyMenuService.getByDate(selectedDate),
     });
 
-    const dailyMenu = rawMenuEntries[0];
+    const dailyMenu = rawMenuEntries.find((entry) => entry.type === 'daily');
     const rawCatalogs = dailyMenu?.catalogs || [];
 
     // Deduplicate and filter active items
@@ -126,10 +126,10 @@ export default function DailyMenu() {
     const { data: savedOrder = null } = useQuery({
         queryKey: ['staffOrder', staffId, selectedDate],
         queryFn: () =>
-            canOrder && staffId
-                ? staffCatalogService.getForStaffAndDate(staffId, selectedDate)
+            canOrder && staffId && dailyMenu?.ID
+                ? staffCatalogService.getForStaffAndDate(staffId, selectedDate, dailyMenu.ID)
                 : Promise.resolve(null),
-        enabled: canOrder && !!staffId,
+        enabled: canOrder && !!staffId && !!dailyMenu?.ID,
     });
 
     const isLoading = menuLoading;
@@ -150,11 +150,12 @@ export default function DailyMenu() {
     const confirmMutation = useMutation({
         mutationFn: async (catalogId: string | null) => {
             if (!staffId) throw new Error('No staffId');
+            if (!dailyMenu?.ID) throw new Error('No dailyMenuId');
             if (savedOrder) {
-                await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, selectedDate);
+                await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, savedOrder.DailyMenu_ID, selectedDate);
             }
             if (catalogId) {
-                await staffCatalogService.createOrder(staffId, catalogId, selectedDate);
+                await staffCatalogService.createOrder(staffId, catalogId, dailyMenu.ID, selectedDate);
             }
         },
         onSuccess: (_, catalogId) => {
@@ -176,7 +177,7 @@ export default function DailyMenu() {
     const cancelMutation = useMutation({
         mutationFn: async () => {
             if (!staffId || !savedOrder) return;
-            await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, selectedDate);
+            await staffCatalogService.deleteOrder(staffId, savedOrder.Catalog_ID, savedOrder.DailyMenu_ID, selectedDate);
         },
         onSuccess: () => {
             setSelectedCatalogId(null);
